@@ -1,0 +1,179 @@
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svobodalab/packages/!svn/ver/113/branches/27jun10_speed/+Whisker
+END
+polyfit.m
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svobodalab/packages/!svn/ver/94/branches/27jun10_speed/+Whisker/polyfit.m
+END
+InterXFast.m
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svobodalab/packages/!svn/ver/94/branches/27jun10_speed/+Whisker/InterXFast.m
+END
+copy_traj.m
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svobodalab/packages/!svn/ver/94/branches/27jun10_speed/+Whisker/copy_traj.m
+END
+read_seq_header.m
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svobodalab/packages/!svn/ver/98/branches/27jun10_speed/+Whisker/read_seq_header.m
+END
+assignTrialTypeFromBar.m
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svobodalab/packages/!svn/ver/94/branches/27jun10_speed/+Whisker/assignTrialTypeFromBar.m
+END
+writeFile_Ui2Commands.m
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svobodalab/packages/!svn/ver/94/branches/27jun10_speed/+Whisker/writeFile_Ui2Commands.m
+END
+mp42tiff.m
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svobodalab/packages/!svn/ver/112/branches/27jun10_speed/+Whisker/mp42tiff.m
+END
+load_whiskers_file.m
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svobodalab/packages/!svn/ver/94/branches/27jun10_speed/+Whisker/load_whiskers_file.m
+END
+load_trajectories.m
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svobodalab/packages/!svn/ver/94/branches/27jun10_speed/+Whisker/load_trajectories.m
+END
+read_whisker_measurements.m
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svobodalab/packages/!svn/ver/94/branches/27jun10_speed/+Whisker/read_whisker_measurements.m
+END
+avi2tiff_convertDirectory.m
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svobodalab/packages/!svn/ver/94/branches/27jun10_speed/+Whisker/avi2tiff_convertDirectory.m
+END
+whisker_convert_directory.m
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svobodalab/packages/!svn/ver/94/branches/27jun10_speed/+Whisker/whisker_convert_directory.m
+END
+makeAllDirectory_WhiskerTrialLite.m
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svobodalab/packages/!svn/ver/101/branches/27jun10_speed/+Whisker/makeAllDirectory_WhiskerTrialLite.m
+END
+lmax.m
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/svobodalab/packages/!svn/ver/94/branches/27jun10_speed/+Whisker/lmax.m
+END
+assignTrialTypeFromBar_doDirectory.m
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svobodalab/packages/!svn/ver/94/branches/27jun10_speed/+Whisker/assignTrialTypeFromBar_doDirectory.m
+END
+writeFile_Whisk2Commands.m
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svobodalab/packages/!svn/ver/94/branches/27jun10_speed/+Whisker/writeFile_Whisk2Commands.m
+END
+load_bar.m
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svobodalab/packages/!svn/ver/94/branches/27jun10_speed/+Whisker/load_bar.m
+END
+view_M0_Fax.m
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svobodalab/packages/!svn/ver/94/branches/27jun10_speed/+Whisker/view_M0_Fax.m
+END
+wtracking_make_contact_dataset.m
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svobodalab/packages/!svn/ver/94/branches/27jun10_speed/+Whisker/wtracking_make_contact_dataset.m
+END
+allDirectory_copyTraj.m
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svobodalab/packages/!svn/ver/94/branches/27jun10_speed/+Whisker/allDirectory_copyTraj.m
+END
+InterX.m
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svobodalab/packages/!svn/ver/94/branches/27jun10_speed/+Whisker/InterX.m
+END
+readSeqImages.m
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svobodalab/packages/!svn/ver/113/branches/27jun10_speed/+Whisker/readSeqImages.m
+END
+avi2tiff.m
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svobodalab/packages/!svn/ver/94/branches/27jun10_speed/+Whisker/avi2tiff.m
+END
+imageFileNums2BehavTrialNums.m
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svobodalab/packages/!svn/ver/94/branches/27jun10_speed/+Whisker/imageFileNums2BehavTrialNums.m
+END
+view_WhiskerTrialLiteArray.m
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svobodalab/packages/!svn/ver/94/branches/27jun10_speed/+Whisker/view_WhiskerTrialLiteArray.m
+END
+xraw_split_into_tiffs.m
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svobodalab/packages/!svn/ver/94/branches/27jun10_speed/+Whisker/xraw_split_into_tiffs.m
+END
+read_multibuffer_xraw.m
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svobodalab/packages/!svn/ver/94/branches/27jun10_speed/+Whisker/read_multibuffer_xraw.m
+END
+makeAllDirectory_WhiskerSignalTrial.m
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svobodalab/packages/!svn/ver/103/branches/27jun10_speed/+Whisker/makeAllDirectory_WhiskerSignalTrial.m
+END
+makeAllDirectory_WhiskerTrial.m
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svobodalab/packages/!svn/ver/101/branches/27jun10_speed/+Whisker/makeAllDirectory_WhiskerTrial.m
+END
