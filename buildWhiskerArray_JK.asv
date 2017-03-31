@@ -62,27 +62,27 @@ end
 % corresponding to trial number in string positions 1:end-13 of the file
 % name. It can be any form. For Spont analysis (2016/11/08 JK)
 
-% for i=1:length(filelist);
-%     dirTrialNums(i)=str2double(filelist(i).name(1:end-13)); % extract out the trial number from each measurements file present in directory
-% end
-% trialNums = sort(dirTrialNums);
-% trialNums = trialNums(~isnan(trialNums));
-% 
-% includef=cell(size(trialNums,1),1);
-% for i = 1: length(trialNums)
-%     includef{i} = num2str(trialNums(i));
-% end
-% 
-% v = VideoReader([includef{1} '.mp4']);
-% vv = read(v,1);
-% vheight = size(vv,1);
-% vwidth = size(vv,2);
-% vavg = zeros(vheight,vwidth);
-% for i = 1 : v.NumberOfFrames
-%     vtemp = read(v,i);    
-%     vtemp = double(vtemp(:,:,1));
-%     vavg = vavg + vtemp/v.NumberOfFrames;
-% end
+for i=1:length(filelist);
+    dirTrialNums(i)=str2double(filelist(i).name(1:end-13)); % extract out the trial number from each measurements file present in directory
+end
+trialNums = sort(dirTrialNums);
+trialNums = trialNums(~isnan(trialNums));
+
+includef=cell(size(trialNums,1),1);
+for i = 1: length(trialNums)
+    includef{i} = num2str(trialNums(i));
+end
+
+v = VideoReader([includef{1} '.mp4']);
+vv = read(v,1);
+vheight = size(vv,1);
+vwidth = size(vv,2);
+vavg = zeros(vheight,vwidth);
+for i = 1 : v.NumberOfFrames
+    vtemp = read(v,i);    
+    vtemp = double(vtemp(:,:,1));
+    vavg = vavg + vtemp/v.NumberOfFrames;
+end
 
 %% Mask
 
@@ -153,7 +153,7 @@ end
 % tid = [0 1]; % Set trajectory ID to view
 
 
-%% MASK
+%%
 figure, imshow(mat2gray(vavg)), axis off, axis image, hold all;
 % plot(x1,y1,'r.',x2,y2,'r.')
 button = 1;

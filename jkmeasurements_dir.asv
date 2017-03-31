@@ -17,7 +17,7 @@ for i = 1 : v.NumberOfFrames
     vavg = vavg + vtemp/v.NumberOfFrames;
 end
 vavg = mat2gray(vavg);
-figure, imshow(vavg), axis off, axis image, title('Select follicle points, first top-view, and then front-view'), hold all
+figure, imshow(vavg), axis off, axis image, title('Select follicle points, starting f), hold all
 i = 1;
 while (i < 3)
     [y, x] = ginput(1);
