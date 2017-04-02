@@ -1,8 +1,15 @@
+function postmeasurements(mouseName,sessionName,videoloc,varargin)
+
 %% Setup whisker array builder 
-mouseName = 'AH0653'
-sessionName ='S03'
-videoloc = 'JK'
+% mouseName = 'AH0653'
+% sessionName ='S03'
+% videoloc = 'JK'
 % optional = 'Spont'
+if nargin > 3
+    optional = varargin{4};
+elseif nargin > 4
+    error('Too many input arguments')
+end
 
 if exist('optional','var')
     d = (['Z:\Data\Video\' videoloc filesep mouseName sessionName filesep optional filesep])
@@ -78,7 +85,6 @@ for i = 1 : masknum(1)
 end
 hold off;
 
-
 %% save mask
-maskfn = [mouseName sessionName 'mask.mat'];
+maskfn = [mouseName sessionName '_post.mat'];
 save(maskfn,'maskx','masky', 'includef')

@@ -1,6 +1,8 @@
+function postmeasurements
+
 %% Setup whisker array builder 
-mouseName = 'AH0648'
-sessionName ='S02'
+mouseName = 'AH0653'
+sessionName ='S03'
 videoloc = 'JK'
 % optional = 'Spont'
 
@@ -14,7 +16,7 @@ end
 cd(d)
 
 %%
-jkmeasurements_dir();
+excludef = jkmeasurements_dir();
 %%
 filelist=dir([d '*.measurements']);
 
@@ -29,6 +31,7 @@ dirTrialNums=zeros(1,size(filelist,1));
 for i=1:length(filelist);
     dirTrialNums(i)=str2double(filelist(i).name(1:end-13)); % extract out the trial number from each measurements file present in directory
 end
+dirTrialNums = setdiff(dirTrialNums,excludef);
 trialNums = sort(dirTrialNums);
 trialNums = trialNums(~isnan(trialNums));
 
@@ -79,4 +82,4 @@ hold off;
 
 %% save mask
 maskfn = [mouseName sessionName 'mask.mat'];
-save(maskfn,maskx,masky)
+save(maskfn,'maskx','masky', 'includef')

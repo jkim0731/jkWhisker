@@ -1,8 +1,15 @@
+function postmeasurements(mouseName,sessionName,videoloc,varargin)
+
 %% Setup whisker array builder 
-mouseName = 'AH0653'
-sessionName ='S03'
-videoloc = 'JK'
+% mouseName = 'AH0653'
+% sessionName ='S03'
+% videoloc = 'JK'
 % optional = 'Spont'
+if nargin > 3
+    optional = varargin{4};
+elseif nargin > 4
+    error('Too many input arguments')
+end
 
 if exist('optional','var')
     d = (['Z:\Data\Video\' videoloc filesep mouseName sessionName filesep optional filesep])
@@ -38,47 +45,6 @@ for i = 1: length(trialNums)
     includef{i} = num2str(trialNums(i));
 end
 
-v = VideoReader([includef{1} '.mp4']);
-vv = read(v,1);
-vheight = size(vv,1);
-vwidth = size(vv,2);
-%%
-vavg = zeros(vheight,vwidth);
-
-video_ind = linspace(1,length(includef),10);
-for j = 1 : 10    
-    v = VideoReader([includef{floor(video_ind(j))} '.mp4']);
-    for i = 1 : v.NumberOfFrames
-        vtemp = read(v,i);    
-        vtemp = double(vtemp(:,:,1));
-        vavg = vavg + vtemp/v.NumberOfFrames; % average
-%         vavg = min(vavg,vtemp); % minimum
-    end
-end
-
-%% Mask
-figure, imshow(mat2gray(vavg)), axis off, axis image, hold all;
-% plot(x1,y1,'r.',x2,y2,'r.')
-button = 1;
-masknum = str2num(cell2mat(inputdlg({'How many trajectories?','How many points?'},'Trajectories',1,{'2','3'})));
-maskx = zeros(masknum(1),masknum(2));
-masky = zeros(masknum(1),masknum(2));
-for i = 1 : masknum(1)
-    for j = 1 : masknum(2)
-        [x, y, button] = ginput(1);
-        x = round(x); y = round(y);        
-        scatter(x,y,'mo');
-        maskx(i,j) = x;
-        masky(i,j) = y;
-        if j > 1
-            plot(maskx(i,j-1:j), masky(i,j-1:j))
-        end
-    end
-    
-end
-hold off;
-
-
 %% save mask
-maskfn = [mouseName sessionName 'mask.mat'];
+maskfn = [mouseName sessionName '_post.mat'];
 save(maskfn,'maskx','masky', 'includef')

@@ -14,7 +14,7 @@ end
 cd(d)
 
 %%
-jkmeasurements_dir();
+excludef = jkmeasurements_dir(); % just the numbers 03/31/2017 JK
 %%
 filelist=dir([d '*.measurements']);
 
@@ -31,6 +31,7 @@ dirTrialNums=zeros(1,size(filelist,1));
 for i=1:length(filelist);
     dirTrialNums(i)=str2double(filelist(i).name(1:end-13)); % extract out the trial number from each measurements file present in directory
 end
+dirTrialNums = setdiff(dirTrialNums,excludef);
 trialNums = sort(dirTrialNums);
 trialNums = trialNums(~isnan(trialNums));
 
@@ -39,7 +40,7 @@ for i = 1: length(trialNums)
     includef{i} = num2str(trialNums(i));
 end
 
-v = VideoReader([includef{1)} '.mp4']);
+v = VideoReader([includef{1} '.mp4']);
 vv = read(v,1);
 vheight = size(vv,1);
 vwidth = size(vv,2);
@@ -51,8 +52,8 @@ for j = 1 : 10
     for i = 1 : v.NumberOfFrames
         vtemp = read(v,i);    
         vtemp = double(vtemp(:,:,1));
-    %     vavg = vavg + vtemp/v.NumberOfFrames; % average
-        vavg = max(vavg,vtemp); % maximum
+        vavg = vavg + vtemp/v.NumberOfFrames; % average
+%         vavg = max(vavg,vtemp); % maximum
     end
 end
 %%
@@ -83,9 +84,6 @@ end
 %     vtemp = double(vtemp(:,:,1));
 %     vavg = vavg + vtemp/v.NumberOfFrames;
 % end
-
-%% Mask
-
 
 %% Optional section for cross correlating behavior and video trials, if you didn't pay attention to trial numbers
 % vv = nan(max(dirTrialNums),1);
@@ -137,21 +135,6 @@ end
 % endTrial = 99999999;
 % includef = includef(trialNums >= startTrial & trialNums <=endTrial);
 % trialNums =  trialNums(trialNums >= startTrial & trialNums <=endTrial);
-
-%% Step 1 - Run without the mask for the first 8 trials to
-% determine what MASK you need
-
-% Whisker.makeAllDirectory_WhiskerTrial(d,[0 1],...'mask', [900 700 200; 50 62 0],...
-%     'trial_nums',trialNums([50, 100, 150, 200]),'include_files',includef([50, 100, 150, 200]),...
-%     'barRadius',15.3,'faceSideInImage', 'bottom', 'framePeriodInSec',.0032,...
-%     'imagePixelDimsXY',[vwidth vheight],'pxPerMm',26.23,'mouseName',mouseName,'sessionName',sessionName,'protractionDirection','rightward')
-% 
-% Whisker.makeAllDirectory_WhiskerSignalTrial(d,'polyRoiInPix',[10 20])%,'follicleExtrapDistInPix',80);
-% Whisker.makeAllDirectory_WhiskerTrialLiteI(d,'r_in_mm',2,'calc_forces',false,'whisker_radius_at_base', 36.5,'whisker_length', 18,'baseline_time_or_kappa_value',0);
-% wl = Whisker.WhiskerTrialLiteArray(d);
-% 
-% tid = [0 1]; % Set trajectory ID to view
-
 
 %% MASK
 figure, imshow(mat2gray(vavg)), axis off, axis image, hold all;
