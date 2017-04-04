@@ -7,8 +7,7 @@ if exist(save_filename,'file')
     return
 end
 
-errorlist = []; % List of files having error(s) in whisker tracking. (Consider re-tracking if the list is too long, about >10% of total trials in a session)
-% 03/31/2017 JK
+
 
 
 load_fn = ls('*follicle_n_mask.mat');
@@ -20,13 +19,16 @@ length_threshold = 40;
 
 flist = dir('*.measurements');
 % v = VideoReader([flist(1).name(1:end-13),'.mp4']);
-
+errorlist = zeros(size(flist,1),1); % List of files having error(s) in whisker tracking. (Consider re-tracking if the list is too long, about >10% of total trials in a session)
+% 03/31/2017 JK
 
 %% Listing error files
-for i = 1 : size(flist,1)
+
+parfor i = 1 : size(flist,1)
     error = jkmeasurements(flist(i).name(1:end-13), width, height, follicle_first, follicle_threshold, length_threshold);
     if error == 1
-        errorlist = [errorlist; str2double(flist(i).name(1:end-13))];
+%         errorlist = [errorlist; str2double(flist(i).name(1:end-13))];
+        errorlist(i) = str2double(flist(i).name(1:end-13));
     end
 end
 

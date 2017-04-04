@@ -4,10 +4,14 @@ function postmeasurements(mouseName,sessionName,videoloc,varargin)
 % mouseName = 'AH0653'
 % sessionName ='S03'
 % videoloc = 'JK'
+% flag_skip = 'skip'
 % optional = 'Spont'
 if nargin > 3
-    optional = varargin{4};
-elseif nargin > 4
+    flag_skip = varargin{4};
+end
+if nargin > 4
+    optional = varargin{5};
+elseif nargin > 5
     error('Too many input arguments')
 end
 
@@ -20,6 +24,16 @@ end
 
 cd(d)
 
+
+savefn = [mouseName sessionName '_post.mat'];
+if exist(savefn,'file')
+    if exist(flag_skip, 'var') && strcmp(flag_skip, 'skip')
+        disp(['Already post-measured. Skip ', mouseName, ' ', sessionName])
+        return
+    else
+        disp(['Over-writing already present post-measurement in ', mouseName, ' ', sessionName])
+    end    
+end
 %%
 excludef = jkmeasurements_dir();
 %%

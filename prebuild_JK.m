@@ -6,38 +6,39 @@ videoloc = 'JK';
 d = (['Z:\Data\Video\' videoloc filesep]);
 
 % comment out when doing for all of the sessions in the mouse directory
-% sessions = {{'S02'}, {'S02'}, {'S02'}, {'S04'}, {'S03'}}; 
+sessions = {{'S02'}, {'S02'}, {'S02'}, {'S04'}, {'S03'}}; 
 
 %% Define follicle points and masks
 
 % comment out when doing for selected sessions in each mouse directory
-for i = 1 : size(mice,2)
-    cd(d)
-    sn = dir([mice{i},'*']);
-    for j = 1 : length(sn)
-        if sn(j).isdir
-            [mouseName, sessionName] = strtok(sn(j).name,'S');            
-            follicle_n_mask(mouseName,sessionName,videoloc)
-        end
-    end
-end
+% for i = 1 : size(mice,2)
+%     cd(d)
+%     sn = dir([mice{i},'*']);
+%     for j = 1 : length(sn)
+%         if sn(j).isdir
+%             [mouseName, sessionName] = strtok(sn(j).name,'S');            
+%             follicle_n_mask(mouseName,sessionName,videoloc)
+%         end
+%     end
+% end
 
 
 % comment out when doing for all of the sessions in the mouse directory
-% for i = 1 : size(mice,2)
-%     cd(d)
-%     sn = sessions{i};
-%     for j = 1 : length(sn)
-%         mouseName = mice{i};
-%         sessionName = sn{j};
-%         follicle_n_mask(mouseName,sessionName,videoloc)
-%     end
-% end
+for i = 1 : size(mice,2)
+    cd(d)
+    sn = sessions{i};
+    for j = 1 : length(sn)
+        mouseName = mice{i};
+        sessionName = sn{j};
+        follicle_n_mask(mouseName,sessionName,videoloc)
+    end
+end
 
 
 %% Re-measure .measurements file before building whisker arrays 
 % comment out when doing for selected sessions in each mouse directory
 % for i = 1 : size(mice,2)
+%     cd(d)
 %     sn = dir([mice{i},'*']);
 %     for j = 1 : length(sn)
 %         if sn(j).isdir

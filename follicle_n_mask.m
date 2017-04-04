@@ -21,8 +21,8 @@ end
 cd(d)
 
 maskfn = [mouseName sessionName 'follicle_n_mask.mat'];
-if exist('maskfn','file')
-    disp([maskn ' already exists. Skipping.'])
+if exist(maskfn,'file')
+    disp([maskfn ' already exists. Skipping.'])
     return
 end
 
@@ -93,11 +93,26 @@ while (i <= masknum(1))
         scatter(x,y,'mo');
         maskx(i,j) = x;
         masky(i,j) = y;
-        if j > 1
-            plot(maskx(i,j-1:j), masky(i,j-1:j))
-        end
         j = j + 1;
     end
+    if j > 1            
+        qnum = length(maskx(i,:));
+        if qnum < 2
+            error('Must define at least 2 points.')
+        elseif qnum < 6
+            polyDegree = qnum-1;
+        else
+            polyDegree = 5;
+        end
+        q = (0:(qnum-1))./(qnum-1);
+        px = Whisker.polyfit(q,maskx(i,:),polyDegree);
+        py = Whisker.polyfit(q,masky(i,:),polyDegree);
+        q = linspace(0,1);
+        x = polyval(px,q);
+        y = polyval(py,q);
+        plot(x,y,'g-','LineWidth',2)
+    end
+
     button = questdlg('is this correct?', 'Mask points', 'Yes', 'No', 'Cancel', 'Yes');
     switch button
         case 'Yes'            
