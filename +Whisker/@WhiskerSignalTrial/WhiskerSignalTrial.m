@@ -95,6 +95,7 @@ classdef WhiskerSignalTrial < handle
         barPosOffset = []; % [x y], either 1X2 or nframesX2
         barRadius = []; % Inherited from WhiskerTrial.  In pixels. Must be radius of bar tracked by the bar tracker.
         time = {};
+        videoFrames = []; % number of frames of the video. Need for comparison with time, so that to see if there was any error during tracking. 2017/04/03 JK
         pxPerMm = 22.68; %  Inherited from WhiskerTrial, but give default value.
         faceSideInImage = 'top'; % Inherited from WhiskerTrial, but give default value.
         % Can be: 'top', 'bottom', 'left','right'.
@@ -217,8 +218,8 @@ classdef WhiskerSignalTrial < handle
                                             % to WhiskerSignalTrial.
                 obj.polyFitsROI = w.polyFitsROI;
                 obj.time{k} = w.get_time(tid);
-
             end
+            obj.videoFrames = w.get_videoFrames; % 2017/04/03 JK
         end
         
         function obj = recompute_cached_mean_theta_kappa(obj, varargin)
@@ -829,7 +830,9 @@ classdef WhiskerSignalTrial < handle
 %                 return
 %             end
             
-            [R,THETA,KAPPA] = obj.arc_length_theta_and_kappa(tid,npoints);
+%             [R,THETA,KAPPA] =
+%             obj.arc_length_theta_and_kappa(tid,npoints); to make it faster, as suggested in arc_length_and_theta function 3/28/2017 JK
+            [R,THETA] = obj.arc_length_and_theta(tid,npoints);
             rind = cellfun(@(x) find(x==0), R,'UniformOutput',false);
             emp = find(cellfun(@isempty, rind));
             
@@ -1537,6 +1540,8 @@ classdef WhiskerSignalTrial < handle
             %   For this function to work properly, object properties 'faceSideInImage'
             %   and 'imagePixelDimsXY' must be correctly set.
             %
+            %   mask is accounted for.
+            %
             % INPUTS:
             %
             %   tid: Whisker trajectory ID.
@@ -2089,6 +2094,129 @@ classdef WhiskerSignalTrial < handle
 
         end
         
+        function [R,KAPPA,varargout] = arc_length_and_kappa_in_roi(obj,tid,varargin)
+            %
+            % [R,KAPPA] = arc_length_and_kappa_in_roi(obj,tid)
+            % [R,KAPPA,Y,X] = arc_length_and_kappa_in_roi(obj,tid)
+            % [R,KAPPA] = arc_length_and_kappa_in_roi(obj,tid,npoints)
+            %
+            %   The whisker is parameterized as c(q) = (x(q),y(q)), where q 
+            %   is in [0,1]. However, here we deal with a second representation of the
+            %   whisker, where polynomials were fitted over a constant region of arc-length,
+            %   [q0,q1], q0,q1 both within [0,1]. 
+            %
+            %   For this function to work properly, object properties 'faceSideInImage'
+            %   and 'imagePixelDimsXY' must be correctly set.
+            %
+            % INPUTS:
+            %
+            %   tid: Whisker trajectory ID.
+            %
+            %   varargin{1}: Optional, integer giving number of points (values of q) to 
+            %        use in reconstructing each whisker. Default is 100 points.  
+            %    
+            %
+            % RETURNS:
+            %
+            %   R:  A cell array where each element is the arc length, computed moving outward from
+            %       whisker follicle along the whisker for a single frame, but only those values
+            %       falling within the ROI. Units of pixels.
+            %
+            %   KAPPA: A cell array where each element kappa is the signed curvature at each point
+            %           on the whisker within the ROI. Units of 1/pixels. Abs(kappa(q)) is 1/X where X is
+            %           the radius in pixels of the osculating circle at c(q). Uses the secondary polynomials
+            %           fitted within the ROI.
+            %
+            %   Optionally also:
+            %
+            %   X,Y: Cell arrays containing the x and y image (pixel) coordinates corresponding to the
+            %        values in R, THETA, and KAPPA.
+            %
+            %
+            %
+            %
+            
+            %   Hoping that it is faster than arc_length_theta_and_kappa_in_roi
+            %   2017/03/30 JK
+            
+            if nargin < 3
+                npoints = 100;
+            else
+                npoints = varargin{1};
+                if isempty(npoints)
+                    npoints = 100;
+                end
+            end
+            
+            ind = find(obj.trajectoryIDs == tid);
+            if isempty(ind)
+                error('Could not find specified trajectory ID.')
+            end
+            
+            nframes = size(obj.polyFitsROI{ind}{1},1);
+            
+            if isempty(obj.polyFitsROI)
+                error('obj.polyFitsROI is empty.')
+            end
+            
+            R = cell(1,nframes);
+            KAPPA = cell(1,nframes);
+            
+            if nargout>3
+                X = cell(1,nframes);
+                Y = cell(1,nframes);
+            end
+            
+            fittedX = obj.polyFitsROI{ind}{1};
+            fittedY = obj.polyFitsROI{ind}{2};
+            fittedQ = obj.polyFitsROI{ind}{3};
+            
+            for k=1:nframes
+                
+                px = fittedX(k,:);
+                py = fittedY(k,:);
+                pq = fittedQ(k,:);
+                
+                q = linspace(pq(1),pq(2),npoints);
+                
+                pxDot = polyder(px);
+                pxDoubleDot = polyder(pxDot);
+                
+                pyDot = polyder(py);
+                pyDoubleDot = polyder(pyDot);
+                
+                xDot = polyval(pxDot,q);
+                xDoubleDot = polyval(pxDoubleDot,q);
+                
+                yDot = polyval(pyDot,q);
+                yDoubleDot = polyval(pyDoubleDot,q);
+                
+                dq = [0 diff(q)];
+                
+                % Arc length as a function of q, after integration below:
+                R{k} = cumsum(sqrt(xDot.^2 + yDot.^2) .* dq); % arc length segments, in pixels, times dq.
+                
+                
+                R{k} = R{k} + pq(3); % Add the whole-whisker arc-length of the first point in the ROI to make this quantity the arc-length
+                                     % measured over the whole fitted whisker, not just arc-length over the ROI.
+                                     % Note that pq(3) already accounts for mask, so do not need to do so in this method.
+               
+                % Signed curvature as a function of q:
+                KAPPA{k} = (xDot.*yDoubleDot - yDot.*xDoubleDot) ./ ((xDot.^2 + yDot.^2).^(3/2)); % SIGNED CURVATURE, in 1/pixels.
+                %                 KAPPA{k} = abs(xDot.*yDoubleDot - yDot.*xDoubleDot) ./ ((xDot.^2 + yDot.^2).^(3/2)); % CURVATURE, in 1/pixels.
+                
+                if nargout>3
+                    X{k} = polyval(px,q);
+                    Y{k} = polyval(py,q);
+                    varargout{1} = Y;
+                    varargout{2} = X;
+                end
+            end
+            
+            % Do not need to apply any mask, because pq(3) above already accounts for mask.
+
+        end
+        
         function t = get_time(obj,tid)
             %
             %   t = get_time(obj,tid)
@@ -2299,7 +2427,7 @@ classdef WhiskerSignalTrial < handle
             f = t / obj.framePeriodInSec;
             nframes = length(f);
             
-            [R,THETA,KAPPA] = obj.arc_length_theta_and_kappa(tid);
+            [R,THETA,KAPPA] = obj.arc_length_theta_and_kappa(tid); % mask is accounted for.
             
             theta0 = zeros(1,nframes);
             kappa0 = zeros(1,nframes);
@@ -2317,6 +2445,65 @@ classdef WhiskerSignalTrial < handle
                 end
             end
         end
+ 
+        function [theta0,t] = get_theta_at_base(obj,tid)
+            %
+            %   [theta0,t] = get_theta_at_base(obj,tid)
+            %
+            %   INPUTS:
+            %       tid:  Trajectory ID (as an integer) or whisker name (as a string).
+            %
+            %   OUTPUTS:
+            %
+            %       theta0: Theta at radial distance 0. Radial distance 0 is determined
+            %                     in part by the mask, if present. In degrees.
+            %
+            %       t: The corresponding times of each observation.
+            %
+            
+            %   Hoping that it is faster than get_theta_kappa_at_base
+            %   2017/03/29 JK
+            
+            
+            if isnumeric(tid) % Trajectory ID specified.
+                ind = find(obj.trajectoryIDs == tid);
+            elseif ischar(tid) % Whisker name specified.
+                ind = strmatch(tid,obj.whiskerNames,'exact');
+            else
+                error('Invalid type for argument ''tid''.')
+            end
+            
+            if isempty(ind)
+                error('Could not find specified trajectory ID.')
+            end
+            t = obj.time{ind};
+            
+            if all(isnan(t))
+                disp(['Nothing tracked for tid ' int2str(tid) '; setting theta0,kappa0,t to NaN.'])
+                theta0 = NaN;
+                t = NaN;
+                return
+            end
+            
+            
+            f = t / obj.framePeriodInSec;
+            nframes = length(f);
+            
+            [R,THETA] = obj.arc_length_and_theta(tid); % mask is accounted for.
+            
+            theta0 = zeros(1,nframes);
+            
+            for k=1:nframes
+                r = R{k};
+                rval = min(r(r >= 0)); % Take the minimum value >= 0.
+                if isempty(rval)
+                    theta0(k) = NaN;
+                else
+                    ind = find(r==rval,1,'first');
+                    theta0(k) = THETA{k}(ind);
+                end
+            end
+        end        
         
         function [thetap,kappap,y,x,t] = get_theta_kappa_at_point(obj,tid,r_in_mm)
             %
@@ -2440,7 +2627,8 @@ classdef WhiskerSignalTrial < handle
             if isnumeric(tid) % Trajectory ID specified.
                 ind = find(obj.trajectoryIDs == tid);
             elseif ischar(tid) % Whisker name specified.
-                ind = strmatch(tid,obj.whiskerNames,'exact');
+%                 ind = strmatch(tid,obj.whiskerNames,'exact'); 03/28/2017 JK, following the recommendation
+                ind = strcmp(obj.whiskerNames,tid);
             else
                 error('Invalid type for argument ''tid''.')
             end
@@ -2477,6 +2665,69 @@ classdef WhiskerSignalTrial < handle
                 end
             end
         end
+        
+        function [kappap,y,x,t] = get_kappa_at_roi_point(obj,tid,r_in_mm)
+            %
+            %   [kappap,y,x,t] = get_kappa_at_roi_point(obj,tid,r_in_mm)
+            %
+            %   INPUTS:
+            %       tid:  Trajectory ID (as an integer) or whisker name (as a string).
+            %
+            %       r_in_mm: Distance along whisker at which to measure theta and kappa.
+            %                Note that this calculation does not extrapolate back
+            %                to the follicle. Also, r_in_mm **MUST FALL WITHIN THE ROI**
+            %                or else a NaN is returned.
+            %
+            %
+            %   OUTPUTS:
+            %
+            %
+            %       kappap: Kappa at radial distance specified by r_in_mm.
+            %               Radial distance is determined outward from the intersection
+            %               of the whisker and the mask, if present. Units of 1/pixels.
+            %
+            %       x,y: The image (pixel) coordinates of the point at r_in_mm.
+            %
+            %       t: The corresponding times of each observation.
+            %
+            if isnumeric(tid) % Trajectory ID specified.
+                ind = find(obj.trajectoryIDs == tid);
+            elseif ischar(tid) % Whisker name specified.
+%                 ind = strmatch(tid,obj.whiskerNames,'exact'); 03/28/2017 JK, following the recommendation
+                ind = strcmp(obj.whiskerNames,tid);
+            else
+                error('Invalid type for argument ''tid''.')
+            end
+            
+            if isempty(ind)
+                error('Could not find specified trajectory ID.')
+            end
+            t = obj.time{ind};
+            f = t / obj.framePeriodInSec;
+            nframes = length(f);
+            
+            [R,KAPPA,Y,X] = obj.arc_length_and_kappa_in_roi(tid); 
+            
+            kappap = zeros(1,nframes);
+            x = zeros(1,nframes);
+            y = zeros(1,nframes);
+            
+            for k=1:nframes
+                r = R{k} / obj.pxPerMm;
+                rval = min(r(r >= r_in_mm)); % Take the minimum value >= r_in_mm.
+                if isempty(rval)
+                    disp('r_in_mm not found within fitted whisker ROI; setting to NaN for this frame.')
+                    kappap(k) = NaN;
+                    y(k) = NaN;
+                    x(k) = NaN;
+                else
+                    ind = find(r==rval,1,'first');
+                    kappap(k) = KAPPA{k}(ind);
+                    y(k) = Y{k}(ind);
+                    x(k) = X{k}(ind);
+                end
+            end
+        end            
         
         function [M0,Faxial,t,varargout] = calc_M0_Faxial(obj,tid,r_point,whisker_radius_at_base,...
                 whisker_length,youngs_modulus,baseline_time_or_kappa_value, varargin)

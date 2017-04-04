@@ -180,8 +180,10 @@ classdef WhiskerTrialLite < handle
                    
                 else
                     % Should consolidate into single function to optimize the following: 
-                    [theta,obj.deltaKappa{k},y,x,t] = w.get_theta_kappa_at_roi_point(tid,p.Results.r_in_mm);
-                    [obj.thetaAtBase{k},kappa0,t] = w.get_theta_kappa_at_base(tid);
+%                     [~,obj.deltaKappa{k},~,~,~] = w.get_theta_kappa_at_roi_point(tid,p.Results.r_in_mm);       
+                    [obj.deltaKappa{k},~,~,~] = w.get_kappa_at_roi_point(tid,p.Results.r_in_mm);
+%                     [obj.thetaAtBase{k},kappa0,t] = w.get_theta_kappa_at_base(tid);
+                    [obj.thetaAtBase{k},~] = w.get_theta_at_base(tid);                    
                 end
                 
             end

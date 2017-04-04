@@ -452,26 +452,6 @@ classdef WhiskerTrial < handle
             t = frameNums*obj.framePeriodInSec;
         end
         
-        function f = get_videoFrames(obj)
-            %
-            % f = get_videoFrames(obj)
-            %
-            %   USAGE:
-            %       f = get_videoFrames(obj)
-            %
-            %   INPUTS:
-            %
-            %   OUTPUTS:
-            %       f: number of frames in the analyzed video, mp4 file.
-            %
-            %   2017/04/03 JK
-            %   
-            
-            fn = [obj.trackerFileName, '.mp4'];
-            v = VideoReader(fn);
-            f = v.NumberOfFrames;
-        end
-        
         function set_face_coords_all(obj, x, y)
             %
             %   set_face_coords_all(obj, x, y)
@@ -526,27 +506,32 @@ classdef WhiskerTrial < handle
             % to create a mask defined by the points in x and y.
             %
             % tid: Trajectory ID. Can be a vector with multiple trajectory
-            %       IDs. In this case all will be set to have same mask.
+            %       IDs. In this case each row of x,y combination are
+            %       calculated for each tid. Assume they are in same length
+            %       (force them to be) 
+            % 2016/10/28 JK
             %
-            % x: Row vector of x coordinates to define mask.
-            % y: Row vector of y coordinates to define mask.
+            % x: Row vector of x coordinates to define mask.(or matrix in
+            % case of multiple tid
+            % y: Row vector of y coordinates to define mask.(or matrix in
+            % case of multiple tid
             %
             % If N points are selected, mask will be the (N-1)-th
             % degree polynomial fit to the points for N < 6. For N >= 6
             % the polynomial will be 5-th degree.
             %
-            qnum = length(x);
-            if length(x) ~= length(y)
+            qnum = size(x,2);
+            if size(x,2) ~= size(y,2)
                 error('Inputs x and y must be of equal length.')
             end
             
-            % Make x, y row vectors:
-            if size(x,1) > size(x,2)
-                x = x';
-            end
-            if size(y,1) > size(y,2)
-                y = y';
-            end
+%             % Make x, y row vectors:
+%             if size(x,1) > size(x,2)
+%                 x = x';
+%             end
+%             if size(y,1) > size(y,2)
+%                 y = y';
+%             end
             
             if qnum < 2
                 error('Must define at least 2 points.')
@@ -558,18 +543,24 @@ classdef WhiskerTrial < handle
             
             q = (0:(qnum-1))./(qnum-1); % [0,1]
             
+            if length(tid) > 1 % multi-whisker mask
+                if size(x,1) == 1
+                    disp('applying the same mask for all')
+                elseif size(x,2) ~= length(tid)
+                    error('number of row in mask matrix should match with number of trajectories')
+                end
+            end                
             % polyfit() gives warnings that indicate that we don't need such a high degree
             % polynomials. Turn off.
             %             warning('off','MATLAB:polyfit:RepeatedPointsOrRescale');
-            px = Whisker.polyfit(q,x,polyDegree);
-            py = Whisker.polyfit(q,y,polyDegree);
-            %             warning('on','MATLAB:polyfit:RepeatedPointsOrRescale');
             
             if isempty(obj.polyFitsMask)
                 obj.polyFitsMask = cell(1,length(obj.trajectoryIDs));
             end
-            
-            for k=1:length(tid)
+
+            for k = 1 : length(tid)
+                px = Whisker.polyfit(q,x(k,:),polyDegree);
+                py = Whisker.polyfit(q,y(k,:),polyDegree);
                 ind = obj.trajectoryIDs==tid(k);
                 if max(ind) < 1
                     error('Trajectory ID was not found.')
@@ -728,139 +719,6 @@ classdef WhiskerTrial < handle
                 theta = interp1(t(~missing),theta(~missing),t,'linear','extrap');
             end
         end
-        
-        function [R,R0] = arc_length_and_intersection(obj,tid,varargin)
-            %
-            % Used instead of arc_length_theta_and_kappa to get R0 only, in
-            % fit_polys_roi
-            %
-            % 2017/04/03 JK
-            %
-            if nargin < 3
-                npoints = 100;
-            else
-                npoints = varargin{1};
-                if isempty(npoints)
-                    npoints = 100;
-                end
-            end
-            
-            ind = find(obj.trajectoryIDs == tid);
-            if isempty(ind)
-                error('Could not find specified trajectory ID.')
-            end
-            
-            frameNums = cellfun(@(x) x{2}, obj.trackerData{ind});
-            nframes = length(frameNums);
-            
-            if isempty(obj.polyFits)
-                disp('obj.polyFits is empty, calling obj.fit_polys; probably want save this WhiskerTrial object afterward.')
-                obj.fit_polys;
-            end
-            
-            R = cell(1,nframes);
-            R0 = zeros(1,nframes);
-            
-            fittedX = obj.polyFits{ind}{1};
-            fittedY = obj.polyFits{ind}{2};
-            
-            q = linspace(0,1,npoints);
-            
-            for k=1:nframes                
-                x = obj.trackerData{ind}{k}{4};
-                if numel(x) < 2 % Tracker can sometimes (rarely) leave frame entries for a trajectory in whiskers file that have no pixels.
-                    R{k} = NaN;
-                    R0(k) = NaN;
-                    continue
-                end
-                
-                px = fittedX(k,:);
-                py = fittedY(k,:);
-                
-                pxDot = polyder(px);
-                pyDot = polyder(py);
-                
-                xDot = polyval(pxDot,q);
-                yDot = polyval(pyDot,q);
-                
-                dq = [0 diff(q)];
-                
-                % Arc length as a function of q, after integration below:
-                R{k} = cumsum(sqrt(xDot.^2 + yDot.^2) .* dq); % arc length segments, in pixels, times dq.
-            end
-            
-            % Apply any mask:
-            if iscell(obj.maskTreatment)
-                if length(obj.maskTreatment) ~= length(obj.trajectoryIDs)
-                    error('obj.maskTreatment and obj.trajectoryIDs must have the same length and matching entries.')
-                end
-                mask_treatment = obj.maskTreatment{ind};
-            else
-                mask_treatment = obj.maskTreatment;
-            end
-            if strcmp(mask_treatment,'none')
-                return
-            end
-            
-            % If there is a polynomial mask specified (see documentation for
-            % object property 'polyFitsMask') and varargin{1} is given, subtract from each element of
-            % R the radial distance at the intersection, if any, of the fitted
-            % whisker and the polynomial mask.
-            if isempty(obj.polyFitsMask)
-                return
-            else
-                pm = obj.polyFitsMask{ind};
-                if isempty(pm)
-                    return
-                end
-            end
-            
-            fittedXMask = obj.polyFitsMask{ind}{1};
-            fittedYMask = obj.polyFitsMask{ind}{2};
-            
-            for k=1:nframes                
-                px = fittedX(k,:);
-                py = fittedY(k,:);
-                
-                if size(fittedXMask,1) > 1
-                    pxm = fittedXMask(k,:);
-                    pym = fittedYMask(k,:);
-                else
-                    pxm = fittedXMask;
-                    pym = fittedYMask;
-                end
-                
-                C1 = [polyval(px,q); polyval(py,q)];
-                C2 = [polyval(pxm,q); polyval(pym,q)];
-                P = Whisker.InterX(C1,C2); % Find points where whisker and mask curves intersect. Slower but more
-                %  accurate version that isn't limited in resolution by the number of
-                %  points whisker and mask are evaluated at.
-                if size(P,2) > 1   % Don't need for faster version, which handles this.
-                    disp('Found more than 1 intersection of whisker and mask curves; using only first.')
-                    P = P(:,1);
-                end
-                
-                %                 P = Whisker.InterXFast(C1,C2); % Find points where whisker and mask curves intersect. Much faster version
-                %                                                 % that is limited in resolution by the number of
-                %                                                 % points whisker and mask are evaluated at (i.e., by number of points in q).
-                
-                if isempty(P)
-                    if strcmp(mask_treatment,'maskNaN')
-                        R{k} = nan(size(R{k}));
-                        R0(k) = NaN;
-                    end
-                else
-                    % Find at what q the whisker is at (P(1),P(2)), i.e., q s.t. x(q)=P(1),y(q)=P(2).
-                    % Doesn't match exactly (maybe due to roundoff error), so find closest.
-                    C = C1 - repmat(P,[1 size(C1,2)]);
-                    err = sqrt(C(1,:).^2 + C(2,:).^2);
-                    ind2 = err==min(err);
-                    R0(k) = R{k}(ind2);
-                    R{k} = R{k} - R{k}(ind2);
-                end
-            end
-        end
-            
         
         function [R,THETA,KAPPA,varargout] = arc_length_theta_and_kappa(obj,tid,varargin)
             %
@@ -1061,23 +919,6 @@ classdef WhiskerTrial < handle
                     if strcmp(mask_treatment,'maskNaN')
                         R{k} = nan(size(R{k}));
                         R0(k) = NaN;
-%                     elseif strcmp(mask_treatment,'maskEx') % extrapolate from the first point of whisker to the mask, just using the same polynomial fit. Extended 20% of the whole whisker at both ends
-%                         q1 = linspace(-0.2, 1.2, floor(npoints*1.4));                        
-%                         C1 = [polyval(px,q1); polyval(py,q1)];
-%                         C2 = [polyval(pxm,q); polyval(pym,q)];
-%                         P = Whisker.InterX(C1,C2);
-%                         if size(P,2) > 1   % Don't need for faster version, which handles this.
-%                             disp('Found more than 1 intersection of whisker and mask curves; using only first.')
-%                             P = P(:,1);
-%                         end
-%                         if isempty(P)
-%                             R{k} = nan(size(R{k}));
-%                             R0(k) = NaN;
-%                         else
-%                             C1 = [polyval(px,0); polyval(py,0)]; % first point of the original whisker tracked
-%                             R0(k) = -sqrt(sum((C1-P).^2)); % the distance from the first point to the mask. R0 in this case should be negative.
-%                             R{k} = R{k} - R0(k);
-%                         end
                     end
                 else
                     % Find at what q the whisker is at (P(1),P(2)), i.e., q s.t. x(q)=P(1),y(q)=P(2).
@@ -1367,102 +1208,22 @@ classdef WhiskerTrial < handle
                 if isempty(obj.polyFitsMask)
                     R0 = zeros(1,nframes);
                 else
-%                     [~,~,~,R0] = obj.arc_length_theta_and_kappa(obj.trajectoryIDs(h));
-                    [~,R0] = obj.arc_length_and_intersection(obj.trajectoryIDs(h)); % changed to an added function to make it faster 2017/04/03 JK
+                    [jnk0,jnk1,jnk2,R0] = obj.arc_length_theta_and_kappa(obj.trajectoryIDs(h));
                 end
                 
                 % polyfit() gives warnings that indicate that we don't need such a high degree
                 % polynomials. Turn off.
                 %                 warning('off','MATLAB:polyfit:RepeatedPointsOrRescale');
                 
-                if exist('parfor','builtin') % parfor to enhance speed (2017/04/03 JK)
-                    xp = nan(k,numCoeff);
-                    yp = nan(k,numCoeff);
-                    qp = nan(k,4);
-                    if strcmp(obj.trackerFileFormat,'whisker0')
-                        whisker0Format = true;
+                for k=1:nframes
+                    %                     disp(['On frame ' int2str(k)])
+                    f = trajectoryData{k};
+                    if numel(f{4}) > 1 % Tracker can sometimes (rarely) leave frame entries for a trajectory in whiskers file that have no pixels.
+                        [xp(k,:), yp(k,:), qp(k,:)] = doFits(f,R0(k));
                     else
-                        whisker0Format = false;
-                    end
-                    parfor k = 1 : nframes
-                        f = trajectoryData{k};
-                        x = f{4};
-                        if whisker0Format == true
-                            x = (x(1):x(2))';
-                        end
-
-                        yy = f{5};
-
-                        % Make everything row vectors, to be consistent for polyfit, below.
-                        if size(x,1) > size(x,2)
-                            x = x';
-                        end
-                        if size(yy,1) > size(yy,2)
-                            yy = yy';
-                        end
-
-
-                        % Check which end of the whisker is closer to the whisker pad origin; make
-                        % sure that c(q) = (x(q),y(q)) pairs are moving away from follice as q increase:
-                        x0 = x(1);
-                        yy0 = yy(1);
-
-                        x1 = x(end);
-                        yy1 = yy(end);
-
-                        if sqrt(sum((wpo-[x1 yy1]).^2)) < sqrt(sum((wpo-[x0 yy0]).^2))
-                            % c(q_max) is closest to whisker pad origin, so reverse the (x,y) sequence
-                            x = x(end:-1:1);
-                            yy = yy(end:-1:1);
-                        end
-
-                        % We are fitting each whisker within
-                        % an arc-length region of interest;
-                        % find only those (x,y) pairs within the ROI, and fit to those
-                        % pairs.  The arc-length origin needs to be determined by any mask if the
-                        % user has defined one.
-                        % If a mask is defined, subtract the arc-length at the intersection of the whisker
-                        % and mask to (re)define the arc-length origin for fitting below:
-
-                        s = cumsum(sqrt([0 diff(x)].^2 + [0 diff(yy)].^2));
-                        q = s ./ max(s); % now [0,1].
-
-                        % Find arc-length point closest to arc-length at intersection of whisker
-                        % and intial fitted whisker:
-                        %                 ind = find(s >= r0,1,'first'); % Or, first exceeding, rather than closest.
-                        dist = (s-R0(k)).^2;
-                        ind = find(dist==min(dist),1,'first');
-                        if ~isempty(ind)
-                            q = q - q(ind); % If there is a mask defined subtract arc-length where whisker crosses mask.
-                            % If no mask is defined, r0 is set to 0 above.
-                            s = s - s(ind);
-                        end
-
-                        ind = s >= rstart & s <= rstop;
-                        q = q(ind);
-                        s = s(ind);
-                        x = x(ind);
-                        yy = yy(ind);
-
-                        if length(q) <= polyDegree
-                            disp('Number of samples not more than polynomial order, returning NaNs.')
-                        else
-                            xp(k,:) = Whisker.polyfit(q,x,polyDegree);
-                            yp(k,:) = Whisker.polyfit(q,yy,polyDegree);
-                            qp(k,:) = [q(1) q(end) s(1) s(end)];
-                        end
-                    end
-                else
-                    for k=1:nframes
-                        %                     disp(['On frame ' int2str(k)])
-                        f = trajectoryData{k};
-                        if numel(f{4}) > 1 % Tracker can sometimes (rarely) leave frame entries for a trajectory in whiskers file that have no pixels.
-                            [xp(k,:), yp(k,:), qp(k,:)] = doFits(f,R0(k));
-                        else
-                            xp(k,:) = nan(1,numCoeff);
-                            yp(k,:) = nan(1,numCoeff);
-                            qp(k,:) = nan(1,4);
-                        end
+                        xp(k,:) = nan(1,numCoeff);
+                        yp(k,:) = nan(1,numCoeff);
+                        qp(k,:) = nan(1,4);
                     end
                 end
                 fitted{h} = {xp,yp,qp};

@@ -142,7 +142,7 @@ else
 end
 
 if ~isempty(fnall)
-    if exist('parfor','builtin') % Parallel Computing Toolbox is installed
+    if exist('parfor','builtin') % Parallel Computing Toolbox is installed.
         parfor k=1:nfiles
             fn = fnall{k};
             disp(['Processing .whiskers file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
@@ -162,6 +162,8 @@ if ~isempty(fnall)
                         w.set_mask_from_points(w.trajectoryIDs(q),p.Results.mask{q}(1,:),p.Results.mask{q}(2,:));
                     end
                 else
+%                     for q = 1 : size(p.Results.mask,1)
+%                         w.set_mask_from_points(w.trajectoryIDs(q),p.Results.mask(q,:),p.Results.mask(q,:));
                     w.set_mask_from_points(w.trajectoryIDs,p.Results.mask(1,:),p.Results.mask(2,:));
                 end
             end
