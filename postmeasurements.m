@@ -61,6 +61,8 @@ end
 
 %% save information from postmeasurements
 savefn = [mouseName sessionName '_post.mat'];
-load('*follicle_n_mask.mat')
-load('remeasure*.mat')
+loadfn1 = dir('*follicle_n_mask.mat');
+loadfn2 = dir('remeasure*.mat');
+load(loadfn1.name)
+load(loadfn2.name)
 save(savefn,'maskx','masky', 'includef', 'errorlist')
