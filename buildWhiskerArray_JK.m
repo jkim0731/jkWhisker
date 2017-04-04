@@ -167,13 +167,13 @@ Whisker.makeAllDirectory_WhiskerTrial(d,[0 1],'mask', {[maskx(1,:);masky(1,:)],[
     'barRadius',15.3,'faceSideInImage', 'bottom', 'framePeriodInSec',.0032,...
     'imagePixelDimsXY',[vwidth vheight],'pxPerMm',26.23,'mouseName',mouseName,'sessionName',sessionName,'protractionDirection','rightward')
 
-Whisker.makeAllDirectory_WhiskerSignalTrial(d,'include_files',includef(temp_tn),'polyRoiInPix',[40-20 40+20],'follicleExtrapDistInPix',33);
+% Whisker.makeAllDirectory_WhiskerSignalTrial(d,'include_files',includef(temp_tn),'polyRoiInPix',[40-20 40+20],'follicleExtrapDistInPix',26);
+Whisker.makeAllDirectory_WhiskerSignalTrial(d,'include_files',includef(temp_tn),'polyRoiInPix',[40-20 40+20]);
 Whisker.makeAllDirectory_WhiskerTrialLiteI(d,'include_files',includef(temp_tn),'r_in_mm',1,'calc_forces',false);
 wl = Whisker.WhiskerTrialLiteArray(d);
 
 tid = [0 1]; % Set trajectory ID to view
 Whisker.viewdouble_WhiskerTrialLiteArray(wl,tid)
-
 
 %% check mask - load .WST file first
 tp = [0 4];

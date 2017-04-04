@@ -45,6 +45,8 @@ for i = 1: length(trialNums)
     includef{i} = num2str(trialNums(i));
 end
 
-%% save mask
-maskfn = [mouseName sessionName '_post.mat'];
-save(maskfn,'maskx','masky', 'includef')
+%% save information from postmeasurements
+savefn = [mouseName sessionName '_post.mat'];
+load('*follicle_n_mask.mat')
+load('remeasure*.mat')
+save(savefn,'maskx','masky', 'includef', 'errorlist')
