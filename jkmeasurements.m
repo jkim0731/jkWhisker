@@ -110,17 +110,5 @@ for i = 1 : max(fids)+1
 
 end
 
-
-i = 1 ;
-while (1)
-    old_fn = [fn(1:end-13),'_old',num2str(i),'.measurements'];
-    if exist(old_fn,'file')
-        i = i + 1;
-    else
-        FileRename(fn,old_fn);
-        break
-    end
-end
-
 SaveMeasurements(fn,b)
 
