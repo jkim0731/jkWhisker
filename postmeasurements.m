@@ -7,10 +7,10 @@ function postmeasurements(mouseName,sessionName,videoloc,varargin)
 % flag_skip = 'skip'
 % optional = 'Spont'
 if nargin > 3
-    flag_skip = varargin{4};
+    flag_skip = varargin{1};
 end
 if nargin > 4
-    optional = varargin{5};
+    optional = varargin{2};
 elseif nargin > 5
     error('Too many input arguments')
 end
