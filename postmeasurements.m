@@ -65,4 +65,4 @@ loadfn1 = dir('*follicle_n_mask.mat');
 loadfn2 = dir('remeasure*.mat');
 load(loadfn1.name)
 load(loadfn2.name)
-save(savefn,'maskx','masky', 'includef', 'errorlist')
+save(savefn,'maskx','masky', 'includef', 'errorlist', 'width', 'height')
