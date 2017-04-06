@@ -42,7 +42,7 @@ for i = 1 : v.NumberOfFrames
     vavg = vavg + vtemp/v.NumberOfFrames;
 end
 vavg = mat2gray(vavg);
-figure, imshow(vavg), axis off, axis image, title('Select follicle points, first top-view, and then front-view'), hold all
+figure('units','normalized','outerposition',[0 0 1 1]), imshow(vavg), axis off, axis image, title('Select follicle points, first top-view, and then front-view'), hold all
 i = 1;
 while (i < 3)
     [y, x] = ginput(1);
@@ -77,11 +77,11 @@ while (i < 3)
     end
 end
 
+drawnow;
 
 %% Mask
-figure, imshow(mat2gray(vavg)), axis off, axis image, hold all;
 button = 1;
-masknum = str2num(cell2mat(inputdlg({'How many trajectories?','How many points?'},'Trajectories',1,{'2','3'})));
+masknum = str2num(cell2mat(inputdlg({'How many trajectories?','How many points?'},'Trajectories',1,{'2','4'})));
 maskx = zeros(masknum(1),masknum(2));
 masky = zeros(masknum(1),masknum(2));
 i = 1; 
@@ -127,6 +127,7 @@ while (i <= masknum(1))
     end
 end
 hold off;
+drawnow;
 
 %% save mask
 
