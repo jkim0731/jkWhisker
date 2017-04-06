@@ -129,6 +129,33 @@ end
 hold off;
 drawnow;
 
+% %% Top-view face angle
+% % need to see once in a preparation
+% figure, imshow(mat2gray(vavg)), axis off, axis image, hold all;
+% face_line = zeros(2,2);
+% i = 1;
+% while (i <= 1)
+%     [face_line(1,1), face_line(1,2)] = ginput(1);
+%     scatter(face_line(1,1),face_line(1,2),'mo');
+%     [face_line(2,1), face_line(2,2)] = ginput(1);    
+%     scatter(face_line(2,1),face_line(2,2),'mo');
+%     plot(face_line(:,1),face_line(:,2),'m-','LineWidth',2)
+%     button = questdlg('is this correct?', 'Face axis', 'Yes', 'No', 'Cancel', 'Yes');
+%     switch button
+%         case 'Yes'            
+%             i = i + 1;            
+%         case 'No' 
+%             delete(findobj(gca, 'type', 'patch'));
+%             delete(findobj(gca, 'type', 'line'));
+%             continue
+%         case 'Cancel'
+%             disp('masking aborted')
+%             return
+%     end
+% end
+% 
+% face_angle = atand(abs(diff(face_line(:,2)))/abs(diff(face_line(:,1)))); % only for the current setting! Confirm this angle in each different settings.
+
 %% save mask
 
 save(maskfn,'maskx','masky','width', 'height', 'follicle_first')
