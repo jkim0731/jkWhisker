@@ -137,6 +137,7 @@ classdef WhiskerTrialLiteArray < handle
             % Arguments for use when w_or_d is a directory path:
             p.addParamValue('include_files', {}, @(x) all(cellfun(@ischar,x)));
             p.addParamValue('ignore_files', {}, @(x) all(cellfun(@ischar,x)));
+            p.addParamValue('behavior', [], @(x) isa(x,'Solo.BehavTrial2padArray'));
             
             p.parse(w_or_d,varargin{:});
             

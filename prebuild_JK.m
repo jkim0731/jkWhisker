@@ -64,18 +64,3 @@ end
 %     end
 % end
 
-%%
-
-
-
-%%
-trialNum = size(dkp_0,1);
-baseline_frames = 1:450;
-figure, subplot(121),
-for i = 1 : trialNum
-    if length(wl.trials{i}.time{1}) ~= length(thab_0{i,1}) || length(thab_0{i,1}) ~= length(dkp_0{i,1})
-        disp(['trial Num ' num2str(i) ' does not match in length'])
-    else
-        plot(thab_0{i,1}(baseline_frames),dkp_0{i,1}(baseline_frames),'k.'), xlabel('Theta at base'), ylabel('kappa'), title('Top-view theta vs kappa during free whisking'), hold on
-    end
-end

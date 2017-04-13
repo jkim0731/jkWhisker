@@ -43,7 +43,10 @@ classdef WhiskerTrialLite < handle
         barPosOffset = []; % Inherited from WhiskerSignalTrial. [x y], either 1X2 or nframesX2
         barRadius = []; % Inherited from WhiskerSignalTrial.  In pixels. Must be radius of bar tracked by the bar tracker.
 
-      
+        pole_pos = []; % from BehaviorArray
+        trial_type = []; % from BehaviorArray
+        pole_axes = {};
+        intersect_coord = {};
     end
     
     properties (Dependent = true)
@@ -118,6 +121,8 @@ classdef WhiskerTrialLite < handle
             p.addParamValue('baseline_time_or_kappa_value', [0 0.1], @isnumeric);
             p.addParamValue('proximity_threshold', -1, @isnumeric);
             
+            p.addParamValue('behavior',[], @(x) isa(x,'Solo.BehavTrial2padArray'));
+            
             p.parse(w,varargin{:});
            
               
@@ -151,7 +156,16 @@ classdef WhiskerTrialLite < handle
             obj.barPos = w.barPos; %  Inherited from WhiskerSignalTrial. [frameNum XPosition YPosition]
             obj.barPosOffset = w.barPosOffset; % Inherited from WhiskerSignalTrial. [x y], either 1X2 or nframesX2
             obj.barRadius = w.barRadius; % Inherited from WhiskerSignalTrial.  In pixels. Must be radius of bar tracked by the bar tracker.
+                        
+            if ~isempty(p.Results.behavior)
+                b_ind = find(cellfun(@(x) x.trialNum,p.Results.behavior.trials)==obj.trialNum);
+                obj.pole_pos = p.Results.behavior.trials{b_ind}.motorApPosition;
+                obj.trial_type = p.Results.behavior.trials{b_ind}.trialType;
+            end
         
+            obj.pole_axes = w.pole_axes;
+            obj.intersect_coord = w.whisker_edge_coord;
+            
             for k=1:ntraj
                 tid = obj.trajectoryIDs(k);
                 

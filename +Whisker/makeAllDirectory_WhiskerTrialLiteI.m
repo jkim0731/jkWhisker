@@ -80,6 +80,8 @@ p.addParamValue('youngs_modulus', 5e9, @isnumeric);
 p.addParamValue('baseline_time_or_kappa_value', [0 0.1], @isnumeric);
 p.addParamValue('proximity_threshold', -1, @isnumeric);
 
+p.addParamValue('behavior',[], @(x) isa(x,'Solo.BehavTrial2padArray')); % adding behavior 2017/04/12 JK
+
 p.parse(d,varargin{:});
 
 disp 'List of all arguments:'
@@ -128,7 +130,7 @@ if ~isempty(fnall)
                 'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
                 'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
                 'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
-                'proximity_threshold',p.Results.proximity_threshold);
+                'proximity_threshold',p.Results.proximity_threshold,'behavior',p.Results.behavior);
 
             outfn = [fn '_WL.mat'];
 
@@ -144,7 +146,7 @@ if ~isempty(fnall)
                 'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
                 'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
                 'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
-                'proximity_threshold',p.Results.proximity_threshold);
+                'proximity_threshold',p.Results.proximity_threshold,'behavior',p.Results.behavior);
 
             outfn = [fn '_WL.mat'];
 

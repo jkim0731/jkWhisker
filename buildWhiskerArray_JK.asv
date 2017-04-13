@@ -23,7 +23,7 @@ cd(whisker_d)
 load_fn = [mouseName sessionName '_post.mat'];
 load(load_fn); % loading errorlist
 %%
-filelist=dir([d '*.measurements']);
+filelist=dir([whisker_d '*.measurements']);
 
 dirTrialNums=zeros(1,size(filelist,1));
 % trialNums=[];  % enter which trial nums to process 
@@ -139,14 +139,15 @@ touch_points = cell(1,length(trial_types));
 %%
 % for i = 1 : length(trial_types)    
 i = 1
-    tt_ind{i} = find(cellfun(@(x) strcmp(x.trialType,trial_types{i}),b_session.trials));
-    if length(tt_ind{i}) > 10
-        tt_ind{i} = sort(randsample(tt_ind{i},10));
-    end
-    temp_files = cell(length(tt_ind{i}),1);
-    for j = 1 : length(tt_ind{i})
-        temp_files{j} = num2str(tt_ind{i}(j));
-    end
+%     tt_ind{i} = find(cellfun(@(x) strcmp(x.trialType,trial_types{i}),b_session.trials));
+%     if length(tt_ind{i}) > 10
+%         tt_ind{i} = sort(randsample(tt_ind{i},10));
+%     end
+temp_files = {'138','216','332','344','414','418','498','705','764','787'};
+%     temp_files = cell(length(tt_ind{i}),1);
+%     for j = 1 : length(tt_ind{i})
+%         temp_files{j} = num2str(tt_ind{i}(j));
+%     end
     Whisker.makeAllDirectory_WhiskerSignalTrial(whisker_d,'include_files',temp_files,'polyRoiInPix',[20 80]);
     Whisker.makeAllDirectory_WhiskerTrialLiteI(whisker_d,'include_files',temp_files,'r_in_mm',2,'calc_forces',false,'behavior',b_session);
     wl = Whisker.WhiskerTrialLiteArray(whisker_d,'include_files',temp_files);
@@ -171,11 +172,14 @@ touch_points{1}{9} = [589,605,664,679,716,725,732,764,885,917,1292,1536,1574,159
 % touch_points{1}{10} = [];
 
 %%
-for j = 1 : length(wl.trialNums)
-    load([num2str(tt_ind{i}(j)),'_WL.mat']);
-    
+figure, hold all
+for i = 1 : length(wl.trialNums)
+    for j = 1 : length(touch_points{1}{i})
+        tp = touch_points{1}{i}(j);
+        plot3(wl.trials{i}.intersect_coord{tp,1},wl.trials{i}.intersect_coord{tp,2},wl.trials{i}.pole_pos, 'Color', [i/9 1-i/9 1-i/9], 'Marker', '.')    
+    end
 end
-
+xlabel('top pole edge axis'), ylabel('front pole edge axis'), zlabel('pole distance')
 
 %%
 Whisker.makeAllDirectory_WhiskerTrial(whisker_d,[0 1],'mask', {[maskx(1,:);masky(1,:)],[maskx(2,:);masky(2,:)]},...

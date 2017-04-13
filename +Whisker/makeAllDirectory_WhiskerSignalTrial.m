@@ -111,7 +111,7 @@ if ~isempty(fnall)
             
             w = pctload([fn '_WT.mat']);
             
-            ws = Whisker.WhiskerSignalTrialI(w,'polyRoiInPix',p.Results.polyRoiInPix);
+            ws = Whisker.WhiskerSignalTrial_2pad(w,'polyRoiInPix',p.Results.polyRoiInPix);
             if ~isempty(p.Results.polyFitsMask)
                 x = p.Results.polyFitsMask(1,:);
                 y = p.Results.polyFitsMask(2,:);
@@ -135,7 +135,7 @@ if ~isempty(fnall)
             disp(['Processing ''_WT.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
             
             load([fn '_WT.mat'],'w');
-            ws = Whisker.WhiskerSignalTrialI(w,'polyRoiInPix',p.Results.polyRoiInPix);
+            ws = Whisker.WhiskerSignalTrial_2pad(w,'polyRoiInPix',p.Results.polyRoiInPix);
             if ~isempty(p.Results.polyFitsMask)
                 x = p.Results.polyFitsMask(1,:);
                 y = p.Results.polyFitsMask(2,:);
