@@ -45,8 +45,11 @@ classdef WhiskerTrialLite < handle
 
         pole_pos = []; % from BehaviorArray
         trial_type = []; % from BehaviorArray
-        pole_axes = {};
-        intersect_coord = {};
+        pole_axes = {}; % Inherited from WhiskerSignalTrial.
+        intersect_coord = []; % Inherited from WhiskerSignalTrial.
+        
+        videoFrames = []; % Inherited from WhiskerSignalTrial.
+        pole_available_timepoints = []; % Inherited from WhiskerSignalTrial. first timepoint is 1, not 0. [frames from the beginning, frames from the end]. 2017/04/13 JK
     end
     
     properties (Dependent = true)
@@ -165,6 +168,10 @@ classdef WhiskerTrialLite < handle
         
             obj.pole_axes = w.pole_axes;
             obj.intersect_coord = w.whisker_edge_coord;
+            obj.pole_available_timepoints = w.pole_available_timepoints;
+            
+            obj.videoFrames = w.videoFrames;
+            obj.pole_available_timepoints = w.pole_available_timepoints;
             
             for k=1:ntraj
                 tid = obj.trajectoryIDs(k);

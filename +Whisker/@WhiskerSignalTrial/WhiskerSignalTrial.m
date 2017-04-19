@@ -103,7 +103,10 @@ classdef WhiskerSignalTrial < handle
         % to handle case of tracked whiskers on both sides of head.
         protractionDirection = 'rightward';  % Inherited from WhiskerTrial, but give default value.
                                             % Can be: 'downward','upward','rightward','leftward'.
-
+                                            
+        pole_available_frames = [550, 200]; % first timepoint is 1, not 0. [frames from the beginning, frames from the end]. 2017/04/13 JK
+        pole_available_timepoints = [];
+        
         useFlag = 1;
     end
     
@@ -145,7 +148,8 @@ classdef WhiskerSignalTrial < handle
             %
             p = inputParser;
             p.addOptional('w', @(x) isa(x,'Whisker.WhiskerTrial'));                      
-            p.addParamValue('polyRoiInPix', NaN); 
+            p.addParamValue('polyRoiInPix', NaN);
+            p.addParamValue('pole_available_frames', [550, 200], @(x) isnumeric(x) && numel(x) == 2);
             p.parse(varargin{:});
             
             if nargin==0
@@ -220,6 +224,7 @@ classdef WhiskerSignalTrial < handle
                 obj.time{k} = w.get_time(tid);
             end
             obj.videoFrames = w.get_videoFrames; % 2017/04/03 JK
+            obj.pole_available_timepoints = p.Results.pole_available_frames(1) : obj.videoFrames - p.Results.pole_available_frames(2);
         end
         
         function obj = recompute_cached_mean_theta_kappa(obj, varargin)

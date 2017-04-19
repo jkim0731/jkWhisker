@@ -13,7 +13,7 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrialI
         contact_ind = {};
         contact_time = {};        
         whisker_pole_intersection = {}; 
-        whisker_edge_coord = {};
+        whisker_edge_coord = [];
         imagePixelDimsXY = [400 250]; % [NumberOfXPixels NumberOfYPixels]
         pole_edge = cell(1,2); % edge detection of the pole
         pole_axes = cell(1,2); % axes for edges
@@ -38,7 +38,7 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrialI
             obj.contact_ind = cell(nframes,ntraj);
             obj.contact_time = cell(nframes,ntraj);
             obj.whisker_pole_intersection = cell(nframes,ntraj);
-            obj.whisker_edge_coord = cell(nframes,ntraj);
+            obj.whisker_edge_coord = zeros(nframes,ntraj);
             obj.imagePixelDimsXY = w.imagePixelDimsXY;
             [obj.pole_edge, obj.pole_axes, obj.vavg] = Whisker.pole_edge_detection(obj.trackerFileName);
             obj.find_whisker_pole_intersection;            
@@ -88,10 +88,10 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrialI
                     
 %                     try
                         temp = Whisker.InterX(obj.pole_axes{i},C); % Whisker.InterX only gets inputs as column pairs of points (x = C(1,:), y = C(2,:))
-
                         if ~isempty(temp)
+                            temp = temp(:,1);
                             obj.whisker_pole_intersection{k,i} = temp'; % row vector
-                            obj.whisker_edge_coord{k,i} = sqrt(sum((temp-obj.pole_axes{i}(:,1)).^2)); % the distances from each axis origin
+                            obj.whisker_edge_coord(k,i) = sqrt(sum((temp-obj.pole_axes{i}(:,1)).^2)); % the distances from each axis origin
                         else  % extrapolate the whisker and find the intersection with pole edge
                             tip = C(:,end)'; % row vector
                             tip_1back = C(:,end-1)'; % row vector
@@ -108,13 +108,14 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrialI
                                 ext_tip = [obj.imagePixelDimsXY(2), x_intersect];
                             end
                             L = [tip', ext_tip'];
-                            temp = Whisker.InterX(obj.pole_axes{i},L);
+                            temp = Whisker.InterX(obj.pole_axes{i},L);                            
                             if ~isempty(temp)
+                                temp = temp(:,1);
                                 obj.whisker_pole_intersection{k,i} = temp'; % row vector
-                                obj.whisker_edge_coord{k,i} = sqrt(sum((temp-obj.pole_axes{i}(:,1)).^2)); % the distances from each axis origin
+                                obj.whisker_edge_coord(k,i) = sqrt(sum((temp-obj.pole_axes{i}(:,1)).^2)); % the distances from each axis origin
                             else
                                 obj.whisker_pole_intersection{k,i} = [];
-                                obj.whisker_edge_coord{k,i} = [];
+                                obj.whisker_edge_coord(k,i) = -10;
                             end
                         end
 %                     catch
