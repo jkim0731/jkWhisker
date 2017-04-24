@@ -137,16 +137,17 @@ trial_types = {'rc', 'rf', 'lc', 'lf'};
 tt_ind = cell(1,length(trial_types));
 wl_array = cell(1,length(trial_types));
 touch_points = cell(1,length(trial_types));
+touch_hp = cell(1,length(trial_type)); % touch hyperplanes
 %%
-for i = 2 : length(trial_types)    
-% i = 1
-    tt_ind{i} = find(cellfun(@(x) strcmp(x.trialType,trial_types{i}),b_session.trials));
+for trial_type_num = 2 : length(trial_types)    
+% trial_type_num = 1
+    tt_ind{trial_type_num} = find(cellfun(@(x) strcmp(x.trialType,trial_types{trial_type_num}),b_session.trials));
 %     if length(tt_ind{i}) > 10
 %         tt_ind{i} = sort(randsample(tt_ind{i},10));
 %     end
-    temp_files = cell(length(tt_ind{i}),1);
-    for j = 1 : length(tt_ind{i})
-        temp_files{j} = num2str(tt_ind{i}(j));
+    temp_files = cell(length(tt_ind{trial_type_num}),1);
+    for j = 1 : length(tt_ind{trial_type_num})
+        temp_files{j} = num2str(tt_ind{trial_type_num}(j));
     end
 %     Whisker.makeAllDirectory_WhiskerSignalTrial(whisker_d,'include_files',temp_files,'polyRoiInPix',[20 80],'pole_available_timepoints',[550:);
     Whisker.makeAllDirectory_WhiskerSignalTrial_2pad(whisker_d,'include_files',temp_files,'polyRoiInPix',[20 80]);
@@ -155,77 +156,230 @@ for i = 2 : length(trial_types)
 
 %     tid = [0 1]; % Set trajectory ID to view
 %     Whisker.viewdouble_WhiskerTrialLiteArray(wl,tid)
-    wl_array{i} = wl;
+    wl_array{trial_type_num} = wl;
 end
 
 %%
-for i = 1 : 4
-    wl = wl_array{i};
+for trial_type_num = 4
+    intersect_3d = [];
+    wl = wl_array{trial_type_num};
     figure, hold all
-    min_kappa = min(cellfun(@(x) min(x.deltaKappa{1}),wl.trials));
-    max_kappa = max(cellfun(@(x) max(x.deltaKappa{1}),wl.trials));
     for tnum = 1 : length(wl.trials)
         top_ind = find(wl.trials{tnum}.intersect_coord(:,1) > 50);
         front_ind = find(wl.trials{tnum}.intersect_coord(:,2) > 50);
         intersect_ind = intersect(wl.trials{tnum}.pole_available_timepoints,intersect(top_ind,front_ind));
-        norm_top_kappa = (wl.trials{tnum}.deltaKappa{1} - min_kappa)/max_kappa;
         try
-            for j = 1 : length(intersect_ind)
-                plot3(wl.trials{tnum}.intersect_coord(intersect_ind(j),1), wl.trials{tnum}.intersect_coord(intersect_ind(j),2), wl.trials{tnum}.pole_pos, 'Color', [1 1 1] * (1-norm_top_kappa(intersect_ind(j))))            
-        %        plot3(wl.trials{tnum}.intersect_coord(wl.trials{tnum}.pole_available_timepoints,1), wl.trials{tnum}.intersect_coord(wl.trials{tnum}.pole_available_timepoints,2), ones(1,length(wl.trials{tnum}.pole_available_timepoints))*wl.trials{tnum}.pole_pos, 'b.')
-            end            
+            plot3(wl.trials{tnum}.intersect_coord(intersect_ind,1), wl.trials{tnum}.intersect_coord(intersect_ind,2), ones(1,length(intersect_ind))*wl.trials{tnum}.pole_pos, 'k.', 'MarkerSize', 3)
+            intersect_3d = [intersect_3d; wl.trials{tnum}.intersect_coord(intersect_ind,1), wl.trials{tnum}.intersect_coord(intersect_ind,2), ones(length(intersect_ind),1)*wl.trials{tnum}.pole_pos];
         catch
+            fprintf('Skipping trial #%d because of index problems',tnum);        
         end
     end
     title(wl.trials{1}.trial_type), xlabel('Top-view intersection coord'), ylabel('Front-view intersection coord'), zlabel('Pole position')
 end
-%%
-% find(abs(cellfun(@(x) x.pole_pos,wl_array{2}.trials)-85520)<10)
-% wl_array{2}.trials{15}.trackerFileName
 
-figure, plot(wl_array{2}.trials{15}.intersect_coord(wl_array{2}.trials{15}.pole_available_timepoints,1), ...
-    wl_array{2}.trials{15}.intersect_coord(wl_array{2}.trials{15}.pole_available_timepoints,2), 'b.')
+%% Calculate psi1 % takes ~ 15 sec
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Manual selection
+ind_opt = 1; % optimal peak index. Starting from 1
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Try finding touch frames with constant intersection coords and decrease in kappa from top view 2017/04/13 JK
-
-touch_frames = cell(1,length(tt_ind{1}));
-% to see what is appropriate for the threshold -> 0.2
-% a1 = cell2mat(wl.trials{1}.intersect_coord(:,1));
-% a2 = cell2mat(wl.trials{1}.intersect_coord(:,2));
-% a1 = diff(a1); a2 = diff(a2);
-% a1 = a1(abs(a1) < 0.5); a2 = a2(abs(a2) < 0.5);
-% figure,hist(a1,100)
-% figure, hist(a2,100)
-intersection_threshold = 0.1; % movements less than 0.2 pixels regards as stable
-kappa_threshold = -2*std(wl.trials{trial_num}.deltaKappa{1});
-% kappa_2_threshold = 0.0001;
-for trial_num = 1:length(tt_ind{1})
-    diff_coord_1 = [0, abs(diff(wl.trials{trial_num}.intersect_coord(:,1)'))];
-    diff_coord_2 = [0, abs(diff(wl.trials{trial_num}.intersect_coord(:,2)'))];
-    diff_top_kappa = [0, diff(wl.trials{trial_num}.deltaKappa{1})];
-%     diff_top_kappa_2 = [0, diff(diff_top_kappa)];
-    ind_dc1 = find(diff_coord_1 < intersection_threshold);
-    ind_dc2 = find(diff_coord_2 < intersection_threshold);
-    ind_dtk = find(diff_top_kappa < kappa_threshold);
-%     ind_dtk2 = find(diff_top_kappa_2 > kappa_2_threshold)+1;
-    
-    touch_frames{trial_num} = intersect(intersect(intersect(ind_dc1,ind_dc2),ind_dtk),wl.trials{trial_num}.pole_available_timepoints);
-%     touch_frames{trial_num} = intersect(intersect(intersect(intersect(ind_dc1,ind_dc2),ind_dtk),ind_dtk2),wl.trials{trial_num}.pole_available_timepoints);
-end    
-
-% %%
-% trial_num = 2;
-% figure, hold all
-% plot(1:length(wl.trials{trial_num}.intersect_coord),wl.trials{trial_num}.intersect_coord(:,1)','k.')
-% plot(1:length(wl.trials{trial_num}.intersect_coord),wl.trials{trial_num}.intersect_coord(:,2)','b.')
-% plot(1:length(wl.trials{trial_num}.intersect_coord),wl.trials{trial_num}.deltaKappa{1}*50000,'r.')
-% 
-% %%
-
-figure, hold all
-for trial_num = 1 : length(tt_ind{1})    
-    plot3(wl.trials{trial_num}.intersect_coord(touch_frames{trial_num},1)',wl.trials{trial_num}.intersect_coord(touch_frames{trial_num},2)',ones(length(touch_frames{trial_num}),1)*wl.trials{trial_num}.pole_pos);
+max_zeros = 0;
+angle_steps = 0:180;
+stds_pre = zeros(length(angle_steps),1);
+for i = 1 : length(angle_steps)
+    A = viewmtx(angle_steps(i),0);
+    x4d = [intersect_3d, ones(size(intersect_3d,1),1)]';
+    x2d = A*x4d;
+    x2d_pix = [floor(x2d(1,:));floor(x2d(2,:)/100)];
+    x2d_dim = [max(x2d_pix(2,:)) - min(x2d_pix(2,:)) + 1, max(x2d_pix(1,:)) - min(x2d_pix(1,:)) + 1];
+    x2d_proj = zeros(x2d_dim);
+%     for i = 1:x2d_dim(1) 
+%         temp1d_ind = find(x2d_pix(2,:) == (max(x2d_pix(2,:)) - i + 1));
+%         for j = 1:x2d_dim(2)
+%             x2d_proj(i,j) = numel(find(x2d_pix(1,temp1d_ind) == (min(x2d_pix(1,:)) + j - 1)));
+%         end
+%     end
+    j_offset = min(x2d_pix(1,:)) - 1;
+    i_offset = min(x2d_pix(2,:)) - 1;
+    for j = 1 : length(x2d_pix)
+        x2d_proj(x2d_pix(2,j) - i_offset, x2d_pix(1,j) - j_offset) = x2d_proj(x2d_pix(2,j) - i_offset, x2d_pix(1,j) - j_offset) + 1;
+    end
+    stds_pre(i) = std(x2d_proj(find(x2d_proj(:))));
+%     temp_std = std(x2d_proj(:));
+%     temp_std = sum(x2d_proj(:)==0);    
 end
+[P, I] = findpeaks(smooth(smooth(stds_pre)));
+[~, I2] = sort(P, 'descend');
+max_psi1_pre = angle_steps(I(I2(ind_opt)));
+
+figure, plot(1:length(stds_pre), smooth(smooth(stds_pre,5))), hold on, plot(I(I2(ind_opt)),stds_pre(I(I2(ind_opt))),'ro')
+
+max_std = 0;
+psi1 = 0;
+angle_steps = max_psi1_pre-4.99:0.01:max_psi1_pre+4.99;
+stds = zeros(length(angle_steps),1);
+x2d_final = zeros(size(x2d_proj));
+for i = 1:length(angle_steps)
+    A = viewmtx(angle_steps(i),0);
+    x4d = [intersect_3d, ones(size(intersect_3d,1),1)]';
+    x2d = A*x4d;
+    x2d_pix = [floor(x2d(1,:));floor(x2d(2,:)/100)];
+    x2d_dim = [max(x2d_pix(2,:)) - min(x2d_pix(2,:)) + 1, max(x2d_pix(1,:)) - min(x2d_pix(1,:)) + 1];
+    x2d_proj = zeros(x2d_dim);
+
+    j_offset = min(x2d_pix(1,:)) - 1;
+    i_offset = min(x2d_pix(2,:)) - 1;
+    for j = 1 : length(x2d_pix)
+        x2d_proj(x2d_pix(2,j) - i_offset, x2d_pix(1,j) - j_offset) = x2d_proj(x2d_pix(2,j) - i_offset, x2d_pix(1,j) - j_offset) + 1;
+    end
+    temp_std = std(x2d_proj(find(x2d_proj(:))));
+%     temp_std = std(x2d_proj(:));
+%     temp_std = sum(x2d_proj(:)==0);
+    stds(i) = temp_std;
+    if temp_std > max_std
+        max_std = temp_std;
+        psi1 = angle_steps(i);
+        x2d_final = x2d_proj;
+    end
+end
+psi1 = psi1-90;
+figure, plot(1:length(stds), stds)
+
+A = viewmtx(psi1+90,0);
+% A = viewmtx(44,0);
+x4d = [intersect_3d, ones(size(intersect_3d,1),1)]';
+x2d = A*x4d;
+figure, plot(x2d(1,:), x2d(2,:),'k.', 'MarkerSize',3)
+%% Draw polygon to select regions for radon transform
+%%%%%%%%%%%%%%%%%%%%%%%%%%%% Manual selection
+x2d_flip = flip(x2d_final,1);
+BW = roipoly(x2d_flip);
+figure, imshow(BW)
+x2d_edge = x2d_flip .* BW;
+figure, imagesc(x2d_edge)
+
+%% Calculate psi2 % ~ 3 sec
+
+theta = 0:0.01:180;
+R = radon(x2d_edge, theta);
+[~, max_ind] = max(max(R));
+psi2 = (max_ind-1)*0.01;
+psi2 = atand(tand(psi2)/100); % psi2 adjusted because it was calculated with pole position divided by 100
+
+figure, imagesc(R), xlabel('Angle = 0:0.01:180'), ylabel('Projected values') 
+figure, imagesc(x2d_flip, [0 1000]), hold on, line([54 54+tand((max_ind-1)*0.01)*size(x2d_flip,1)],[1 size(x2d_flip,1)], 'LineWidth', 3, 'Color', [1 1 1])
+line([69 69+tand((max_ind-1)*0.01)*size(x2d_flip,1)],[1 size(x2d_flip,1)], 'LineWidth', 3, 'Color', [1 1 1])
+
+%% Calculate touch hyperplanes
+xmin = -200; xmax = 200; zmin_data = min(intersect_3d(:,3)); zmax_data = max(intersect_3d(:,3)); zdiff = zmax_data - zmin_data; zmax = zmax_data + zdiff; zmin = zmin_data - zdiff;
+z = zmin:zmax;
+xyz = zeros((length(z))*(xmax-xmin+1),3);
+for i = xmin:xmax
+    xyz((i-xmin)*length(z)+1 : (i-xmin+1)*length(z),:) = [ones(length(z),1)*i, zeros(length(z),1), z'];
+end
+
+% xyz = xyz';
+% xyz(:,xyz(1,:) < 0) = [];
+% xyz(:,xyz(1,:) > xmax) = [];
+% xyz(:,xyz(2,:) < 0) = [];
+% xyz(:,xyz(2,:) > xmax) = [];
+% xyz(:,xyz(3,:) < zmin_data) = [];
+% xyz(:,xyz(3,:) > zmax_data) = [];
+% 
+% figure, plot3(xyz(1,:), xyz(2,:), xyz(3,:), 'r.', 'MarkerSize',3), hold on,
+% plot3(intersect_3d(:,1),intersect_3d(:,2), intersect_3d(:,3),'k.', 'MarkerSize',3), xlabel('top'), ylabel('front'), zlabel('pos')
+
+[xyz_psi1, ~, ~] = AxelRot(xyz',psi1,[0 0 1], 0); % rotate psi1 degrees counterclockwise around z axis
+
+% xyz_psi1(:,xyz_psi1(1,:) < 0) = [];
+% xyz_psi1(:,xyz_psi1(1,:) > xmax) = [];
+% xyz_psi1(:,xyz_psi1(2,:) < 0) = [];
+% xyz_psi1(:,xyz_psi1(2,:) > xmax) = [];
+% xyz_psi1(:,xyz_psi1(3,:) < zmin_data) = [];
+% xyz_psi1(:,xyz_psi1(3,:) > zmax_data) = [];
+% 
+% figure, plot3(xyz_psi1(1,:), xyz_psi1(2,:), xyz_psi1(3,:), 'r.', 'MarkerSize',3), hold on,
+% plot3(intersect_3d(:,1),intersect_3d(:,2), intersect_3d(:,3),'k.', 'MarkerSize',3), xlabel('top'), ylabel('front'), zlabel('pos')
+
+zcenter = floor(mean([zmax_data, zmin_data]));
+x0 = [0 0 zcenter];
+u = [1 tand(psi1) 0];
+[xyz_psi2, ~, ~] = AxelRot(xyz_psi1, psi2, u, x0); 
+% xyz_psi2(:,xyz_psi2(1,:) <=0) = [];
+% xyz_psi2(:,xyz_psi2(1,:) > xmax) = [];
+% xyz_psi2(:,xyz_psi2(2,:) <= 0) = [];
+% xyz_psi2(:,xyz_psi2(2,:) > xmax) = [];
+xyz_psi2(:,xyz_psi2(3,:) < zmin_data) = [];
+xyz_psi2(:,xyz_psi2(3,:) > zmax_data) = [];
+
+figure, plot3(intersect_3d(:,1),intersect_3d(:,2), intersect_3d(:,3),'k.', 'MarkerSize',3), xlabel('top'), ylabel('front'), zlabel('pos'), hold on
+plot3(xyz_psi2(1,:), xyz_psi2(2,:), xyz_psi2(3,:), 'r.', 'MarkerSize',3)
+
+%% ~ 8 min
+%%%%%%%%%%%%%%%%%%%%%% manual selection
+steps = 150:300;
+%%%%%%%%%%%%%%%%%%%%%% try as short as possible to reduce time next step
+
+
+if abs(tand(psi1+90)) > 1
+    transvec = [1/tand(psi1+90) 1 0]; % translation vector, moving xyz_psi2 along its normal vector after projecting to x-y plane.
+else
+    transvect = [1 tand(psi1+90) 0];
+end
+
+intersect_pix = round(intersect_3d);
+
+num_points_in_hp = zeros(max(steps),1);
+for i = steps % this is time consuming...
+    hp = round(xyz_psi2);
+    hp(1,:) = hp(1,:)+i;
+    [~,points,~] = intersect(intersect_pix, hp','rows');
+    num_points_in_hp(i) = numel(points);
+end
+
+figure, plot(steps,num_points_in_hp(steps), 'k-', 'LineWidth', 3), xlabel('translocation (pix)'), ylabel('# intersection')
+
+%%
+touch_hp{trial_type_num} = xyz_psi2; % Don't round them! (at least at this saving process)
+
+%end
+%% Identifying touch frames in each type of trial
+% trial_types = {'rc', 'rf', 'lc', 'lf'};
+% for i = 1 : 4
+%     max_trial_num(i) = max(cellfun(@(x) x.trialNum,wl_array{i}.trials));
+% end
+% max_trial_num = max(max_trial_num);
+% touch_frames = cell(1,max_trial_num); % this is based just on the trial num, to make it easier for later comparison with manual inspection of the touches (obvious touches and obvious non-touches)
+% for i = 1 : 4
+%     for j = 1 : length(wl_array{i}.trials)
+%         t = wl_array{i}.trials{j};
+%         switch t.trial_type
+%             case trial_types{1}
+%                 touch_frames{t.trialNum} = intersect(touch_hp{1}
+%         end
+%     end
+% end
+
+%%
+trialnum = 70;
+temp_ta = round(wl_array{2}.trials{trialnum}.intersect_coord);
+
+temp_touch_hp = touch_hp{2};
+temp_touch_hp(1,:) = temp_touch_hp(1,:) + 46;
+temp_touch_hp = sortrows(temp_touch_hp',3)';
+temp_ind = find(temp_touch_hp(3,:) == wl_array{1}.trials{trialnum}.pole_pos);
+temp_touch_hp_ = temp_touch_hp(1:2,temp_ind);
+% figure, plot(temp_touch_hp_(1,:), temp_touch_hp_(2,:),'r.'), hold on, plot(temp_ta(550:end-200,1),temp_ta(550:end-200,2),'k.')
+
+temp_touch_hp_ = [temp_touch_hp_(1,:), temp_touch_hp_(1,:) + 1, temp_touch_hp_(1,:) - 1, temp_touch_hp_(1,:) - 2; ...
+    temp_touch_hp_(2,:),temp_touch_hp_(2,:),temp_touch_hp_(2,:),temp_touch_hp_(2,:)];
+temp_touch_hp_ = temp_touch_hp_';
+temp_touch_hp_ = unique(temp_touch_hp_,'rows');
+touch_frame = find(ismember(temp_ta,temp_touch_hp_,'rows')==1);
+
+wl_array{2}.trials{trialnum}.trackerFileName
+
+figure,  plot(temp_touch_hp_(:,1),temp_touch_hp_(:,2),'r.'), hold on, plot(temp_ta(550:end-200,1),temp_ta(550:end-200,2),'k.')
 
 %%
 tt_ind{1}
