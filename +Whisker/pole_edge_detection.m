@@ -1,5 +1,5 @@
 function [pole_edge, varargout] = pole_edge_detection(video_fn)
-
+% every value is in MATLAB convention (
     if isnumeric(video_fn)
         v = VideoReader([num2str(video_fn),'.mp4']);
     else

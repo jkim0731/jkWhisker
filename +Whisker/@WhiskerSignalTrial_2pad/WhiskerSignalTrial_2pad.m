@@ -85,10 +85,6 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrialI
                 for k=1:nframes
                     tx = obj.trackerData{i}{k}{4};
                     ty = obj.trackerData{i}{k}{5};
-                    if ty(1) < ty(end) % follicle at the beginning of the vector (column)
-                        ty = flip(ty);
-                        tx = flip(tx);
-                    end
 %                     px = fittedX(k,:);
 %                     py = fittedY(k,:);
                     C = [ty'+1;tx'+1]; % converting whisker tracker points into normal MATLAB coordinates
@@ -106,10 +102,14 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrialI
                             obj.whisker_edge_coord(k,i) = sqrt(sum((temp'-obj.pole_axes{i}(:,1)).^2)); % the distances from each axis origin
                         else  % extrapolate the whisker and find the intersection with pole edge
                             % polyfit from the last 4 points, linear fitting, and then drawing from the 5th last point
-                            % Extend for 20 pixels. Should be enough. If that's not enough, it means extrapolation itself cannot be correct anyway.
+                            % Extend for 20 pixels y direction (negative 1st dim in MATLAB convention). Should be enough. If that's not enough, it means extrapolation itself cannot be correct anyway.
+                            if ty(1) < ty(end) % follicle at the beginning of the vector (column)
+                                ty = flip(ty);
+                                tx = flip(tx);
+                            end
                             p = polyfix(ty(end-3:end-1),tx(end-3:end-1),1,ty(end-3),tx(end-3)); % I need p(1) only.
                             tip = [ty(end-3)+1, tx(end-3)+1];
-                            ext_tip = [tip(1),tip(2)+p(1)*20];
+                            ext_tip = [tip(1)-20, tip(2)-p(1)*20];
 %                             tip = C(:,end)'; % row vector
 %                             tip_1back = C(:,end-1)'; % row vector
 %                             tip_5back = C(:,end-5)';
