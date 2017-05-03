@@ -22,6 +22,9 @@ for i = 1 : length(b)
         temp = b(i).tip_y;
         b(i).tip_y = b(i).follicle_y;
         b(i).follicle_y = temp;
+        temp = b(i).tip_x; % treating x values together. Added 2017/04/27.
+        b(i).tip_x = b(i).follicle_x;
+        b(i).follicle_x = temp;
     end
     
     if abs(b(i).follicle_y - f1) < follicle_threshold && b(i).follicle_x > width/2 && b(i).length > length_threshold % top-view whisker

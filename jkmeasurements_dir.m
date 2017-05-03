@@ -14,8 +14,8 @@ h = height;
 f = follicle_first;
 
 % Adjust this accordingly
-follicle_threshold = 40;
-length_threshold = 40;
+follicle_threshold = 20;
+length_threshold = 30;
 
 
 

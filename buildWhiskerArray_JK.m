@@ -137,9 +137,9 @@ trial_types = {'rc', 'rf', 'lc', 'lf'};
 tt_ind = cell(1,length(trial_types));
 wl_array = cell(1,length(trial_types));
 touch_points = cell(1,length(trial_types));
-touch_hp = cell(1,length(trial_type)); % touch hyperplanes
+touch_hp = cell(1,length(trial_types)); % touch hyperplanes
 %%
-for trial_type_num = 2 : length(trial_types)    
+for trial_type_num = 1 : length(trial_types)    
 % trial_type_num = 1
     tt_ind{trial_type_num} = find(cellfun(@(x) strcmp(x.trialType,trial_types{trial_type_num}),b_session.trials));
 %     if length(tt_ind{i}) > 10
@@ -381,6 +381,101 @@ wl_array{2}.trials{trialnum}.trackerFileName
 
 figure,  plot(temp_touch_hp_(:,1),temp_touch_hp_(:,2),'r.'), hold on, plot(temp_ta(550:end-200,1),temp_ta(550:end-200,2),'k.')
 
+%%
+hp_peaks = {[21, 31],[35, 46],[158, 169],[201, 212]};
+pro_touch_right = zeros(9,4); % peak / peak & -1 / peak & -1 & -2 / peak & +1 / peak & +1 & +2 / peak & -1 & +1 / peak & -1 & -2 & +1 / peak & -1 & +1 & +2 / peak & -1 & -2 & +1 & +2
+pro_touch_wrong = zeros(9,4);
+ret_touch_right = zeros(9,4); % peak / peak & +1 / peak & +1 & +2 / peak & -1 / peak & -1 & -2 / peak & +1 & -1 / peak & +1 & +2 & -1 / peak & +1 & -1 & -2 / peak & +1 & +2 & -1 & -2
+ret_touch_wrong = zeros(9,4);
+non_touch_right = zeros(9,4);
+non_touch_wrong = zeros(9,4);
+for i = 1 : 4
+    wl = wl_array{i};
+    trial_type = wl.trials{1}.trial_type;
+    eval(['temp_touch_list = touch_list.AH0648S02.',trial_type,';'])
+    temp_th = touch_hp{i}; % temp_thouch_hyperplane
+    temp_trial_ind = temp_touch_list.trial_num;
+    % checking tracker file names
+    for j = 1 : 10
+        if wl.trialNums(temp_trial_ind(j)) ~= str2double(temp_touch_list.tracker_filename(j));
+            error('Tracker file name mismatch in trial index #%d of trial type #%d', j, i);
+        end
+    end
+    for j = 1 : 10
+        temp_pro_frames = temp_touch_list.touch_protraction{j} +1; % frames start from 1, not 0
+        temp_ret_frames = temp_touch_list.touch_retraction{j} +1; % frames start from 1, not 0
+        temp_non_frames = temp_touch_list.non_touch{j} +1; % frames start from 1, not 0
+        temp_trial = wl.trials(temp_trial_ind(j));
+        v = VideoReader([temp_trial.trackerFileName,'.mp4']);
+        if v.NumberOfFrames ~= length(temp_trial.intersect_coord)
+            error(['# of video frames does not match that of whisker-tracker in trial #',temp_trial.trackerFileName])
+        end
+        for k = 1 : 9
+            temp_th_pp_ind = find(temp_th(3,:) == temp_trial.pole_pos); % temp_touch_hyperplane_pole_position_index
+            temp_th_pp = temp_th(1:2,temp_th_pp_ind); % temp_touch_hyperplane_pole_position
+            temp_th_pro_peak = temp_th_pp + [ones(1,length(temp_th_pp)) * hp_peaks{i}(2); zeros(1,length(temp_th_pp))];
+            temp_th_ret_peak = temp_th_pp + [ones(1,length(temp_th_pp)) * hp_peaks{i}(1); zeros(1,length(temp_th_pp))];      
+            temp_intersection = round(temp_trial.intersect_coord);
+            switch k
+                case 1
+                    temp_th_pro = temp_th_pro_peak';
+                    temp_th_ret = temp_th_ret_peak';                    
+                case 2
+                    temp_th_pro = [temp_th_pro_peak(1,:), temp_th_pro_peak(1,:) - 1; ...
+                        temp_th_pro_peak(2,:), temp_th_pro_peak(2,:)]';
+                    temp_th_ret = [temp_th_ret_peak(1,:), temp_th_ret_peak(1,:) + 1; ...
+                        temp_th_ret_peak(2,:), temp_th_ret_peak(2,:)]';
+                case 3
+                    temp_th_pro = [temp_th_pro_peak(1,:), temp_th_pro_peak(1,:) - 1, temp_th_pro_peak(1,:) - 2; ...
+                        temp_th_pro_peak(2,:), temp_th_pro_peak(2,:), temp_th_pro_peak(2,:)]';
+                    temp_th_ret = [temp_th_ret_peak(1,:), temp_th_ret_peak(1,:) + 1, temp_th_ret_peak(1,:) + 2; ...
+                        temp_th_ret_peak(2,:), temp_th_ret_peak(2,:), temp_th_ret_peak(2,:)]';
+                case 4
+                    temp_th_pro = [temp_th_pro_peak(1,:), temp_th_pro_peak(1,:) + 1; ...
+                        temp_th_pro_peak(2,:), temp_th_pro_peak(2,:)]';
+                    temp_th_ret = [temp_th_ret_peak(1,:), temp_th_ret_peak(1,:) - 1; ...
+                        temp_th_ret_peak(2,:), temp_th_ret_peak(2,:)]';
+                case 5
+                    temp_th_pro = [temp_th_pro_peak(1,:), temp_th_pro_peak(1,:) + 1, temp_th_pro_peak(1,:) + 2; ...
+                        temp_th_pro_peak(2,:), temp_th_pro_peak(2,:), temp_th_pro_peak(2,:)]';
+                    temp_th_ret = [temp_th_ret_peak(1,:), temp_th_ret_peak(1,:) - 1, temp_th_ret_peak(1,:) - 2; ...
+                        temp_th_ret_peak(2,:), temp_th_ret_peak(2,:), temp_th_ret_peak(2,:)]';
+                case 6
+                    temp_th_pro = [temp_th_pro_peak(1,:), temp_th_pro_peak(1,:) - 1, temp_th_pro_peak(1,:) + 1; ...
+                        temp_th_pro_peak(2,:), temp_th_pro_peak(2,:), temp_th_pro_peak(2,:)]';
+                    temp_th_ret = [temp_th_ret_peak(1,:), temp_th_ret_peak(1,:) + 1, temp_th_ret_peak(1,:) - 1; ...
+                        temp_th_ret_peak(2,:), temp_th_ret_peak(2,:), temp_th_ret_peak(2,:)]';
+                case 7
+                     temp_th_pro = [temp_th_pro_peak(1,:), temp_th_pro_peak(1,:) - 1, temp_th_pro_peak(1,:) - 2, temp_th_pro_peak(1,:) + 1; ...
+                        temp_th_pro_peak(2,:), temp_th_pro_peak(2,:), temp_th_pro_peak(2,:), temp_th_pro_peak(2,:)]';
+                    temp_th_ret = [temp_th_ret_peak(1,:), temp_th_ret_peak(1,:) + 1, temp_th_ret_peak(1,:) + 2, temp_th_ret_peak(1,:) - 1; ...
+                        temp_th_ret_peak(2,:), temp_th_ret_peak(2,:), temp_th_ret_peak(2,:), temp_th_ret_peak(2,:)]';        
+                case 8
+                    temp_th_pro = [temp_th_pro_peak(1,:), temp_th_pro_peak(1,:) - 1, temp_th_pro_peak(1,:) + 1, temp_th_pro_peak(1,:) + 2; ...
+                        temp_th_pro_peak(2,:), temp_th_pro_peak(2,:), temp_th_pro_peak(2,:), temp_th_pro_peak(2,:)]';
+                    temp_th_ret = [temp_th_ret_peak(1,:), temp_th_ret_peak(1,:) + 1, temp_th_ret_peak(1,:) - 1, temp_th_ret_peak(1,:) - 2; ...
+                        temp_th_ret_peak(2,:), temp_th_ret_peak(2,:), temp_th_ret_peak(2,:), temp_th_ret_peak(2,:)]';        
+                case 9
+                    temp_th_pro = [temp_th_pro_peak(1,:), temp_th_pro_peak(1,:) - 1, temp_th_pro_peak(1,:) - 2, temp_th_pro_peak(1,:) + 1, temp_th_pro_peak(1,:) + 2; ...
+                        temp_th_pro_peak(2,:), temp_th_pro_peak(2,:), temp_th_pro_peak(2,:), temp_th_pro_peak(2,:), temp_th_pro_peak(2,:)]';
+                    temp_th_ret = [temp_th_ret_peak(1,:), temp_th_ret_peak(1,:) + 1, temp_th_ret_peak(1,:) + 2, temp_th_ret_peak(1,:) - 1, temp_th_ret_peak(1,:) - 2; ...
+                        temp_th_ret_peak(2,:), temp_th_ret_peak(2,:), temp_th_ret_peak(2,:), temp_th_ret_peak(2,:), temp_th_ret_peak(2,:)]';        
+            end
+            temp_th_pro = unique(temp_th_pro,'rows');
+            temp_th_ret = unique(temp_th_ret,'rows');
+            
+            temp_th_pro_frames = find(ismember(temp_intersection,temp_th_pro,'rows') == 1);
+            temp_th_ret_frames = find(ismember(temp_intersection,temp_th_ret,'rows') == 1);            
+                       
+            pro_touch_right(k,i) = pro_touch_right(k,i) + sum(ismember(temp_pro_frames,temp_th_pro_frames));
+            pro_touch_wrong(k,i) = pro_touch_wrong(k,i) + length(temp_pro_frames) - sum(ismember(temp_pro_frames,temp_th_pro_frames));
+            ret_touch_right(k,i) = ret_touch_right(k,i) + sum(ismember(temp_ret_frames,temp_th_ret_frames));
+            ret_touch_wrong(k,i) = ret_touch_wrong(k,i) + length(temp_ret_frames) - sum(ismember(temp_ret_frames,temp_th_ret_frames));
+            non_touch_right(k,i) = non_touch_right(k,i) + length(temp_non_frames) - sum(ismember(temp_non_frames,temp_th_pro_frames)) - sum(ismember(temp_non_frames,temp_th_ret_frames));
+            non_touch_wrong(k,i) = non_touch_wrong(k,i) + sum(ismember(temp_non_frames,temp_th_pro_frames)) + sum(ismember(temp_non_frames,temp_th_ret_frames));
+        end
+    end
+end
 %%
 tt_ind{1}
 %%

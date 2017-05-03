@@ -1804,7 +1804,6 @@ classdef WhiskerTrial < handle
             % image point instead of a string and return that here.
         end
         
-        
     end
     
     methods (Static = true)
