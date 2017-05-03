@@ -107,7 +107,7 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrialI
                         else  % extrapolate the whisker and find the intersection with pole edge
                             % polyfit from the last 4 points, linear fitting, and then drawing from the 5th last point
                             % Extend for 20 pixels. Should be enough. If that's not enough, it means extrapolation itself cannot be correct anyway.
-                            p = polyfit(ty(end-3:end),tx(end-3:end),1); % I need p(1) only.
+                            p = polyfix(ty(end-3:end-1),tx(end-3:end-1),1,ty(end-3),tx(end-3)); % I need p(1) only.
                             tip = [ty(end-3)+1, tx(end-3)+1];
                             ext_tip = [tip(1),tip(2)+p(1)*20];
 %                             tip = C(:,end)'; % row vector
