@@ -27,7 +27,7 @@ cd(d)
 
 savefn = [mouseName sessionName '_post.mat'];
 if exist(savefn,'file')
-    if exist(flag_skip, 'var') && strcmp(flag_skip, 'skip')
+    if exist('flag_skip', 'var') && strcmp(flag_skip, 'skip')
         disp(['Already post-measured. Skip ', mouseName, ' ', sessionName])
         return
     else
