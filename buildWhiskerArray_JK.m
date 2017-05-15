@@ -15,8 +15,7 @@ whisker_d = [whisker_base_dir mouseName sessionName '\'];
 cd(behavior_d)
 load('behavior.mat') % loading b of the mouse (all the sessions)
 
-bb = cellfun(@(x) x.sessionName,b,'UniformOutput',false);
-b_ind = find(cellfun(@(x) strcmp(x,sessionName),bb));
+b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
 b_session = b{b_ind};
 
 cd(whisker_d)
@@ -24,9 +23,7 @@ cd(whisker_d)
 load_fn = [mouseName sessionName '_post.mat'];
 load(load_fn); % loading errorlist
 
-session_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
-
-if ~isempty(session_ind) % try only the ones with behavior session
+if ~isempty(b_ind) % try only the ones with behavior session
     % %%
     filelist=dir([whisker_d '*.measurements']);
 
@@ -40,13 +37,13 @@ if ~isempty(session_ind) % try only the ones with behavior session
     % name. These index numbers may need to be changed to match up to the
     % numerical code of the trial number.  (2016/09/05 JK)
 
-    for i=1:length(filelist);
+    for i=1:length(filelist)
         dirTrialNums(i)=str2double(filelist(i).name(1:end-13)); % extract out the trial number from each measurements file present in directory
     end
     dirTrialNums = setdiff(dirTrialNums,errorlist);
     trialNums = sort(dirTrialNums);
     trialNums = trialNums(~isnan(trialNums));
-    trialNums = intersect(trialNums,b{session_ind}.trialNums); % try only the ones with behavior trials
+    trialNums = intersect(trialNums,b{b_ind}.trialNums); % try only the ones with behavior trials
 
     includef=cell(size(trialNums,1),1);
     for i = 1: length(trialNums)

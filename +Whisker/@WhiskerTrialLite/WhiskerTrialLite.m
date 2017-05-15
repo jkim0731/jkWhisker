@@ -159,13 +159,15 @@ classdef WhiskerTrialLite < handle
             obj.barPos = w.barPos; %  Inherited from WhiskerSignalTrial. [frameNum XPosition YPosition]
             obj.barPosOffset = w.barPosOffset; % Inherited from WhiskerSignalTrial. [x y], either 1X2 or nframesX2
             obj.barRadius = w.barRadius; % Inherited from WhiskerSignalTrial.  In pixels. Must be radius of bar tracked by the bar tracker.
-                        
+    
             if ~isempty(p.Results.behavior)
                 b_ind = find(cellfun(@(x) x.trialNum,p.Results.behavior.trials)==obj.trialNum);
-                obj.pole_pos = p.Results.behavior.trials{b_ind}.motorApPosition;
-                obj.trial_type = p.Results.behavior.trials{b_ind}.trialType;
+                if ~isempty(b_ind)
+                    obj.pole_pos = p.Results.behavior.trials{b_ind}.motorApPosition;
+                    obj.trial_type = p.Results.behavior.trials{b_ind}.trialType;
+                end
             end
-        
+                    
             obj.pole_axes = w.pole_axes;
             obj.intersect_coord = w.whisker_edge_coord;
             obj.pole_available_timepoints = w.pole_available_timepoints;
