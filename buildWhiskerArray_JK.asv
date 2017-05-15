@@ -4,6 +4,7 @@ base_angle = 21;
 behavior_base_dir = 'Z:\Data\2p\soloData\';
 whisker_base_dir = 'Z:\Data\Video\JK\';
 
+
 sessions = {'AH0648S02','AH0650S02','AH0651S02','AH0652S04','AH0653S03'};
 [mouseName, sessionName] = strtok(sessions{5},'S');
 % mouse = 'AH0648';
@@ -22,31 +23,36 @@ cd(whisker_d)
 
 load_fn = [mouseName sessionName '_post.mat'];
 load(load_fn); % loading errorlist
-% %%
-filelist=dir([whisker_d '*.measurements']);
 
-dirTrialNums=zeros(1,size(filelist,1));
-% trialNums=[];  % enter which trial nums to process 
+session_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
 
-% %%
-% Assign the trial numbers to existing .measurements files in the directory
-% NOTE : This assumes that the .measurements files have leading numbers
-% corresponding to trial number in string positions 1:end-13 of the file
-% name. These index numbers may need to be changed to match up to the
-% numerical code of the trial number.  (2016/09/05 JK)
+if ~isempty(session_ind) % try only the ones with behavior session
+    % %%
+    filelist=dir([whisker_d '*.measurements']);
 
-for i=1:length(filelist);
-    dirTrialNums(i)=str2double(filelist(i).name(1:end-13)); % extract out the trial number from each measurements file present in directory
+    dirTrialNums=zeros(1,size(filelist,1));
+    % trialNums=[];  % enter which trial nums to process 
+
+    % %%
+    % Assign the trial numbers to existing .measurements files in the directory
+    % NOTE : This assumes that the .measurements files have leading numbers
+    % corresponding to trial number in string positions 1:end-13 of the file
+    % name. These index numbers may need to be changed to match up to the
+    % numerical code of the trial number.  (2016/09/05 JK)
+
+    for i=1:length(filelist);
+        dirTrialNums(i)=str2double(filelist(i).name(1:end-13)); % extract out the trial number from each measurements file present in directory
+    end
+    dirTrialNums = setdiff(dirTrialNums,errorlist);
+    trialNums = sort(dirTrialNums);
+    trialNums = trialNums(~isnan(trialNums));
+    trialNums = intersect(trialNums,b{session_ind}.trialNums); % try only the ones with behavior trials
+
+    includef=cell(size(trialNums,1),1);
+    for i = 1: length(trialNums)
+        includef{i} = num2str(trialNums(i));
+    end
 end
-dirTrialNums = setdiff(dirTrialNums,errorlist);
-trialNums = sort(dirTrialNums);
-trialNums = trialNums(~isnan(trialNums));
-
-includef=cell(size(trialNums,1),1);
-for i = 1: length(trialNums)
-    includef{i} = num2str(trialNums(i));
-end
-
 %% Optional section for cross correlating behavior and video trials, if you didn't pay attention to trial numbers
 % vv = nan(max(dirTrialNums),1);
 % 
