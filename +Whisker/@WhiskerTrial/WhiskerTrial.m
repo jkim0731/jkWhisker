@@ -8,6 +8,12 @@ classdef WhiskerTrial < handle
     %
     %
     %
+    
+    % Sometimes there is an error with .whiskers file. In that or any other
+    % case when WhiskerTrial does not work correctly, throw an error
+    % (fname_error.mat file with trial_num in it)
+    % 2017/05/15 JK
+    
     properties
         trialNum = [];
         trialType = NaN;

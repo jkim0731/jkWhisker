@@ -146,57 +146,67 @@ if ~isempty(fnall)
         parfor k=1:nfiles
             fn = fnall{k};
             disp(['Processing .whiskers file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
-            
-            w = Whisker.WhiskerTrial(fn, trial_nums(k), p.Results.trajectory_nums, p.Results.mouseName, p.Results.sessionName);
-            
-            w.barRadius = p.Results.barRadius;
-            w.barPosOffset = p.Results.barPosOffset;
-            w.faceSideInImage = p.Results.faceSideInImage;
-            w.protractionDirection = p.Results.protractionDirection;
-            w.imagePixelDimsXY = p.Results.imagePixelDimsXY;
-            w.pxPerMm = p.Results.pxPerMm;
-            w.framePeriodInSec = p.Results.framePeriodInSec;
-            if ~isempty(p.Results.mask)
-                if iscell(p.Results.mask)
-                    for q=1:numel(w.trajectoryIDs)
-                        w.set_mask_from_points(w.trajectoryIDs(q),p.Results.mask{q}(1,:),p.Results.mask{q}(2,:));
+            try % An error found during building .whiskers file. Whisker tracker error, so having a way out of using that trial
+                w = Whisker.WhiskerTrial(fn, trial_nums(k), p.Results.trajectory_nums, p.Results.mouseName, p.Results.sessionName);
+
+                w.barRadius = p.Results.barRadius;
+                w.barPosOffset = p.Results.barPosOffset;
+                w.faceSideInImage = p.Results.faceSideInImage;
+                w.protractionDirection = p.Results.protractionDirection;
+                w.imagePixelDimsXY = p.Results.imagePixelDimsXY;
+                w.pxPerMm = p.Results.pxPerMm;
+                w.framePeriodInSec = p.Results.framePeriodInSec;
+                if ~isempty(p.Results.mask)
+                    if iscell(p.Results.mask)
+                        for q=1:numel(w.trajectoryIDs)
+                            w.set_mask_from_points(w.trajectoryIDs(q),p.Results.mask{q}(1,:),p.Results.mask{q}(2,:));
+                        end
+                    else
+    %                     for q = 1 : size(p.Results.mask,1)
+    %                         w.set_mask_from_points(w.trajectoryIDs(q),p.Results.mask(q,:),p.Results.mask(q,:));
+                        w.set_mask_from_points(w.trajectoryIDs,p.Results.mask(1,:),p.Results.mask(2,:));
                     end
-                else
-%                     for q = 1 : size(p.Results.mask,1)
-%                         w.set_mask_from_points(w.trajectoryIDs(q),p.Results.mask(q,:),p.Results.mask(q,:));
-                    w.set_mask_from_points(w.trajectoryIDs,p.Results.mask(1,:),p.Results.mask(2,:));
                 end
+
+                outfn = [fn '_WT.mat'];
+                pctsave(outfn,w)
+            catch
+                disp(['Error on .whiskers file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
+                outfn = [fn '_error.mat'];
+                pctsave(outfn,k)
             end
-            
-            outfn = [fn '_WT.mat'];
-            pctsave(outfn,w)
         end
     else
         for k=1:nfiles
             fn = fnall{k};
             disp(['Processing .whiskers file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
-            
-            w = Whisker.WhiskerTrial(fn, trial_nums(k), p.Results.trajectory_nums, p.Results.mouseName, p.Results.sessionName);
-            
-            w.barRadius = p.Results.barRadius;
-            w.barPosOffset = p.Results.barPosOffset;
-            w.faceSideInImage = p.Results.faceSideInImage;
-            w.protractionDirection = p.Results.protractionDirection;
-            w.imagePixelDimsXY = p.Results.imagePixelDimsXY;
-            w.pxPerMm = p.Results.pxPerMm;
-            w.framePeriodInSec = p.Results.framePeriodInSec;
-            if ~isempty(p.Results.mask)
-                if iscell(p.Results.mask)
-                    for q=1:numel(w.trajectoryIDs)
-                        w.set_mask_from_points(w.trajectoryIDs(q),p.Results.mask{q}(1,:),p.Results.mask{q}(2,:));
+            try
+                w = Whisker.WhiskerTrial(fn, trial_nums(k), p.Results.trajectory_nums, p.Results.mouseName, p.Results.sessionName);
+
+                w.barRadius = p.Results.barRadius;
+                w.barPosOffset = p.Results.barPosOffset;
+                w.faceSideInImage = p.Results.faceSideInImage;
+                w.protractionDirection = p.Results.protractionDirection;
+                w.imagePixelDimsXY = p.Results.imagePixelDimsXY;
+                w.pxPerMm = p.Results.pxPerMm;
+                w.framePeriodInSec = p.Results.framePeriodInSec;
+                if ~isempty(p.Results.mask)
+                    if iscell(p.Results.mask)
+                        for q=1:numel(w.trajectoryIDs)
+                            w.set_mask_from_points(w.trajectoryIDs(q),p.Results.mask{q}(1,:),p.Results.mask{q}(2,:));
+                        end
+                    else
+                        w.set_mask_from_points(w.trajectoryIDs,p.Results.mask(1,:),p.Results.mask(2,:));
                     end
-                else
-                    w.set_mask_from_points(w.trajectoryIDs,p.Results.mask(1,:),p.Results.mask(2,:));
                 end
+
+                outfn = [fn '_WT.mat'];
+                save(outfn,'w');
+            catch
+                disp(['Error on .whiskers file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
+                outfn = [fn '_error.mat'];
+                save(outfn,'k')
             end
-            
-            outfn = [fn '_WT.mat'];
-            save(outfn,'w');
         end
     end
 end
