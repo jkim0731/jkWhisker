@@ -122,35 +122,47 @@ nfiles = length(fnall);
 if ~isempty(fnall)
     if exist('parfor','builtin') % Parallel Computing Toolbox is installed.
         parfor k=1:nfiles
-            fn = fnall{k};
-            disp(['Processing ''_WST.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
+            try
+                fn = fnall{k};
+                disp(['Processing ''_WST.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
 
-            ws = pctload([fn '_WST.mat']);
-            wl = Whisker.WhiskerTrialLiteI(ws,'r_in_mm',p.Results.r_in_mm,'calc_forces',p.Results.calc_forces,...
-                'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
-                'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
-                'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
-                'proximity_threshold',p.Results.proximity_threshold,'behavior',p.Results.behavior);
+                ws = pctload([fn '_WST.mat']);
+                wl = Whisker.WhiskerTrialLiteI(ws,'r_in_mm',p.Results.r_in_mm,'calc_forces',p.Results.calc_forces,...
+                    'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
+                    'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
+                    'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
+                    'proximity_threshold',p.Results.proximity_threshold,'behavior',p.Results.behavior);
 
-            outfn = [fn '_WL.mat'];
+                outfn = [fn '_WL.mat'];
 
-            pctsave(outfn,wl);
+                pctsave(outfn,wl);
+            catch
+                disp(['Error on whisker tracker file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
+                outfn = [fn '_errorWL.mat'];
+                pctsave(outfn,k)
+            end
         end
     else
         for k=1:nfiles
-            fn = fnall{k};
-            disp(['Processing ''_WST.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
+            try
+                fn = fnall{k};
+                disp(['Processing ''_WST.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
 
-            load([fn '_WST.mat'],'ws');
-            wl = Whisker.WhiskerTrialLiteI(ws,'r_in_mm',p.Results.r_in_mm,'calc_forces',p.Results.calc_forces,...
-                'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
-                'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
-                'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
-                'proximity_threshold',p.Results.proximity_threshold,'behavior',p.Results.behavior);
+                load([fn '_WST.mat'],'ws');
+                wl = Whisker.WhiskerTrialLiteI(ws,'r_in_mm',p.Results.r_in_mm,'calc_forces',p.Results.calc_forces,...
+                    'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
+                    'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
+                    'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
+                    'proximity_threshold',p.Results.proximity_threshold,'behavior',p.Results.behavior);
 
-            outfn = [fn '_WL.mat'];
+                outfn = [fn '_WL.mat'];
 
-            save(outfn,'wl');
+                save(outfn,'wl');
+            catch
+                disp(['Error on whisker tracker file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
+                outfn = [fn '_errorWL.mat'];
+                save(outfn,'k')
+            end            
         end
     end
 end

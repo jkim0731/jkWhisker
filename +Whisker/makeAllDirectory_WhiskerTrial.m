@@ -75,6 +75,11 @@ function makeAllDirectory_WhiskerTrial(d,trajectory_nums,varargin)
 % 3/10, DHO.
 %
 
+% Sometimes there is an error with .whiskers file. In that or any other
+% case when WhiskerTrial does not work correctly, throw an error
+% (fname_errorWT.mat file with trial_num in it)
+% 2017/05/15 JK
+
 p = inputParser;
 
 p.addRequired('d', @ischar);
@@ -172,7 +177,7 @@ if ~isempty(fnall)
                 pctsave(outfn,w)
             catch
                 disp(['Error on .whiskers file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
-                outfn = [fn '_error.mat'];
+                outfn = [fn '_errorWT.mat'];
                 pctsave(outfn,k)
             end
         end
@@ -204,7 +209,7 @@ if ~isempty(fnall)
                 save(outfn,'w');
             catch
                 disp(['Error on .whiskers file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
-                outfn = [fn '_error.mat'];
+                outfn = [fn '_errorWT.mat'];
                 save(outfn,'k')
             end
         end

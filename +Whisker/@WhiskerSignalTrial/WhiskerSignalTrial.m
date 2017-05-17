@@ -97,7 +97,7 @@ classdef WhiskerSignalTrial < handle
         time = {};
         videoFrames = []; % number of frames of the video. Need for comparison with time, so that to see if there was any error during tracking. 2017/04/03 JK
         pxPerMm = 22.68; %  Inherited from WhiskerTrial, but give default value.
-        faceSideInImage = 'top'; % Inherited from WhiskerTrial, but give default value.
+        faceSideInImage = 'bottom'; % Inherited from WhiskerTrial, but give default value.
         % Can be: 'top', 'bottom', 'left','right'.
         % May need to make this a cell array of strings, one per trajectory ID
         % to handle case of tracked whiskers on both sides of head.

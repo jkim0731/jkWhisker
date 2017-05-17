@@ -56,6 +56,11 @@ function makeAllDirectory_WhiskerSignalTrial_2pad(d,varargin)
 % 3/10, DHO.
 %
 
+% Sometimes there is an error with VideoReader during parallel processing (~0.2%). 
+% In that or any other case when WhiskerTrial does not work correctly, throw an error
+% (fname_errorWST.mat file with trial_num in it)
+% 2017/05/15 JK
+
 p = inputParser;
 
 p.addRequired('d', @ischar);
@@ -109,49 +114,60 @@ if ~isempty(fnall)
             fn = fnall{k};
             disp(['Processing ''_WT.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
             
-            w = pctload([fn '_WT.mat']);
-            
-            ws = Whisker.WhiskerSignalTrial_2pad(w,'polyRoiInPix',p.Results.polyRoiInPix);
-            if ~isempty(p.Results.polyFitsMask)
-                x = p.Results.polyFitsMask(1,:);
-                y = p.Results.polyFitsMask(2,:);
-                tidList = ws.trajectoryIDs;
-                for tid=tidList
-                    ws.set_mask_from_points(tid,x,y);
+            try
+                w = pctload([fn '_WT.mat']);
+
+                ws = Whisker.WhiskerSignalTrial_2pad(w,'polyRoiInPix',p.Results.polyRoiInPix);
+                if ~isempty(p.Results.polyFitsMask)
+                    x = p.Results.polyFitsMask(1,:);
+                    y = p.Results.polyFitsMask(2,:);
+                    tidList = ws.trajectoryIDs;
+                    for tid=tidList
+                        ws.set_mask_from_points(tid,x,y);
+                    end
                 end
+
+                if ~isnan(p.Results.follicleExtrapDistInPix)
+                    ws.recompute_cached_follicle_coords(p.Results.follicleExtrapDistInPix,ws.trajectoryIDs); % Right now fits even "contact detection" tids, need to change format***
+                end
+
+                outfn = [fn '_WST.mat'];
+
+                pctsave(outfn,ws)
+            catch
+                outfn = [fn '_errorWST.mat'];
+                pctsave(outfn,k)
             end
-            
-            if ~isnan(p.Results.follicleExtrapDistInPix)
-                ws.recompute_cached_follicle_coords(p.Results.follicleExtrapDistInPix,ws.trajectoryIDs); % Right now fits even "contact detection" tids, need to change format***
-            end
-            
-            outfn = [fn '_WST.mat'];
-            
-            pctsave(outfn,ws)
         end
     else
         for k=1:nfiles
             fn = fnall{k};
             disp(['Processing ''_WT.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
             
-            load([fn '_WT.mat'],'w');
-            ws = Whisker.WhiskerSignalTrial_2pad(w,'polyRoiInPix',p.Results.polyRoiInPix);
-            if ~isempty(p.Results.polyFitsMask)
-                x = p.Results.polyFitsMask(1,:);
-                y = p.Results.polyFitsMask(2,:);
-                tidList = ws.trajectoryIDs;
-                for tid=tidList
-                    ws.set_mask_from_points(tid,x,y);
+            try
+                load([fn '_WT.mat'],'w');
+                ws = Whisker.WhiskerSignalTrial_2pad(w,'polyRoiInPix',p.Results.polyRoiInPix);
+                if ~isempty(p.Results.polyFitsMask)
+                    x = p.Results.polyFitsMask(1,:);
+                    y = p.Results.polyFitsMask(2,:);
+                    tidList = ws.trajectoryIDs;
+                    for tid=tidList
+                        ws.set_mask_from_points(tid,x,y);
+                    end
                 end
+
+                if ~isnan(p.Results.follicleExtrapDistInPix)
+                    ws.recompute_cached_follicle_coords(p.Results.follicleExtrapDistInPix,ws.trajectoryIDs); % Right now fits even "contact detection" tids, need to change format***
+                end
+
+                outfn = [fn '_WST.mat'];
+
+                save(outfn,'ws');
+            catch
+                outfn = [fn '_errorWST.mat'];
+                save(outfn,'k')
             end
-            
-            if ~isnan(p.Results.follicleExtrapDistInPix)
-                ws.recompute_cached_follicle_coords(p.Results.follicleExtrapDistInPix,ws.trajectoryIDs); % Right now fits even "contact detection" tids, need to change format***
-            end
-            
-            outfn = [fn '_WST.mat'];
-            
-            save(outfn,'ws');
+
         end
     end
 end
