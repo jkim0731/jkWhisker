@@ -8,7 +8,7 @@ d = (['Z:\Data\Video\' videoloc filesep]);
 
 % comment out when doing for all of the sessions in the mouse directory
 % sessions_exc = {{'S02'}, {'S02'}, {'S02'}, {'S04'}, {'S03'}}; 
-sessions = {{'S03'}, {'S14'}}; 
+sessions = {{'S00'}}; 
 
 %% Define follicle points and masks
 

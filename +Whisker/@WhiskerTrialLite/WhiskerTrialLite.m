@@ -44,7 +44,7 @@ classdef WhiskerTrialLite < handle
         barRadius = []; % Inherited from WhiskerSignalTrial.  In pixels. Must be radius of bar tracked by the bar tracker.
 
         pole_pos = []; % from BehaviorArray
-        trial_type = []; % from BehaviorArray
+        trial_type = ''; % from BehaviorArray
         pole_axes = {}; % Inherited from WhiskerSignalTrial.
         intersect_coord = []; % Inherited from WhiskerSignalTrial.
         
