@@ -8,7 +8,7 @@ mice = {'AH0648','AH0650','AH0651','AH0652','AH0653'};
 steps = {[10:70],[20:80],[140:200],[140:200]};
 %%%%%%%%%%%%%%%%%%%%%% try as short as possible to reduce time next step
 mouseName = 'AH0648';
-sessionNum = [11:15];
+sessionNum = [12:15];
 % sessionNum =[19:21];
 trial_types = {'rc', 'rf', 'lc', 'lf'};
 % trial_types = {'rn', 'ln'};
@@ -76,11 +76,8 @@ for sessionInd = 1 : length(sessionNum)
     num_points_in_hp = cell(1,length(trial_types));
     tt_ind = cell(1,length(trial_types));
     wl_array = cell(1,length(trial_types));
-    % touch_points = cell(1,length(trial_types));
     touch_hp = cell(1,length(trial_types)); % touch hyperplanes
     hp_peaks = cell(1,length(trial_types)); % touch hyperplane peak points. 2 points for each hyperplane
-    % %%
-    % load('wl_array.mat')
 
     for trial_type_num = 1 : length(trial_types)    
     % trial_type_num = 1
@@ -242,12 +239,10 @@ for sessionInd = 1 : length(sessionNum)
             end
         end
             %% Manual check of the view
-
         %     A = viewmtx(I(6)+5,0);
         %     x4d = [intersect_3d, ones(size(intersect_3d,1),1)]';
         %     x2d = A*x4d;
         %     h3 = figure; plot(x2d(1,:), x2d(2,:),'k.', 'MarkerSize',3)
-
 
         %% Psi2
         %%%%%%%%%%%%%%%%%%%%%%%%%%%% Manual selection
@@ -288,9 +283,7 @@ for sessionInd = 1 : length(sessionNum)
             figure, imagesc(x2d_edge)
     %%
             theta = 0:0.01:180;
-    %         x2d_flip = flip(x2d_final,1);
             R = radon(x2d_edge, theta);
-    %         [~, max_ind] = max(max(R));
             [~, max_ind] = max(std(R));
             psi2 = (max_ind-1)*0.01;
             psi2 = atand(tand(psi2)/100); % psi2 adjusted because it was calculated with pole position divided by 100
@@ -373,7 +366,8 @@ for sessionInd = 1 : length(sessionNum)
             while(strcmp(peak_answer,'Yes'))
                 if strcmp(answer,'Yes')
                     datacursormode(h1,'on')
-                    hp_peaks{trial_type_num} = str2num(cell2mat(inputdlg({'Left peak','Right peak'},'What are the peak points?',1,{'',''},options)))';                                    
+                    hp_peak_ans = inputdlg({'Left peak','Right peak'},'What are the peak points?',1,{'',''},options);
+                    hp_peaks{trial_type_num} = [str2num(hp_peak_ans{1}) str2num(hp_peak_ans{2})];                    
 
                     % Final confirmation
                     % project the peak hyperplanes and all coordinates onto psi1 psi2 view
@@ -435,9 +429,9 @@ for sessionInd = 1 : length(sessionNum)
         steps_hp{trial_type_num} = steps;
         num_points_in_hp{trial_type_num} = num_points;
         touch_hp{trial_type_num} = xyz_psi2; % Don't round them! (at least at this saving process)
-        fprintf('%s %s trial type #%d processed',mouseName, sessionName,trial_type_num)
+        fprintf('%s %s trial type #%d processed\n',mouseName, sessionName,trial_type_num)
     end
     %%
     save([whisker_d 'touch_hp.mat'],'touch_hp','num_points_in_hp','steps_hp','hp_peaks')
-    disp('hp_peaks saved')
+    fprintf('%s %s hp_peaks saved\n', mouseName, sessionName)
 end
