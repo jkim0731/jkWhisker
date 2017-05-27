@@ -4,10 +4,16 @@ whisker_base_dir = 'Z:\Data\Video\JK\';
 
 mice = {'AH0648','AH0650','AH0651','AH0652','AH0653'};
 
-sessionNum = [4, 6:15];
+%%%%%%%%%%%%%%%%%%%%%% manual selection
+steps = {[10:70],[20:80],[140:200],[140:200]};
+%%%%%%%%%%%%%%%%%%%%%% try as short as possible to reduce time next step
+mouseName = 'AH0648';
+sessionNum = [11:15];
+% sessionNum =[19:21];
+trial_types = {'rc', 'rf', 'lc', 'lf'};
+% trial_types = {'rn', 'ln'};
 for sessionInd = 1 : length(sessionNum)
-% for sessionInd = 1
-    mouseName = 'AH0648';
+% for sessionInd = 1:3    
     sessionName = sprintf('S%02d',sessionNum(sessionInd));
 
     behavior_d = [behavior_base_dir mouseName '\'];
@@ -65,7 +71,7 @@ for sessionInd = 1 : length(sessionNum)
     % Currently, only dealing with 4 types of trials: 'rc', 'rf', 'lc', 'lf'
     % Should make something different for straight pole touch in S00. 
     % 2017/04/11 JK
-    trial_types = {'rc', 'rf', 'lc', 'lf'};
+    
     steps_hp = cell(1,length(trial_types));
     num_points_in_hp = cell(1,length(trial_types));
     tt_ind = cell(1,length(trial_types));
@@ -87,16 +93,16 @@ for sessionInd = 1 : length(sessionNum)
         wl_array{trial_type_num} = wl;
     end
     %%
-    for trial_type_num = 1:4
-    % trial_type_num = 3  
-        intersect_3d = [];
+    for trial_type_num = 1 : length(trial_types)
+%     for trial_type_num = 4  
+        intersect_3d_total = [];
         wl = wl_array{trial_type_num};        
         for tnum = 1 : length(wl.trials)
             try        
                 top_ind = find(~isnan(wl.trials{tnum}.intersect_coord(:,1)));
                 front_ind = find(~isnan(wl.trials{tnum}.intersect_coord(:,2)));
                 intersect_ind = intersect(wl.trials{tnum}.pole_available_timepoints,intersect(top_ind,front_ind));
-                intersect_3d = [intersect_3d; wl.trials{tnum}.intersect_coord(intersect_ind,1), wl.trials{tnum}.intersect_coord(intersect_ind,2), ones(length(intersect_ind),1)*wl.trials{tnum}.pole_pos];
+                intersect_3d_total = [intersect_3d_total; wl.trials{tnum}.intersect_coord(intersect_ind,1), wl.trials{tnum}.intersect_coord(intersect_ind,2), ones(length(intersect_ind),1)*wl.trials{tnum}.pole_pos];
             catch
                 fprintf('Skipping trial #%d because of index problems \n',tnum);        
             end
@@ -105,7 +111,7 @@ for sessionInd = 1 : length(sessionNum)
         psi1_polygon_answer = 'Yes'; % for re-drawing of polygon for psi1
         while(strcmp(psi1_answer,'Yes'))                    
             while(strcmp(psi1_polygon_answer,'No'))
-                h2 = figure('units','normalized','outerposition',[0 0 1 1]); plot(intersect_3d(:,1), intersect_3d(:,2), 'k.', 'MarkerSize', 0.1), hold on
+                h2 = figure('units','normalized','outerposition',[0 0 1 1]); plot(intersect_3d_total(:,1), intersect_3d_total(:,2), 'k.', 'MarkerSize', 0.1), hold on
                 pre_poly = []; % points of the polygon
                 i = 1;
                 temp_point = ginput(1);
@@ -123,13 +129,19 @@ for sessionInd = 1 : length(sessionNum)
                 switch psi1_polygon_answer
                     case 'Yes'
                         close all
+                        in = inpolygon(intersect_3d_total(:,1), intersect_3d_total(:,2), pre_poly(:,1), pre_poly(:,2));
+                         intersect_3d_crop = intersect_3d_total(in,:);
                     case 'No'
                         close(h2)
-                        h2 = figure('units','normalized','outerposition',[0 0 1 1]); plot(intersect_3d(:,1), intersect_3d(:,2), 'k.', 'MarkerSize', 0.1), hold on
-                end
-                in = inpolygon(intersect_3d(:,1), intersect_3d(:,2), pre_poly(:,1), pre_poly(:,2));
-                intersect_3d = intersect_3d(in,:);
+                        h2 = figure('units','normalized','outerposition',[0 0 1 1]); plot(intersect_3d_total(:,1), intersect_3d_total(:,2), 'k.', 'MarkerSize', 0.1), hold on
+                end                
             end            
+            if exist('intersect_3d_crop','var') 
+                intersect_3d = intersect_3d_crop;
+                clear intersect_3d_crop
+            else
+                intersect_3d = intersect_3d_total;
+            end
             h1 = figure; plot3(intersect_3d(:,1), intersect_3d(:,2), intersect_3d(:,3), 'k.', 'MarkerSize', 0.1)
             title(wl.trials{1}.trial_type), xlabel('Top-view intersection coord'), ylabel('Front-view intersection coord'), zlabel('Pole position')
 
@@ -229,12 +241,12 @@ for sessionInd = 1 : length(sessionNum)
                 end
             end
         end
-        %% Manual check of the view
+            %% Manual check of the view
 
-    %     A = viewmtx(I(6)+5,0);
-    %     x4d = [intersect_3d, ones(size(intersect_3d,1),1)]';
-    %     x2d = A*x4d;
-    %     h3 = figure; plot(x2d(1,:), x2d(2,:),'k.', 'MarkerSize',3)
+        %     A = viewmtx(I(6)+5,0);
+        %     x4d = [intersect_3d, ones(size(intersect_3d,1),1)]';
+        %     x2d = A*x4d;
+        %     h3 = figure; plot(x2d(1,:), x2d(2,:),'k.', 'MarkerSize',3)
 
 
         %% Psi2
@@ -284,12 +296,15 @@ for sessionInd = 1 : length(sessionNum)
             psi2 = atand(tand(psi2)/100); % psi2 adjusted because it was calculated with pole position divided by 100
 
             linex = zeros(3,2); 
-            linex(1,1) = 1; linex(2,1) = floor(size(x2d_flip,2)/2); linex(3,1) = size(x2d_flip,2);
+            x2d_flip_1strow = x2d_flip(1,:);
+            [~, linex(1,1)] = max(x2d_flip_1strow); x2d_flip_1strow(max(1,linex(1,1)-5):min(size(x2d_flip,2),linex(1,1)+5)) = 0; 
+            [~, linex(2,1)] = max(x2d_flip_1strow); x2d_flip_1strow(max(1,linex(2,1)-5):min(size(x2d_flip,2),linex(2,1)+5)) = 0; 
+            [~, linex(3,1)] = max(x2d_flip_1strow); 
             for i = 1 : 3
                 linex(i,2) = linex(i,1) + tand((max_ind-1)*0.01)*size(x2d_flip,1);
             end
             liney = [1 size(x2d_flip,1);1 size(x2d_flip,1);1 size(x2d_flip,1)];
-            figure, 
+            figure('units','normalized','outerposition',[0 0 1 1]), 
             subplot(121), imagesc(R), xlabel('Angle = 0:0.01:180'), ylabel('Projected values'), axis square
             subplot(122), imagesc(x2d_flip, [0 1000]), axis square, hold on, 
             for i = 1 : 3
@@ -314,8 +329,8 @@ for sessionInd = 1 : length(sessionNum)
         end
         %% Calculate touch hyperplanes
         disp('Sweeping the hyperplane')
-        xmin = -200; xmax = 200; zmin_data = min(intersect_3d(:,3)); zmax_data = max(intersect_3d(:,3)); zdiff = zmax_data - zmin_data; zmax = zmax_data + zdiff; zmin = zmin_data - zdiff;
-        ymin_data = min(intersect_3d(:,2)); ymax_data = max(intersect_3d(:,2));
+        xmin = -200; xmax = 200; zmin_data = min(intersect_3d_total(:,3)); zmax_data = max(intersect_3d_total(:,3)); zdiff = zmax_data - zmin_data; zmax = zmax_data + zdiff; zmin = zmin_data - zdiff;
+        ymin_data = min(intersect_3d_total(:,2)); ymax_data = max(intersect_3d_total(:,2));
         z = zmin:zmax;
         xyz = zeros((length(z))*(xmax-xmin+1),3);
         for i = xmin:xmax
@@ -333,35 +348,23 @@ for sessionInd = 1 : length(sessionNum)
         xyz_psi2(:,xyz_psi2(2,:) < ymin_data) = [];
         xyz_psi2(:,xyz_psi2(2,:) > ymax_data) = [];
 
-        figure, plot3(intersect_3d(:,1),intersect_3d(:,2), intersect_3d(:,3),'k.', 'MarkerSize',3), xlabel('top'), ylabel('front'), zlabel('pos'), hold on
+        figure, plot3(intersect_3d_total(:,1),intersect_3d_total(:,2), intersect_3d_total(:,3),'k.', 'MarkerSize',3), xlabel('top'), ylabel('front'), zlabel('pos'), hold on
         plot3(xyz_psi2(1,:), xyz_psi2(2,:), xyz_psi2(3,:), 'r.', 'MarkerSize',3)
 
         %% ~ 0.5 min (depending on the length of "steps" and the size of xyz_psi2)
-        %%%%%%%%%%%%%%%%%%%%%% manual selection
-        switch trial_type_num
-            case 1
-                steps = 10:70;
-            case 2
-                steps = 20:80;
-            case 3
-                steps = 140:200;
-            case 4
-                steps = 140:200;
-        end
-        %%%%%%%%%%%%%%%%%%%%%% try as short as possible to reduce time next step
-        %%
+
         hp_decision = 'No';
         while(strcmp(hp_decision,'No'))
-            intersect_pix = round(intersect_3d);
+            intersect_pix = round(intersect_3d_total);
 
-            num_points = zeros(length(steps),1);
-            parfor i = 1:length(steps) % this is time consuming...
+            num_points = zeros(length(steps{trial_type_num}),1);
+            parfor i = 1:length(steps{trial_type_num}) % this is time consuming...
                 hp = round(xyz_psi2);
-                hp(1,:) = hp(1,:)+steps(i);    
+                hp(1,:) = hp(1,:)+steps{trial_type_num}(i);    
                 num_points(i) = sum(ismember(intersect_pix, hp','rows'));
             end
 
-            h1 = figure; plot(steps,num_points(:), 'k-', 'LineWidth', 3), xlabel('translocation (pix)'), ylabel('# intersection')
+            h1 = figure; plot(steps{trial_type_num},num_points(:), 'k-', 'LineWidth', 3), xlabel('translocation (pix)'), ylabel('# intersection')
 
             options.WindowStyle = 'normal';
             questTitle='Touch hyperplane peaks'; start(timer('StartDelay',1,'TimerFcn',@(o,e)set(findall(0,'Tag',questTitle),'WindowStyle','normal')));         
@@ -373,11 +376,20 @@ for sessionInd = 1 : length(sessionNum)
                     hp_peaks{trial_type_num} = str2num(cell2mat(inputdlg({'Left peak','Right peak'},'What are the peak points?',1,{'',''},options)))';                                    
 
                     % Final confirmation
-                    h2 = figure('units','normalized','outerposition',[0 0 1 1]); 
-                    subplot(121), plot3(intersect_3d(:,1),intersect_3d(:,2), intersect_3d(:,3),'k.', 'MarkerSize',1), xlabel('top'), ylabel('front'), zlabel('pos'), hold on
-                    plot3(xyz_psi2(1,:) + hp_peaks{trial_type_num}(1)-2, xyz_psi2(2,:), xyz_psi2(3,:), 'r.', 'MarkerSize', 1) 
-                    subplot(122), plot3(intersect_3d(:,1),intersect_3d(:,2), intersect_3d(:,3),'k.', 'MarkerSize',1), xlabel('top'), ylabel('front'), zlabel('pos'), hold on
-                    plot3(xyz_psi2(1,:) + hp_peaks{trial_type_num}(2)+2, xyz_psi2(2,:), xyz_psi2(3,:), 'r.', 'MarkerSize', 1) 
+                    % project the peak hyperplanes and all coordinates onto psi1 psi2 view
+                    h2 = figure('units','normalized','outerposition',[0 0 1 1]);                     
+                    A = viewmtx(psi1,90-psi2);
+                    intersect_4d = [intersect_3d_total, ones(size(intersect_3d_total,1),1)]';
+                    intersect_2d = A*intersect_4d;
+                    intersect_2d = unique(round(intersect_2d(1:2,:)',2),'rows');
+                    th_4d1 = [xyz_psi2(1,:) + hp_peaks{trial_type_num}(1);xyz_psi2(2:3,:);ones(1,size(xyz_psi2,2))];
+                    th_2d1 = A*th_4d1;
+                    th_2d1 = unique(th_2d1(1:2,:)','rows');
+                    th_4d2 = [xyz_psi2(1,:) + hp_peaks{trial_type_num}(2);xyz_psi2(2:3,:);ones(1,size(xyz_psi2,2))];
+                    th_2d2 = A*th_4d2;
+                    th_2d2 = unique(th_2d2(1:2,:)','rows');
+                    scatter(intersect_2d(:,1),intersect_2d(:,2),'k.'), hold on, scatter(th_2d1(:,1), th_2d1(:,2),'r.'), scatter(th_2d2(:,1), th_2d2(:,2),'r.')
+                    
                     options.WindowStyle = 'normal';
                     questTitle='Final Confirmation'; start(timer('StartDelay',1,'TimerFcn',@(o,e)set(findall(0,'Tag',questTitle),'WindowStyle','normal')));         
                     answer2 = questdlg('Is the result REALLY correct?', questTitle, 'Yes', 'No', 'Yes');
@@ -391,7 +403,7 @@ for sessionInd = 1 : length(sessionNum)
                             switch answer3
                                 case 'Yes'                                    
                                     step_boundary_cell = inputdlg({'First step','Last step'},'What are the sweep boundaries?',1,{'',''},options);
-                                    steps = str2double(step_boundary_cell{1}):str2double(step_boundary_cell{2});
+                                    steps{trial_type_num} = str2double(step_boundary_cell{1}):str2double(step_boundary_cell{2});
                                     peak_answer = 'No'; % get out of peak while
                                     close all
                                 case 'No'
@@ -408,7 +420,7 @@ for sessionInd = 1 : length(sessionNum)
                     switch answer3
                         case 'Yes'                            
                             step_boundary_cell = inputdlg({'First step','Last step'},'What are the sweep boundaries?',1,{'',''},options);
-                            steps = str2double(step_boundary_cell{1}):str2double(step_boundary_cell{2});
+                            steps{trial_type_num} = str2double(step_boundary_cell{1}):str2double(step_boundary_cell{2});
                             peak_answer = 'No';
                             close all
                         case 'No'
@@ -418,11 +430,12 @@ for sessionInd = 1 : length(sessionNum)
             end
         end
 
+
         %% save parameters
         steps_hp{trial_type_num} = steps;
         num_points_in_hp{trial_type_num} = num_points;
         touch_hp{trial_type_num} = xyz_psi2; % Don't round them! (at least at this saving process)
-        sprintf('trial type #%d processed',trial_type_num)
+        fprintf('%s %s trial type #%d processed',mouseName, sessionName,trial_type_num)
     end
     %%
     save([whisker_d 'touch_hp.mat'],'touch_hp','num_points_in_hp','steps_hp','hp_peaks')

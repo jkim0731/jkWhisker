@@ -7,9 +7,10 @@ whisker_base_dir = 'Z:\Data\Video\JK\';
 
 mice = {'AH0648','AH0650','AH0651','AH0652','AH0653'};
 
-mouseName = 'AH0648';
-sessionName = 'S06';
-
+mouseName = 'AH0650';
+sessionName = 'S19';
+% trial_types = {'rc', 'rf', 'lc', 'lf'};
+trial_types = {'rn', 'ln'};
 behavior_d = [behavior_base_dir mouseName '\'];
 whisker_d = [whisker_base_dir mouseName sessionName '\'];
 
@@ -58,7 +59,7 @@ end
 % Currently, only dealing with 4 types of trials: 'rc', 'rf', 'lc', 'lf'
 % Should make something different for straight pole touch in S00. 
 % 2017/04/11 JK
-trial_types = {'rc', 'rf', 'lc', 'lf'};
+
 steps_hp = cell(1,length(trial_types));
 num_points_in_hp = cell(1,length(trial_types));
 tt_ind = cell(1,length(trial_types));
