@@ -15,7 +15,7 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrialI
         trackerData = {};
         whisker_pole_intersection = {}; 
         whisker_edge_coord = [];
-        imagePixelDimsXY = [400 250]; % [NumberOfXPixels NumberOfYPixels]
+        imagePixelDimsXY = []; % [NumberOfXPixels NumberOfYPixels]
         pole_edge = cell(1,2); % edge detection of the pole
         pole_axes = cell(1,2); % axes for edges
         vavg = []; % average pic

@@ -1,3 +1,5 @@
+% For 2pad (2-port angle distance), WT, WST, and WL is generated during prebuild_JK.m
+
 %% Setup whisker array builder 
 behavior_base_dir = 'Z:\Data\2p\soloData\';
 whisker_base_dir = 'Z:\Data\Video\JK\';
@@ -7,10 +9,10 @@ mice = {'AH0648','AH0650','AH0651','AH0652','AH0653'};
 %%%%%%%%%%%%%%%%%%%%%% manual selection
 steps = {[10:70],[20:80],[140:200],[140:200]};
 %%%%%%%%%%%%%%%%%%%%%% try as short as possible to reduce time next step
-mouseName = 'AH0648';
-sessionNum = [12:15];
+mouseName = 'AH0650';
+% sessionNum = [1:15];
 % sessionNum =[19:21];
-trial_types = {'rc', 'rf', 'lc', 'lf'};
+% trial_types = {'rc', 'rf', 'lc', 'lf'};
 % trial_types = {'rn', 'ln'};
 for sessionInd = 1 : length(sessionNum)
 % for sessionInd = 1:3    
@@ -345,7 +347,6 @@ for sessionInd = 1 : length(sessionNum)
         plot3(xyz_psi2(1,:), xyz_psi2(2,:), xyz_psi2(3,:), 'r.', 'MarkerSize',3)
 
         %% ~ 0.5 min (depending on the length of "steps" and the size of xyz_psi2)
-
         hp_decision = 'No';
         while(strcmp(hp_decision,'No'))
             intersect_pix = round(intersect_3d_total);
@@ -424,7 +425,6 @@ for sessionInd = 1 : length(sessionNum)
             end
         end
 
-
         %% save parameters
         steps_hp{trial_type_num} = steps;
         num_points_in_hp{trial_type_num} = num_points;
@@ -432,6 +432,6 @@ for sessionInd = 1 : length(sessionNum)
         fprintf('%s %s trial type #%d processed\n',mouseName, sessionName,trial_type_num)
     end
     %%
-    save([whisker_d 'touch_hp.mat'],'touch_hp','num_points_in_hp','steps_hp','hp_peaks')
+    save([whisker_d mouseName sessionName '_touch_hp.mat'],'touch_hp','num_points_in_hp','steps_hp','hp_peaks','trial_types')
     fprintf('%s %s hp_peaks saved\n', mouseName, sessionName)
 end

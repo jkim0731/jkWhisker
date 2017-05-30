@@ -1,8 +1,11 @@
-classdef WhiskerTrialLite < handle
+classdef WhiskerTrialLite_2pad < handle
     %
-    %
+    % Modified from
+    % 
     %   WhiskerTrialLite < handle
     %
+    % and also combining
+    %   WhiskerTrialLietI < WhiskerTrialLite
     %
     % Contains just final timeseries measurements from whiskers (kappa, theta, etc)
     % and meta-information in order to match with other data (ephys, imaging, etc).
@@ -15,7 +18,7 @@ classdef WhiskerTrialLite < handle
         trialType = NaN;
         whiskerNames = {};  % whiskerNames and trajectoryIDs must be of same length
         trajectoryIDs = []; % with matching elements.
-        framePeriodInSec = 0.002;
+        framePeriodInSec = 0.003225806451613; % 310 Hz
         pxPerMm = []; %  Inherited from WhiskerSignalTrial.
         mouseName = '';
         sessionName = '';
@@ -42,6 +45,9 @@ classdef WhiskerTrialLite < handle
         barPos = []; %  Inherited from WhiskerSignalTrial. [frameNum XPosition YPosition]
         barPosOffset = []; % Inherited from WhiskerSignalTrial. [x y], either 1X2 or nframesX2
         barRadius = []; % Inherited from WhiskerSignalTrial.  In pixels. Must be radius of bar tracked by the bar tracker.
+        
+        M0I = {};
+        contactInds = {};
 
         pole_pos = []; % from BehaviorArray
         trial_type = ''; % from BehaviorArray
@@ -50,6 +56,7 @@ classdef WhiskerTrialLite < handle
         
         videoFrames = []; % Inherited from WhiskerSignalTrial.
         pole_available_timepoints = []; % Inherited from WhiskerSignalTrial. first timepoint is 1, not 0. [frames from the beginning, frames from the end]. 2017/04/13 JK
+        th_hull = []; % convex hull of the touch hyperplane at this specific pole position
         th_touch_frames = []; % touch frames derived from the touch hyperplane.
         kappa_touch_threshold = []; % the threshold for determining touch based on kappa, on top of th_touch_frames
         touch_frames = []; % touch frames deteremined by both the touch hyperplane and kappa threshold.
@@ -58,11 +65,12 @@ classdef WhiskerTrialLite < handle
     properties (Dependent = true)
         theta % For compatability, make this 'alias' to refer to thetaAtBase
         kappa % For compatability, make this 'alias' to refer to deltaKappa
+        M0Combined
     end
     
         
     methods (Access = public)
-        function obj = WhiskerTrialLite(w,varargin)
+        function obj = WhiskerTrialLite_2pad(w,varargin)
             %
             %
             %
@@ -118,20 +126,22 @@ classdef WhiskerTrialLite < handle
             
             p = inputParser;
             p.addRequired('w', @(x) isa(x,'Whisker.WhiskerSignalTrial'));                      
-            p.addParamValue('r_in_mm', 1, @(x) isnumeric(x) && numel(x)==1);
-            p.addParamValue('calc_forces', false, @islogical);
+            p.addParameter('r_in_mm', 1, @(x) isnumeric(x) && numel(x)==1);
+            p.addParameter('calc_forces', false, @islogical);
        
-            p.addParamValue('whisker_radius_at_base', 33.5, @isnumeric);
-            p.addParamValue('whisker_length', 16, @isnumeric);
-            p.addParamValue('youngs_modulus', 5e9, @isnumeric);
-            p.addParamValue('baseline_time_or_kappa_value', [0 0.1], @isnumeric);
-            p.addParamValue('proximity_threshold', -1, @isnumeric);
+            p.addParameter('whisker_radius_at_base', 33.5, @isnumeric);
+            p.addParameter('whisker_length', 16, @isnumeric);
+            p.addParameter('youngs_modulus', 5e9, @isnumeric);
+            p.addParameter('baseline_time_or_kappa_value', [0 0.1], @isnumeric);
+            p.addParameter('proximity_threshold', -1, @isnumeric);
             
-            p.addParamValue('behavior',[], @(x) isa(x,'Solo.BehavTrial2padArray'));
+            p.addParameter('pole_pos',[], @isnumeric);
+            p.addParameter('trial_type',{}, @ischar);
+            p.addParameter('th_hull',[], @isnumeric);
+            p.addParameter('kappa_touch_threshold',[],@(x) isnumeric(x) && numel(x)==2); % 2 values for top-view and front-view kappa            
             
             p.parse(w,varargin{:});
-           
-              
+            
             obj.trialNum = w.trialNum;
             obj.trialType = w.trialType;
             obj.whiskerNames = w.whiskerNames;
@@ -162,14 +172,19 @@ classdef WhiskerTrialLite < handle
             obj.barPos = w.barPos; %  Inherited from WhiskerSignalTrial. [frameNum XPosition YPosition]
             obj.barPosOffset = w.barPosOffset; % Inherited from WhiskerSignalTrial. [x y], either 1X2 or nframesX2
             obj.barRadius = w.barRadius; % Inherited from WhiskerSignalTrial.  In pixels. Must be radius of bar tracked by the bar tracker.
-    
-            if ~isempty(p.Results.behavior)
-                b_ind = find(cellfun(@(x) x.trialNum,p.Results.behavior.trials)==obj.trialNum);
-                if ~isempty(b_ind)
-                    obj.pole_pos = p.Results.behavior.trials{b_ind}.motorApPosition;
-                    obj.trial_type = p.Results.behavior.trials{b_ind}.trialType;
-                end
-            end
+            
+            obj.M0I = w.M0I;
+
+            obj.pole_pos = p.Results.pole_pos;
+            obj.trial_type = p.Results.trial_type;
+%             if ~isempty(p.Results.behavior)
+%                 b_ind = find(cellfun(@(x) x.trialNum,p.Results.behavior.trials)==obj.trialNum);
+%                 if ~isempty(b_ind)
+%                     obj.pole_pos = p.Results.behavior.trials{b_ind}.motorApPosition;
+%                     obj.trial_type = p.Results.behavior.trials{b_ind}.trialType;
+%                 end
+%             end
+            obj.th_hull = p.Results.th_hull;
                     
             obj.pole_axes = w.pole_axes;
             obj.intersect_coord = w.whisker_edge_coord;
@@ -202,8 +217,7 @@ classdef WhiskerTrialLite < handle
                    [obj.M0{k},obj.Faxial{k},t,obj.deltaKappa{k},obj.Fnorm{k},...
                        obj.thetaAtBase{k},obj.thetaAtContact{k},obj.distanceToPoleCenter{k}, obj.meanKappa{k}, obj.Flateral{k}] = ...
                        w.calc_M0_Faxial(tid,p.Results.r_in_mm,p.Results.whisker_radius_at_base, p.Results.whisker_length,...
-                       p.Results.youngs_modulus,p.Results.baseline_time_or_kappa_value,p.Results.proximity_threshold); 
-                   
+                       p.Results.youngs_modulus,p.Results.baseline_time_or_kappa_value,p.Results.proximity_threshold);                    
                 else
                     % Should consolidate into single function to optimize the following: 
 %                     [~,obj.deltaKappa{k},~,~,~] = w.get_theta_kappa_at_roi_point(tid,p.Results.r_in_mm);       
@@ -211,8 +225,13 @@ classdef WhiskerTrialLite < handle
 %                     [obj.thetaAtBase{k},kappa0,t] = w.get_theta_kappa_at_base(tid);
                     [obj.thetaAtBase{k},~] = w.get_theta_at_base(tid);                    
                 end
-                
             end
+            
+            obj.th_touch_frames = find(inhull([obj.intersect_coord,ones(length(obj.intersect_coord),1)*obj.pole_pos],obj.th_hull));
+            if ~isempty(obj.pole_available_timepoints)
+                obj.th_touch_frames = intersect(obj.pole_available_timepoints,obj.th_touch_frames);
+            end            
+            
         end
         
         function tid = name2tid(obj, whisker_name)
@@ -838,6 +857,14 @@ classdef WhiskerTrialLite < handle
         
         function value = get.kappa(obj)
             value = obj.deltaKappa;
+        end
+        
+        function value = get.M0Combined(obj)
+            if isempty(obj.barPos)
+                value = [];
+            else
+               value = [1];
+            end
         end
         
     end
