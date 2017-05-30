@@ -9,10 +9,10 @@ whisker_base_dir = 'Z:\Data\Video\JK\';
 
 mice = {'AH0648','AH0650','AH0651','AH0652','AH0653'};
 
-mouseName = 'AH0650';
-sessionName = 'S19';
-% trial_types = {'rc', 'rf', 'lc', 'lf'};
-trial_types = {'rn', 'ln'};
+mouseName = 'AH0648';
+sessionName = 'S01';
+trial_types = {'rc', 'rf', 'lc', 'lf'};
+% trial_types = {'rn', 'ln'};
 behavior_d = [behavior_base_dir mouseName '\'];
 whisker_d = [whisker_base_dir mouseName sessionName '\'];
 
@@ -27,8 +27,8 @@ b_session = b{b_ind};
 
 load_fn = [mouseName sessionName '_post.mat'];
 load([whisker_d load_fn]); % loading errorlist
-cd('C:\Users\shires\Documents\MATLAB')
-
+% cd('C:\Users\shires\Documents\MATLAB')
+%%
 if ~isempty(b_ind) % try only the ones with behavior session
     % %%
     filelist=dir([whisker_d '*.measurements']);
@@ -537,5 +537,7 @@ Whisker.makeAllDirectory_WhiskerTrialLiteI(whisker_d,'include_files',includef,'r
 wl = Whisker.WhiskerTrialLiteArray(whisker_d);
 save([d mouseName sessionName '-WTLIA.mat'],'wl');
 
-tid = 0; % Set trajectory ID to view
-Whisker.view_WhiskerTrialLiteArray(wl,tid)
+%%
+tid = [0 1]; % Set trajectory ID to view
+wl = Whisker.WhiskerTrialLiteArray_2pad(whisker_d);
+Whisker.viewdouble_WhiskerTrialLiteArray(wl,tid)

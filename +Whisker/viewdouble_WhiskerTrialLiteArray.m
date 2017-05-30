@@ -76,19 +76,25 @@ end
 set(h,'UserData',g)
 
 f = g.w.trials{g.ind}.get_time(g.tid) / g.w.trials{g.ind}.framePeriodInSec;
+touch_ind = g.w.trials{g.ind}.th_touch_frames;
 
 tit = g.w.trials{g.ind}.trackerFileName;
 tit = [int2str(g.ind) '/' int2str(g.maxInd) ': ' tit];
 
 
+
 subplot(211)
 y = g.w.trials{g.ind}.get_thetaAtBase(g.tid(1));
 y2 = g.w.trials{g.ind}.get_thetaAtBase(g.tid(2));
-plot(f,y,'r.-', f,y2,'k.-'), ylabel('deg'); title([tit ' Theta at base, top view (red) and front view (black)'])
+plot(f,y,'r.-', f,y2,'k.-'), ylabel('deg'), hold on, 
+plot(f(touch_ind),y(touch_ind),'b.-', f(touch_ind),y2(touch_ind),'g.-')
+title([tit ' Theta at base, top view (red) and front view (black)'])
 subplot(212)
 y = g.w.trials{g.ind}.get_deltaKappa(g.tid(1));
 y2 = g.w.trials{g.ind}.get_deltaKappa(g.tid(2));
-plot(f,y,'r.-', f,y2,'k.-'), ylabel('1/mm'); title('Change in kappa, top view (red) and front view (black)')
+plot(f,y,'r.-', f,y2,'k.-'), ylabel('1/mm'), hold on,
+plot(f(touch_ind),y(touch_ind),'b.-', f(touch_ind),y2(touch_ind),'g.-')
+title('Change in kappa, top view (red) and front view (black)')
 xlabel('Time (frames)')
  
 
