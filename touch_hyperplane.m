@@ -435,3 +435,125 @@ for sessionInd = 1 : length(sessionNum)
     save([whisker_d mouseName sessionName '_touch_hp.mat'],'touch_hp','num_points_in_hp','steps_hp','hp_peaks','trial_types')
     fprintf('%s %s hp_peaks saved\n', mouseName, sessionName)
 end
+
+%% old
+% for i = 1
+%     wl = wl_array{i};
+%     trial_type = wl.trials{1}.trial_type;
+%     eval(['temp_touch_list = touch_list.AH0648S02.',trial_type,';'])
+%     total_touch_num = 0;
+%     touch_right_num = 0;
+%     total_non_touch_num = 0;
+%     non_touch_wrong_num = 0;
+%     touch_polygon = [hp_corners{i}+ [hp_peaks{i}(1);0;0], hp_corners{i}+ [hp_peaks{i}(2);0;0]];
+%     for j = 1 : 10
+%         touch_frames = [temp_touch_list.touch_protraction{j} + 1; temp_touch_list.touch_retraction{j} + 1];
+%         non_touch_frames = temp_touch_list.non_touch{j} + 1;        
+%         
+%         temp_intersect_coord = [wl.trials{temp_touch_list.trial_num(j)}.intersect_coord,ones(size(wl.trials{temp_touch_list.trial_num(j)}.intersect_coord,1),1)*wl.trials{temp_touch_list.trial_num(j)}.pole_pos];
+%         touch_intersect_coord = temp_intersect_coord(touch_frames,:);
+%         non_touch_intersect_coord = temp_intersect_coord(non_touch_frames,:);
+%         
+%         total_touch_num = total_touch_num + length(touch_frames);
+%         touch_right_num = touch_right_num + sum(inhull(touch_intersect_coord,touch_polygon'));
+%         
+%         total_non_touch_num = total_non_touch_num + length(non_touch_frames);
+%         non_touch_wrong_num = non_touch_wrong_num + sum(inhull(non_touch_intersect_coord,touch_polygon'));
+%     end
+% end
+
+%%
+% pro_touch_right = zeros(9,4); % peak / peak & -1 / peak & -1 & -2 / peak & +1 / peak & +1 & +2 / peak & -1 & +1 / peak & -1 & -2 & +1 / peak & -1 & +1 & +2 / peak & -1 & -2 & +1 & +2
+% pro_touch_wrong = zeros(9,4);
+% ret_touch_right = zeros(9,4); % peak / peak & +1 / peak & +1 & +2 / peak & -1 / peak & -1 & -2 / peak & +1 & -1 / peak & +1 & +2 & -1 / peak & +1 & -1 & -2 / peak & +1 & +2 & -1 & -2
+% ret_touch_wrong = zeros(9,4);
+% non_touch_right = zeros(9,4);
+% non_touch_wrong = zeros(9,4);
+% for i = 1 : 4
+%     wl = wl_array{i};
+%     trial_type = wl.trials{1}.trial_type;
+%     eval(['temp_touch_list = touch_list.AH0648S02.',trial_type,';'])
+%     temp_th = touch_hp{i}; % temp_touch_hyperplane
+%     temp_trial_ind = temp_touch_list.trial_num;
+%     % checking tracker file names
+%     for j = 1 : 10
+%         if wl.trialNums(temp_trial_ind(j)) ~= str2double(temp_touch_list.tracker_filename(j));
+%             error('Tracker file name mismatch in trial index #%d of trial type #%d', j, i);
+%         end
+%     end
+%     for j = 1 : 10
+%         temp_pro_frames = temp_touch_list.touch_protraction{j} +1; % make frames start from 1, not 0
+%         temp_ret_frames = temp_touch_list.touch_retraction{j} +1; % make frames start from 1, not 0
+%         temp_non_frames = temp_touch_list.non_touch{j} +1; % make frames start from 1, not 0
+%         temp_trial = wl.trials(temp_trial_ind(j));
+%         v = VideoReader([temp_trial.trackerFileName,'.mp4']);
+%         if v.NumberOfFrames ~= length(temp_trial.intersect_coord)
+%             error(['# of video frames does not match that of whisker-tracker in trial #',temp_trial.trackerFileName])
+%         end
+%         for k = 1 : 9
+%             temp_th_pp_ind = find(temp_th(3,:) == temp_trial.pole_pos); % temp_touch_hyperplane_pole_position_index
+%             temp_th_pp = temp_th(1:2,temp_th_pp_ind); % temp_touch_hyperplane_pole_position
+%             temp_th_pro_peak = temp_th_pp + [ones(1,length(temp_th_pp)) * hp_peaks{i}(2); zeros(1,length(temp_th_pp))];
+%             temp_th_ret_peak = temp_th_pp + [ones(1,length(temp_th_pp)) * hp_peaks{i}(1); zeros(1,length(temp_th_pp))];      
+%             temp_intersection = round(temp_trial.intersect_coord);
+%             switch k
+%                 case 1
+%                     temp_th_pro = temp_th_pro_peak';
+%                     temp_th_ret = temp_th_ret_peak';                    
+%                 case 2
+%                     temp_th_pro = [temp_th_pro_peak(1,:), temp_th_pro_peak(1,:) - 1; ...
+%                         temp_th_pro_peak(2,:), temp_th_pro_peak(2,:)]';
+%                     temp_th_ret = [temp_th_ret_peak(1,:), temp_th_ret_peak(1,:) + 1; ...
+%                         temp_th_ret_peak(2,:), temp_th_ret_peak(2,:)]';
+%                 case 3
+%                     temp_th_pro = [temp_th_pro_peak(1,:), temp_th_pro_peak(1,:) - 1, temp_th_pro_peak(1,:) - 2; ...
+%                         temp_th_pro_peak(2,:), temp_th_pro_peak(2,:), temp_th_pro_peak(2,:)]';
+%                     temp_th_ret = [temp_th_ret_peak(1,:), temp_th_ret_peak(1,:) + 1, temp_th_ret_peak(1,:) + 2; ...
+%                         temp_th_ret_peak(2,:), temp_th_ret_peak(2,:), temp_th_ret_peak(2,:)]';
+%                 case 4
+%                     temp_th_pro = [temp_th_pro_peak(1,:), temp_th_pro_peak(1,:) + 1; ...
+%                         temp_th_pro_peak(2,:), temp_th_pro_peak(2,:)]';
+%                     temp_th_ret = [temp_th_ret_peak(1,:), temp_th_ret_peak(1,:) - 1; ...
+%                         temp_th_ret_peak(2,:), temp_th_ret_peak(2,:)]';
+%                 case 5
+%                     temp_th_pro = [temp_th_pro_peak(1,:), temp_th_pro_peak(1,:) + 1, temp_th_pro_peak(1,:) + 2; ...
+%                         temp_th_pro_peak(2,:), temp_th_pro_peak(2,:), temp_th_pro_peak(2,:)]';
+%                     temp_th_ret = [temp_th_ret_peak(1,:), temp_th_ret_peak(1,:) - 1, temp_th_ret_peak(1,:) - 2; ...
+%                         temp_th_ret_peak(2,:), temp_th_ret_peak(2,:), temp_th_ret_peak(2,:)]';
+%                 case 6
+%                     temp_th_pro = [temp_th_pro_peak(1,:), temp_th_pro_peak(1,:) - 1, temp_th_pro_peak(1,:) + 1; ...
+%                         temp_th_pro_peak(2,:), temp_th_pro_peak(2,:), temp_th_pro_peak(2,:)]';
+%                     temp_th_ret = [temp_th_ret_peak(1,:), temp_th_ret_peak(1,:) + 1, temp_th_ret_peak(1,:) - 1; ...
+%                         temp_th_ret_peak(2,:), temp_th_ret_peak(2,:), temp_th_ret_peak(2,:)]';
+%                 case 7
+%                      temp_th_pro = [temp_th_pro_peak(1,:), temp_th_pro_peak(1,:) - 1, temp_th_pro_peak(1,:) - 2, temp_th_pro_peak(1,:) + 1; ...
+%                         temp_th_pro_peak(2,:), temp_th_pro_peak(2,:), temp_th_pro_peak(2,:), temp_th_pro_peak(2,:)]';
+%                     temp_th_ret = [temp_th_ret_peak(1,:), temp_th_ret_peak(1,:) + 1, temp_th_ret_peak(1,:) + 2, temp_th_ret_peak(1,:) - 1; ...
+%                         temp_th_ret_peak(2,:), temp_th_ret_peak(2,:), temp_th_ret_peak(2,:), temp_th_ret_peak(2,:)]';        
+%                 case 8
+%                     temp_th_pro = [temp_th_pro_peak(1,:), temp_th_pro_peak(1,:) - 1, temp_th_pro_peak(1,:) + 1, temp_th_pro_peak(1,:) + 2; ...
+%                         temp_th_pro_peak(2,:), temp_th_pro_peak(2,:), temp_th_pro_peak(2,:), temp_th_pro_peak(2,:)]';
+%                     temp_th_ret = [temp_th_ret_peak(1,:), temp_th_ret_peak(1,:) + 1, temp_th_ret_peak(1,:) - 1, temp_th_ret_peak(1,:) - 2; ...
+%                         temp_th_ret_peak(2,:), temp_th_ret_peak(2,:), temp_th_ret_peak(2,:), temp_th_ret_peak(2,:)]';        
+%                 case 9
+%                     temp_th_pro = [temp_th_pro_peak(1,:), temp_th_pro_peak(1,:) - 1, temp_th_pro_peak(1,:) - 2, temp_th_pro_peak(1,:) + 1, temp_th_pro_peak(1,:) + 2; ...
+%                         temp_th_pro_peak(2,:), temp_th_pro_peak(2,:), temp_th_pro_peak(2,:), temp_th_pro_peak(2,:), temp_th_pro_peak(2,:)]';
+%                     temp_th_ret = [temp_th_ret_peak(1,:), temp_th_ret_peak(1,:) + 1, temp_th_ret_peak(1,:) + 2, temp_th_ret_peak(1,:) - 1, temp_th_ret_peak(1,:) - 2; ...
+%                         temp_th_ret_peak(2,:), temp_th_ret_peak(2,:), temp_th_ret_peak(2,:), temp_th_ret_peak(2,:), temp_th_ret_peak(2,:)]';        
+%             end
+%             temp_th_pro = unique(temp_th_pro,'rows');
+%             temp_th_ret = unique(temp_th_ret,'rows');
+%             
+%             temp_th_pro_frames = find(ismember(temp_intersection,temp_th_pro,'rows') == 1);
+%             temp_th_ret_frames = find(ismember(temp_intersection,temp_th_ret,'rows') == 1);            
+%                        
+%             pro_touch_right(k,i) = pro_touch_right(k,i) + sum(ismember(temp_pro_frames,temp_th_pro_frames));
+%             pro_touch_wrong(k,i) = pro_touch_wrong(k,i) + length(temp_pro_frames) - sum(ismember(temp_pro_frames,temp_th_pro_frames));
+%             ret_touch_right(k,i) = ret_touch_right(k,i) + sum(ismember(temp_ret_frames,temp_th_ret_frames));
+%             ret_touch_wrong(k,i) = ret_touch_wrong(k,i) + length(temp_ret_frames) - sum(ismember(temp_ret_frames,temp_th_ret_frames));
+%             non_touch_right(k,i) = non_touch_right(k,i) + length(temp_non_frames) - sum(ismember(temp_non_frames,temp_th_pro_frames)) - sum(ismember(temp_non_frames,temp_th_ret_frames));
+%             non_touch_wrong(k,i) = non_touch_wrong(k,i) + sum(ismember(temp_non_frames,temp_th_pro_frames)) + sum(ismember(temp_non_frames,temp_th_ret_frames));
+%         end
+%     end
+% end
+

@@ -56,7 +56,7 @@ classdef WhiskerTrialLite_2pad < handle
         
         videoFrames = []; % Inherited from WhiskerSignalTrial.
         pole_available_timepoints = []; % Inherited from WhiskerSignalTrial. first timepoint is 1, not 0. [frames from the beginning, frames from the end]. 2017/04/13 JK
-        th_hull = []; % convex hull of the touch hyperplane at this specific pole position
+        th_polygon = []; % convex hull of the touch hyperplane at this specific pole position
         th_touch_frames = []; % touch frames derived from the touch hyperplane.
         kappa_touch_threshold = []; % the threshold for determining touch based on kappa, on top of th_touch_frames
         touch_frames = []; % touch frames deteremined by both the touch hyperplane and kappa threshold.
@@ -137,7 +137,7 @@ classdef WhiskerTrialLite_2pad < handle
             
             p.addParameter('pole_pos',[], @isnumeric);
             p.addParameter('trial_type',{}, @ischar);
-            p.addParameter('th_hull',[], @isnumeric);
+            p.addParameter('th_polygon',[], @isnumeric);
             p.addParameter('kappa_touch_threshold',[],@(x) isnumeric(x) && numel(x)==2); % 2 values for top-view and front-view kappa            
             
             p.parse(w,varargin{:});
@@ -177,14 +177,7 @@ classdef WhiskerTrialLite_2pad < handle
 
             obj.pole_pos = p.Results.pole_pos;
             obj.trial_type = p.Results.trial_type;
-%             if ~isempty(p.Results.behavior)
-%                 b_ind = find(cellfun(@(x) x.trialNum,p.Results.behavior.trials)==obj.trialNum);
-%                 if ~isempty(b_ind)
-%                     obj.pole_pos = p.Results.behavior.trials{b_ind}.motorApPosition;
-%                     obj.trial_type = p.Results.behavior.trials{b_ind}.trialType;
-%                 end
-%             end
-            obj.th_hull = p.Results.th_hull;
+            obj.th_polygon = p.Results.th_polygon;
                     
             obj.pole_axes = w.pole_axes;
             obj.intersect_coord = w.whisker_edge_coord;
@@ -227,7 +220,8 @@ classdef WhiskerTrialLite_2pad < handle
                 end
             end
             
-            obj.th_touch_frames = find(inhull([obj.intersect_coord,ones(length(obj.intersect_coord),1)*obj.pole_pos],obj.th_hull));
+            obj.th_touch_frames = find(inpolygon(obj.intersect_coord(:,1),obj.intersect_coord(:,2), ...
+                obj.th_polygon(:,1), obj.th_polygon(:,2)));
             if ~isempty(obj.pole_available_timepoints)
                 obj.th_touch_frames = intersect(obj.pole_available_timepoints,obj.th_touch_frames);
             end            

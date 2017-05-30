@@ -47,9 +47,9 @@ if isa(w,'Whisker.WhiskerTrialLiteArray_2pad') % Initialize
     set(bbutton,'ClickedCallback',['Whisker.' mname '(''last'')'])
     g.ind = 1; % Add a field to keep track of the current index.
     g.maxInd = length(w);
-    figure('Color','white','Position',[1168 732 393 330]);
-    g.h2 = axes;
-    figure(h)
+%     figure('Color','white','Position',[1168 732 393 330]);
+%     g.h2 = axes;
+%     figure(h)
     
     %     cellfun(@(x) x.trackerFileName, wl.trials,'UniformOutput',false)
 elseif strcmp(w,'next')
@@ -96,15 +96,14 @@ plot(f,y,'r.-', f,y2,'k.-'), ylabel('1/mm'), hold on,
 plot(f(touch_ind),y(touch_ind),'b.', f(touch_ind),y2(touch_ind),'g.')
 title('Change in kappa, top view (red) and front view (black)'), hold off
 xlabel('Time (frames)')
- 
 
-x = g.w.trials{g.ind}.get_follicleCoordsX(g.tid(1));
-y = g.w.trials{g.ind}.get_follicleCoordsY(g.tid(1));
-x2 = g.w.trials{g.ind}.get_follicleCoordsX(g.tid(2));
-y2 = g.w.trials{g.ind}.get_follicleCoordsY(g.tid(2));
-if ~isempty(x) && ~isempty(y), plot(g.h2,x,y,'r.', x2,y2,'k.'), end; hold on; 
-set(g.h2,'XLim',[0 500],'YLim',[0 300],'YDir','reverse','PlotBoxAspectRatio',[500 300 1]);
-title(g.h2,'Follicle position')
+% x = g.w.trials{g.ind}.get_follicleCoordsX(g.tid(1));
+% y = g.w.trials{g.ind}.get_follicleCoordsY(g.tid(1));
+% x2 = g.w.trials{g.ind}.get_follicleCoordsX(g.tid(2));
+% y2 = g.w.trials{g.ind}.get_follicleCoordsY(g.tid(2));
+% if ~isempty(x) && ~isempty(y), plot(g.h2,x,y,'r.', x2,y2,'k.'), end; hold on; 
+% set(g.h2,'XLim',[0 500],'YLim',[0 300],'YDir','reverse','PlotBoxAspectRatio',[500 300 1]);
+% title(g.h2,'Follicle position')
 
 
 end

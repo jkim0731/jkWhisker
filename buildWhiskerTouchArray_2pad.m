@@ -1,6 +1,6 @@
 % For 2pad (2-port angle distance), WT, WST, and WL is generated during prebuild_JK.m
 % build WL again using information from touch_hyperplane.
-
+tic
 touch_boundary_thickness = 2; % include # of pixels outer space from the hp_peak boundary. Default = 2.
 
 behavior_base_dir = 'Z:\Data\2p\soloData\';
@@ -66,3 +66,4 @@ for mi = 1 : size(mice,2)
         end
     end
 end
+toc

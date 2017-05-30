@@ -170,7 +170,7 @@ classdef WhiskerTrialLiteArray_2pad < handle
                 obj.trials = cell(1, ntrials);
                 for k=1:ntrials
                     disp(['Processing trial ' int2str(k) ' of ' int2str(ntrials)])
-                    obj.trials{k} = Whisker.WhiskerTrialLite(w.trials{k},varargin{:});
+                    obj.trials{k} = Whisker.WhiskerTrialLite_2pad(w.trials{k},varargin{:});
 %                     obj.trials{k} = Whisker.WhiskerTrialLite(w.trials{k},'r_in_mm',...
 %                         p.Results.r_in_mm,'calc_forces',p.Results.calc_forces,...
 %                         'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
@@ -190,7 +190,6 @@ classdef WhiskerTrialLiteArray_2pad < handle
                 cd(d)
                 
                 fnall = arrayfun(@(x) x.name(1:(end-7)), dir([d '*_WL.mat']),'UniformOutput',false);
-                
                 if ~isempty(p.Results.include_files) % Make sure files are found. If not, ignored.
                     ind = ismember(p.Results.include_files,fnall);
                     fnall = p.Results.include_files(ind);
@@ -208,22 +207,25 @@ classdef WhiskerTrialLiteArray_2pad < handle
                 inBoth = intersect(p.Results.include_files,p.Results.ignore_files);
                 if ~isempty(inBoth)
                     disp('The following files were given in BOTH ''include_files'' and ''ignore files'' and will be ignored:')
-                    disp(inBoth)
+                    disp(inBoth)                    
                 end
                 
+                fnerror = arrayfun(@(x) x.name(1:(end-12)), dir([d '*_errorWL.mat']),'UniformOutput',false);                
+                if ~isempty(intersect(fnall,fnerror))
+                    disp('The following files have error in WL, and will be ignored if included in the list')
+                    disp(intersect(fnall,fnerror))
+                    ind = ~ismember(fnall, fnerror);
+                    fnall = fnall(ind);
+                end
+                    
                 nfiles = length(fnall);
-                
                 obj.trials = cell(1, nfiles);
+                
+                
                 if ~isempty(fnall)
                     for k=1:nfiles
                         fn = fnall{k};
-                        if exist([fn '_errorWL.mat'],'file')
-                            disp([fn ' has an error - ignoring'])
-                            continue
-                        end
-                        
                         disp(['Loading ''_WL.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
-                        
                         load([fn '_WL.mat'],'wl');
                         if ~isa(wl,'Whisker.WhiskerTrialLite_2pad')
                             error(['File ' fn '_WL.mat did not contain a WhiskerTrialLite_2pad object.'])
@@ -231,8 +233,8 @@ classdef WhiskerTrialLiteArray_2pad < handle
                         obj.trials{k} = wl;
                     end
                     
-                    obj.mouseName = obj.trials{1}.mouseName; % Assume all files are from same mouse.
-                    obj.sessionName = obj.trials{1}.sessionName; % Assume all files are from same session.
+                    obj.mouseName = obj.trials{1}.mouseName; % Assume all files are from one mouse.
+                    obj.sessionName = obj.trials{1}.sessionName; % Assume all files are from one session.
                 end
                 
                 cd(currentDir)
