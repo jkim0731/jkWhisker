@@ -541,3 +541,10 @@ save([d mouseName sessionName '-WTLIA.mat'],'wl');
 tid = [0 1]; % Set trajectory ID to view
 wl = Whisker.WhiskerTrialLiteArray_2pad(whisker_d);
 Whisker.viewdouble_WhiskerTrialLiteArray(wl,tid)
+%%
+ttf_ind = [];
+for i = 1 : length(wl.trials)
+    if ~isempty(wl.trials{i}.th_touch_frames)
+        ttf_ind = [ttf_ind; i];
+    end
+end

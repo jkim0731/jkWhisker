@@ -11,7 +11,7 @@ function viewdouble_WhiskerTrialLiteArray(w,varargin)
 %
 g.plotOnlyFirstContacts = false; 
 
-if isa(w,'Whisker.WhiskerTrialLiteArray') % Initialize
+if isa(w,'Whisker.WhiskerTrialLiteArray_2pad') % Initialize
     
     if nargin==1  % tid, contact_tid not given.
         tid = 0;
@@ -87,14 +87,14 @@ subplot(211)
 y = g.w.trials{g.ind}.get_thetaAtBase(g.tid(1));
 y2 = g.w.trials{g.ind}.get_thetaAtBase(g.tid(2));
 plot(f,y,'r.-', f,y2,'k.-'), ylabel('deg'), hold on, 
-plot(f(touch_ind),y(touch_ind),'b.-', f(touch_ind),y2(touch_ind),'g.-')
-title([tit ' Theta at base, top view (red) and front view (black)'])
+plot(f(touch_ind),y(touch_ind),'b.', f(touch_ind),y2(touch_ind),'g.')
+title([tit ' Theta at base, top view (red) and front view (black)']), hold off
 subplot(212)
 y = g.w.trials{g.ind}.get_deltaKappa(g.tid(1));
 y2 = g.w.trials{g.ind}.get_deltaKappa(g.tid(2));
 plot(f,y,'r.-', f,y2,'k.-'), ylabel('1/mm'), hold on,
-plot(f(touch_ind),y(touch_ind),'b.-', f(touch_ind),y2(touch_ind),'g.-')
-title('Change in kappa, top view (red) and front view (black)')
+plot(f(touch_ind),y(touch_ind),'b.', f(touch_ind),y2(touch_ind),'g.')
+title('Change in kappa, top view (red) and front view (black)'), hold off
 xlabel('Time (frames)')
  
 
