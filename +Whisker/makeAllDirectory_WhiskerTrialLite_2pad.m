@@ -155,18 +155,18 @@ if ~isempty(fnall)
                         'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
                         'proximity_threshold',p.Results.proximity_threshold,'pole_pos',pole_pos,'trial_type',trial_type,'th_polygon',touch_polygon');
                 end
-                outfn = [fn '_WL.mat'];
+                outfn = [fn '_WL_2pad.mat'];
 
                 pctsave(outfn,wl);
             catch
                 disp(['Error on whisker tracker file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
-                outfn = [fn '_errorWL.mat'];
+                outfn = [fn '_errorWL_2pad.mat'];
                 pctsave(outfn,k)
             end
         end
     else
         for k=1:nfiles
-%             try
+            try
                 fn = fnall{k};
                 disp(['Processing ''_WST.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
 
@@ -194,14 +194,14 @@ if ~isempty(fnall)
                         'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
                         'proximity_threshold',p.Results.proximity_threshold,'pole_pos',pole_pos,'trial_type',trial_type,'th_polygon',touch_polygon');
                 end
-                outfn = [fn '_WL.mat'];
+                outfn = [fn '_WL_2pad.mat'];
 
                 save(outfn,'wl');
-%             catch
-%                 disp(['Error on whisker tracker file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
-%                 outfn = [fn '_errorWL.mat'];
-%                 save(outfn,'k')
-%             end            
+            catch
+                disp(['Error on whisker tracker file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
+                outfn = [fn '_errorWL_2pad.mat'];
+                save(outfn,'k')
+            end            
         end
     end
 end
