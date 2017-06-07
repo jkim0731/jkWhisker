@@ -189,7 +189,7 @@ classdef WhiskerTrialLiteArray_2pad < handle
                 currentDir = pwd;
                 cd(d)
                 
-                fnall = arrayfun(@(x) x.name(1:(end-7)), dir([d '*_WL.mat']),'UniformOutput',false);
+                fnall = arrayfun(@(x) x.name(1:(end-7)), dir([d '*_WL_2pad.mat']),'UniformOutput',false);
                 if ~isempty(p.Results.include_files) % Make sure files are found. If not, ignored.
                     ind = ismember(p.Results.include_files,fnall);
                     fnall = p.Results.include_files(ind);
@@ -210,7 +210,7 @@ classdef WhiskerTrialLiteArray_2pad < handle
                     disp(inBoth)                    
                 end
                 
-                fnerror = arrayfun(@(x) x.name(1:(end-12)), dir([d '*_errorWL.mat']),'UniformOutput',false);                
+                fnerror = arrayfun(@(x) x.name(1:(end-12)), dir([d '*_errorWL_2pad.mat']),'UniformOutput',false);                
                 if ~isempty(intersect(fnall,fnerror))
                     disp('The following files have error in WL, and will be ignored if included in the list')
                     disp(intersect(fnall,fnerror))
@@ -225,8 +225,8 @@ classdef WhiskerTrialLiteArray_2pad < handle
                 if ~isempty(fnall)
                     for k=1:nfiles
                         fn = fnall{k};
-                        disp(['Loading ''_WL.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
-                        load([fn '_WL.mat'],'wl');
+                        disp(['Loading ''_WL_2pad.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
+                        load([fn '_WL_2pad.mat'],'wl');
                         if ~isa(wl,'Whisker.WhiskerTrialLite_2pad')
                             error(['File ' fn '_WL.mat did not contain a WhiskerTrialLite_2pad object.'])
                         end

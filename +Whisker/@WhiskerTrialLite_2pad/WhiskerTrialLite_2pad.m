@@ -219,13 +219,18 @@ classdef WhiskerTrialLite_2pad < handle
                     [obj.thetaAtBase{k},~] = w.get_theta_at_base(tid);                    
                 end
             end
-            
+            %% Temporary remedy 2017/05/30
+            thp1 = obj.th_polygon(1:end/2,:);
+            thp1 = [2*thp1(1,:) - thp1(end,:); thp1; 2*thp1(end,:) - thp1(1,:)];
+            thp2 = obj.th_polygon(end/2+1:end,:);
+            thp2 = [2*thp2(1,:) - thp2(end,:); thp2; 2*thp2(end,:) - thp2(1,:)];
+            obj.th_polygon = [thp1; thp2];            
+            %%
             obj.th_touch_frames = find(inpolygon(obj.intersect_coord(:,1),obj.intersect_coord(:,2), ...
                 obj.th_polygon(:,1), obj.th_polygon(:,2)));
             if ~isempty(obj.pole_available_timepoints)
                 obj.th_touch_frames = intersect(obj.pole_available_timepoints,obj.th_touch_frames);
-            end            
-            
+            end                    
         end
         
         function tid = name2tid(obj, whisker_name)
