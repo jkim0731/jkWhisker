@@ -36,11 +36,11 @@ classdef WhiskerTrial < handle
         
         faceData = {}; % {[frameNumbers],{[x1, y1],[x2,y2], etc, one per frame}}
         
-        faceSideInImage = 'top'; % 'top', 'bottom', 'left','right'
+        faceSideInImage = 'bottom'; % 'top', 'bottom', 'left','right'
         protractionDirection = 'rightward'; % 'downward', 'upward', 'rightward','leftward'
-        imagePixelDimsXY = [150 200]; % [NumberOfXPixels NumberOfYPixels]
+        imagePixelDimsXY = [624 300]; % [NumberOfXPixels NumberOfYPixels]
         
-        pxPerMm = 22.68;
+        pxPerMm = 17.81002608;
         
         % polyFitsMask:
         % Cell array of length length(trajectoryIDs), of format:
@@ -93,7 +93,7 @@ classdef WhiskerTrial < handle
         %                      values in R to NaN.
         maskTreatment = 'maskNaN'; % default defined in loadobj() also.
         
-        framePeriodInSec = 0.002;
+        framePeriodInSec = 0.003225806451613;
         mouseName = '';
         sessionName = '';
         trackerFileName = '';

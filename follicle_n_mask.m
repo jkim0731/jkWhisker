@@ -21,10 +21,13 @@ end
 cd(d)
 
 maskfn = [mouseName sessionName 'follicle_n_mask.mat'];
-if exist(maskfn,'file')
-    disp([maskfn ' already exists. Skipping.'])
-    return
-end
+% if exist(maskfn,'file')
+%     disp([maskfn ' already exists. Skipping.'])
+%     return
+% end
+
+number_of_random_trials = 20; % for averaging for mask detection
+inflate_rate = 1.02;
 
 %% Follicle
 flist = dir('*.mp4');
@@ -32,129 +35,121 @@ v = VideoReader(flist(1).name);
 % length_threshold = 40;
 % follicle_threshold = 40; % 40 pixels movement of follicle in x and y is tolerable
 follicle_first = zeros(2,2);
-vv = read(v,1);
-width = size(vv,2);
-height = size(vv,1);
-vavg = zeros(height,width);
-for i = 1 : v.NumberOfFrames
-    vtemp = read(v,i);    
+vavg = zeros(v.Height,v.Width);
+nof = fix(v.FrameRate*v.Duration); % number of frames
+while hasFrame(v)
+    vtemp = readFrame(v);    
     vtemp = double(vtemp(:,:,1));
-    vavg = vavg + vtemp/v.NumberOfFrames;
+    vavg = vavg + vtemp/nof;
 end
 vavg = mat2gray(vavg);
-figure('units','normalized','outerposition',[0 0 1 1]), imshow(vavg), axis off, axis image, title('Select follicle points, first top-view, and then front-view'), hold all
+figure('units','normalized','outerposition',[0 0 1 1]), imshow(vavg,'InitialMagnification','fit'), axis off, axis image, title('Select follicle points, first top-view, and then front-view'), hold all
 i = 1;
 while (i < 3)
     [y, x] = ginput(1);
-    scatter(y, x, 'mo');
+    obj_h = scatter(y, x, 'mo');
     if i == 1
         button = questdlg('is this correct?', 'Top-view follicle', 'Yes', 'No', 'Cancel', 'Yes');
-        switch button
-            case 'Yes'
-                follicle_first(i,2)= y; follicle_first(i,1) = x;
-                i = i + 1;
-                scatter(y, x, 'go');
-            case 'No' 
-                delete(findobj(gca, 'type', 'patch'));
-                continue
-            case 'Cancel'
-                disp('measurements adjustment aborted')
-                return
-        end
-    elseif i == 2
+    else
         button = questdlg('is this correct?', 'Front-view follicle', 'Yes', 'No', 'Cancel', 'Yes');
-        switch button
-            case 'Yes'
-                follicle_first(i,2)= y; follicle_first(i,1) = x;
-                i = i + 1;
-            case 'No' 
-                delete(findobj(gca, 'type', 'patch'));
-                continue
-            case 'Cancel'
-                disp('measurements adjustment aborted')
-                return
-        end
+    end
+    switch button
+        case 'Yes'
+            follicle_first(i,2)= y; follicle_first(i,1) = x;
+            i = i + 1;
+            scatter(y, x, 'go');
+        case 'No' 
+            delete(obj_h);
+            continue
+        case 'Cancel'
+            disp('measurements adjustment aborted')
+            return
     end
 end
 
 drawnow;
 
 %% Mask
-button = 1;
-masknum = str2num(cell2mat(inputdlg({'How many trajectories?','How many points?'},'Trajectories',1,{'2','4'})));
-maskx = zeros(masknum(1),masknum(2));
-masky = zeros(masknum(1),masknum(2));
-i = 1; 
-while (i <= masknum(1))
-    j = 1;
-    while (j <= masknum(2))
-        [x, y, button] = ginput(1);
-        x = round(x); y = round(y);        
-        scatter(x,y,'mo');
-        maskx(i,j) = x;
-        masky(i,j) = y;
-        j = j + 1;
+vavg = zeros(v.Height,v.Width);
+randlist = randi(length(flist), 1, number_of_random_trials);
+for i = 1 : number_of_random_trials
+    v = VideoReader(flist(randlist(i)).name);
+    temp_vavg = zeros(v.Height,v.Width);
+    nof = fix(v.FrameRate*v.Duration); % number of frames
+    while hasFrame(v)
+        vtemp = readFrame(v);    
+        vtemp = double(vtemp(:,:,1));
+        temp_vavg = temp_vavg + vtemp/nof;
     end
-    if j > 1            
-        qnum = length(maskx(i,:));
-        if qnum < 2
-            error('Must define at least 2 points.')
-        elseif qnum < 6
-            polyDegree = qnum-1;
-        else
-            polyDegree = 5;
-        end
-        q = (0:(qnum-1))./(qnum-1);
-        px = Whisker.polyfit(q,maskx(i,:),polyDegree);
-        py = Whisker.polyfit(q,masky(i,:),polyDegree);
-        q = linspace(0,1);
-        x = polyval(px,q);
-        y = polyval(py,q);
-        plot(x,y,'g-','LineWidth',2)
-    end
+    vavg = vavg + temp_vavg/number_of_random_trials;
+end
+vavg_filt = imgaussfilt(vavg,3);
+BW = edge(vavg_filt,'Prewitt');
+[edge_i,edge_j] = ind2sub([v.Height,v.Width],find(BW));
 
-    button = questdlg('is this correct?', 'Mask points', 'Yes', 'No', 'Cancel', 'Yes');
+maskx = {[],[]};
+masky = {[],[]};
+
+vavg_inflate = imresize(vavg_filt,inflate_rate);
+BW = edge(vavg_inflate,'Prewitt');
+[edge_i,edge_j] = ind2sub(size(BW),find(BW));
+top_ind = find(edge_j >= size(BW,2)/2);
+edge_i = edge_i - size(BW,2) + size(vavg,2);
+edge_j(top_ind) = edge_j(top_ind) - (size(BW,1) - size(vavg,1))*(sind(21)/sind(45)); % 21 degrees tilted
+scatter(edge_j,edge_i,3,'mo');
+
+i = 1;
+while (i < 3)            
+    temp_ind = zeros(2,1);
+    for j = 1 : 2
+        [x, y] = ginput(1);
+        temp_dist = (edge_j - x).^2 + (edge_i - y).^2;
+        [~,temp_ind(j)] = min(temp_dist);        
+    end
+    temp_j = floor(edge_j(min(temp_ind):max(temp_ind)));
+    temp_j(temp_j < 1) = 1;
+    temp_j(temp_j > size(vavg,2)) = size(vavg,2);    
+    temp_i = floor(edge_i(min(temp_ind):max(temp_ind)));
+    temp_i(temp_i < 1) = 1;
+    temp_i(temp_i > size(vavg,1)) = size(vavg,1);
+    temp_bw = zeros(size(vavg));
+    temp_ind = sub2ind(size(temp_bw),temp_i,temp_j);
+    temp_bw(temp_ind) = 1;
+    bl = bwlabel(temp_bw);        
+    [mask_i,mask_j] = ind2sub(size(vavg),find(bl == bl(temp_i(1),temp_j(1))));
+
+    obj_h = scatter(mask_j,mask_i,3,'bo');
+    drawnow;
+    if i == 1
+        button = questdlg('is this correct?', 'Top-view mask', 'Yes', 'No', 'Cancel', 'Yes');
+    else
+        button = questdlg('is this correct?', 'Front-view mask', 'Yes', 'No', 'Cancel', 'Yes');
+    end
     switch button
-        case 'Yes'            
-            i = i + 1;            
+        case 'Yes'
+            maskx{i} = mask_j;
+            masky{i} = mask_i;
+
+            qnum = length(mask_j);
+            polyDegree = min([qnum-1,6]);
+            mask_j = mask_j'; mask_i = mask_i';
+            q = (0:(qnum-1))./(qnum-1);
+            px = Whisker.polyfit(q,mask_j,polyDegree);
+            py = Whisker.polyfit(q,mask_i,polyDegree);
+            q = linspace(0,1);
+            x = polyval(px,q);
+            y = polyval(py,q);
+            plot(x,y,'g-','LineWidth',2)
+
+            i = i + 1;
         case 'No' 
-            delete(findobj(gca, 'type', 'patch'));
-            delete(findobj(gca, 'type', 'line'));
+            delete(obj_h);
             continue
         case 'Cancel'
-            disp('masking aborted')
+            disp('measurements adjustment aborted')
             return
     end
 end
-hold off;
-drawnow;
-
-% %% Top-view face angle
-% % need to see once in a preparation
-% figure, imshow(mat2gray(vavg)), axis off, axis image, hold all;
-% face_line = zeros(2,2);
-% i = 1;
-% while (i <= 1)
-%     [face_line(1,1), face_line(1,2)] = ginput(1);
-%     scatter(face_line(1,1),face_line(1,2),'mo');
-%     [face_line(2,1), face_line(2,2)] = ginput(1);    
-%     scatter(face_line(2,1),face_line(2,2),'mo');
-%     plot(face_line(:,1),face_line(:,2),'m-','LineWidth',2)
-%     button = questdlg('is this correct?', 'Face axis', 'Yes', 'No', 'Cancel', 'Yes');
-%     switch button
-%         case 'Yes'            
-%             i = i + 1;            
-%         case 'No' 
-%             delete(findobj(gca, 'type', 'patch'));
-%             delete(findobj(gca, 'type', 'line'));
-%             continue
-%         case 'Cancel'
-%             disp('masking aborted')
-%             return
-%     end
-% end
-% 
-% face_angle = atand(abs(diff(face_line(:,2)))/abs(diff(face_line(:,1)))); % only for the current setting! Confirm this angle in each different settings.
 
 %% save mask
 
