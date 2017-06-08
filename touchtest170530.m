@@ -6,9 +6,9 @@ whisker_base_dir = 'Z:\Data\Video\JK\';
 mice = {'AH0648','AH0650','AH0651','AH0652','AH0653'};
 
 mouseName = 'AH0650';
-sessionName = 'S21';
-% trial_types = {'rc', 'rf', 'lc', 'lf'};
-trial_types = {'rn', 'ln'};
+sessionName = 'S10';
+trial_types = {'rc', 'rf', 'lc', 'lf'};
+% trial_types = {'rn', 'ln'};
 behavior_d = [behavior_base_dir mouseName '\'];
 whisker_d = [whisker_base_dir mouseName sessionName '\'];
 
@@ -38,7 +38,7 @@ if ~isempty(b_ind) % try only the ones with behavior session
     end
 end
 
-% %%
+%%
 % tid = [0 1]; % Set trajectory ID to view
 % wl = Whisker.WhiskerTrialLiteArray_2pad(whisker_d);
 % Whisker.viewdouble_WhiskerTrialLiteArray(wl,tid)
@@ -102,15 +102,14 @@ for wl_array_ind = 1 : length(trial_types)
     subplot(3,2,1), % top-view theta vs front-view theta
     plot(sp1(:,1),sp1(:,2),'k.'), title('top-view theta vs front-view theta'), xlim([-30 30]), ylim([-10 30]);
     subplot(3,2,2), % top-view kappa vs front-view kappa
-    plot(sp2(:,1),sp2(:,2),'k.'), title('top-view kappa vs front-view kappa'), xlim([-0.03 0.02]), ylim([-0.02 0.02]);
+    plot(sp2(:,1),sp2(:,2),'k.'), title('top-view kappa vs front-view kappa'), xlim([-0.01 0.01]), ylim([-0.01 0.01]);
     subplot(3,2,3) % top-view theta vs top-view kappa
-    plot(sp3(:,1),sp3(:,2),'k.'), title('top-view theta vs kappa'), xlim([-30 30]), ylim([-0.05 0.05]);
+    plot(sp3(:,1),sp3(:,2),'k.'), title('top-view theta vs kappa'), xlim([-30 30]), ylim([-0.01 0.01]);
     subplot(3,2,4) % front-view theta vs front-view kappa
-    plot(sp4(:,1),sp4(:,2),'k.'), title('front-view theta vs kappa'), xlim([-10 30]), ylim([-0.02 0.02]);
+    plot(sp4(:,1),sp4(:,2),'k.'), title('front-view theta vs kappa'), xlim([-10 30]), ylim([-0.01 0.01]);
     subplot(3,2,5) % top-view theta vs front-view kappa
-    plot(sp5(:,1),sp5(:,2),'k.'), title('top-view theta vs front-view kappa'), xlim([-30 30]), ylim([-0.02 0.02]);
-    subplot(3,2,6) % top-view theta vs top-view intersection coordinate
-    plot(sp6(:,1),sp6(:,2),'k.'), title('top-view theta vs top-view ISC'), xlim([-30 30]), ylim([100 400]);    
+    plot(sp5(:,1),sp5(:,2),'k.'), title('top-view theta vs front-view kappa'), xlim([-30 30]), ylim([-0.01 0.01]);
+ 
 end
 
 % free whisking
@@ -118,13 +117,13 @@ figure,
 subplot(3,2,1), % top-view theta vs front-view theta
     plot(fw1(:,1),fw1(:,2),'k.'), title(sprintf('top-view theta vs front-view theta')), xlim([-30 30]), ylim([-10 30]);
     subplot(3,2,2), % top-view kappa vs front-view kappa
-    plot(fw2(:,1),fw2(:,2),'k.'), title(sprintf('top-view kappa vs front-view kappa')), xlim([-0.03 0.02]), ylim([-0.02 0.02]);
+    plot(fw2(:,1),fw2(:,2),'k.'), title(sprintf('top-view kappa vs front-view kappa')), xlim([-0.01 0.01]), ylim([-0.01 0.01]);
     subplot(3,2,3) % top-view theta vs top-view kappa
-    plot(fw3(:,1),fw3(:,2),'k.'), title(sprintf('top-view theta vs kappa')), xlim([-30 30]), ylim([-0.05 0.05]);
+    plot(fw3(:,1),fw3(:,2),'k.'), title(sprintf('top-view theta vs kappa')), xlim([-30 30]), ylim([-0.01 0.01]);
     subplot(3,2,4) % front-view theta vs front-view kappa
-    plot(fw4(:,1),fw4(:,2),'k.'), title(sprintf('front-view theta vs kappa')), xlim([-10 30]), ylim([-0.02 0.02]);
+    plot(fw4(:,1),fw4(:,2),'k.'), title(sprintf('front-view theta vs kappa')), xlim([-10 30]), ylim([-0.01 0.01]);
     subplot(3,2,5) % top-view theta vs front-view kappa
-    plot(fw5(:,1),fw5(:,2),'k.'), title(sprintf('top-view theta vs front-view kappa')), xlim([-30 30]), ylim([-0.02 0.02]);
+    plot(fw5(:,1),fw5(:,2),'k.'), title(sprintf('top-view theta vs front-view kappa')), xlim([-30 30]), ylim([-0.01 0.01]);
 
 
 
