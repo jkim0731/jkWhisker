@@ -7,7 +7,7 @@ behavior_base_dir = 'Z:\Data\2p\soloData\';
 whisker_base_dir = 'Z:\Data\Video\JK\';
 % mice = {'AH0648','AH0650','AH0651','AH0652','AH0653'};
 mice = {'AH0650'};
-sessionNum = [19:21];
+sessionNum = [21:24];
 for mi = 1 : size(mice,2)
     mouseName = mice{mi};
     behavior_d = [behavior_base_dir mouseName '\'];
@@ -24,13 +24,13 @@ for mi = 1 : size(mice,2)
         try
             load([whisker_d mouseName sessionName '_post.mat'])
         catch
-            error(['No _post.mat file in ' mouseName ' ' sessionName])
+            continue
         end
                 
         try 
             load([whisker_d mouseName sessionName '_touch_hp.mat']);
         catch
-            error(['No touch_hp.mat file in ' mouseName ' ' sessionName]);
+            continue
         end
 
         b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
@@ -62,7 +62,7 @@ for mi = 1 : size(mice,2)
                 includef{i} = num2str(trialNums(i));
             end
 
-            Whisker.makeAllDirectory_WhiskerTrialLite_2pad(whisker_d,'include_files',includef,'r_in_mm',2,'calc_forces',false,'behavior',b_session,'touch_hp',touch_hp,'hp_peaks',hp_peaks,'touch_boundary_thickness',touch_boundary_thickness,'trial_types',trial_types);
+            Whisker.makeAllDirectory_WhiskerTrialLite_2pad(whisker_d,'include_files',includef,'r_in_mm',3,'calc_forces',false,'behavior',b_session,'touch_hp',touch_hp,'hp_peaks',hp_peaks,'touch_boundary_thickness',touch_boundary_thickness,'trial_types',trial_types);
         end
     end
 end

@@ -5,13 +5,13 @@ mice = {'AH0650'};
 videoloc = 'JK';
 d = (['Z:\Data\Video\' videoloc filesep]);
 
-ppm = 10.56526073;
+ppm = 17.81002608;
             % 'pxPerMm': 17.81002608 for telecentric lens
             % 'pxPerMm': 10.56526073 for microVideo lens
 % comment out when doing for all of the sessions in the mouse directory
 % sessions = {{'S02'}, {'S02'}, {'S02'}, {'S04'}, {'S03'}}; 
-sessions = {[19:21]}; 
-all_session = 1; % 1 if using all sessions, 0 if using selected sessions
+sessions = {[21:24]}; 
+all_session = 0; % 1 if using all sessions, 0 if using selected sessions
 % sessions_exc= {{'S02'}, {'S02'}, {'S02'}, {'S04'}, {'S03'}};
 %% Define follicle points and masks
 % saves follicle_n_mask.mat file consists of variables 'maskx','masky','width', 'height', and 'follicle_first'
@@ -73,12 +73,12 @@ if all_session == 1
             if isempty(sessions_exc{i})
                 if sn(j).isdir
                     [mouseName, sessionName] = strtok(sn(j).name,'S');
-                    postmeasurements(mouseName,sessionName,videoloc)
+                    postmeasurements(mouseName,sessionName,videoloc,'skip')
                 end
             else
                 if sn(j).isdir && ~strcmp(sn(j).name,strcat(mice{i},sessions_exc{i}))
                     [mouseName, sessionName] = strtok(sn(j).name,'S');
-                    postmeasurements(mouseName,sessionName,videoloc)
+                    postmeasurements(mouseName,sessionName,videoloc,'skip')
                 end
             end
         end
@@ -91,7 +91,7 @@ else
             for j = 1 : length(sessions{i})
                 mouseName = mice{i};
                 sessionName = sprintf('S%02d',sessions{i}(j));
-                postmeasurements(mouseName,sessionName,videoloc)
+                postmeasurements(mouseName,sessionName,videoloc,'skip')
             end
         end
     end
@@ -101,7 +101,6 @@ end
 behavior_base_dir = 'Z:\Data\2p\soloData\';
 if all_session == 1
     for mi = 1 : size(mice,2) % mouse index
-        whisker_d = [d, mice{mi}];
         sn = dir([mice{mi},'*']);
         for si = 1 : length(sn)
             go_flag = 0;
@@ -118,8 +117,8 @@ if all_session == 1
             if go_flag
                 [mouseName, sessionName] = strtok(sn(si).name,'S');      
                 behavior_d = [behavior_base_dir mouseName '\'];
-                whisker_d = [d, mice{mi}, sn{si}];
-                load([whisker_d, filesep, mice{mi}, sn{si}, '_post.mat'])
+                whisker_d = [d, mice{mi}, sn{si}, filesep];
+                load([whisker_d, mice{mi}, sn{si}, '_post.mat'])
             
                 if exist('b','var')
                     if strcmp(b{1}.mouseName, mouseName)
@@ -177,12 +176,12 @@ if all_session == 1
 else
     for mi = 1 : size(mice,2) % mouse index                 
         mouseName = mice{mi};
-        if ~isempty(sessions{i})
-            for j = 1 : length(sessions{i})
-                sessionName = sprintf('S%02d',sessions{i}(j));
+        if ~isempty(sessions{mi})
+            for j = 1 : length(sessions{mi})
+                sessionName = sprintf('S%02d',sessions{mi}(j));
                 behavior_d = [behavior_base_dir mouseName '\'];
-                whisker_d = [d, mouseName, sessionName];
-                load([whisker_d, filesep, mouseName, sessionName, '_post.mat'])
+                whisker_d = [d, mouseName, sessionName, filesep];
+                load([whisker_d, mouseName, sessionName, '_post.mat'])
 
                 if exist('b','var')
                     if strcmp(b{1}.mouseName, mouseName)
