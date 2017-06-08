@@ -5,6 +5,9 @@ mice = {'AH0650'};
 videoloc = 'JK';
 d = (['Z:\Data\Video\' videoloc filesep]);
 
+ppm = 10.56526073;
+            % 'pxPerMm': 17.81002608 for telecentric lens
+            % 'pxPerMm': 10.56526073 for microVideo lens
 % comment out when doing for all of the sessions in the mouse directory
 % sessions = {{'S02'}, {'S02'}, {'S02'}, {'S04'}, {'S03'}}; 
 sessions = {{'S19','S20','S21'}}; 
@@ -138,9 +141,9 @@ if all_session == 1
                 Whisker.makeAllDirectory_WhiskerTrial(whisker_d,[0 1],'mask', {[maskx(1,:);masky(1,:)],[maskx(2,:);masky(2,:)]},...
                     'trial_nums',trialNums,'include_files',includef,...
                     'barRadius',15.3,'faceSideInImage', 'bottom', 'framePeriodInSec',.0032,...
-                    'imagePixelDimsXY',[width height],'pxPerMm',26.23,'mouseName',mouseName,'sessionName',sessionName,'protractionDirection','rightward');
-                Whisker.makeAllDirectory_WhiskerSignalTrial_2pad(whisker_d,'include_files',temp_files,'polyRoiInPix',[20 80]);
-                Whisker.makeAllDirectory_WhiskerTrialLiteI(whisker_d,'include_files',temp_files,'r_in_mm',2,'calc_forces',false,'behavior',b_session);
+                    'imagePixelDimsXY',[width height],'pxPerMm',ppm,'mouseName',mouseName,'sessionName',sessionName,'protractionDirection','rightward');
+                Whisker.makeAllDirectory_WhiskerSignalTrial_2pad(whisker_d,'include_files',includef,'polyRoiInPix',[20 80]);
+                Whisker.makeAllDirectory_WhiskerTrialLiteI(whisker_d,'include_files',includef,'r_in_mm',3,'calc_forces',false,'behavior',b_session);
             end
         end
     end
@@ -200,10 +203,7 @@ else
             Whisker.makeAllDirectory_WhiskerTrial(whisker_d,[0 1],'mask', {[maskx(1,:);masky(1,:)],[maskx(2,:);masky(2,:)]},...
                 'trial_nums',trialNums,'include_files',includef,...
                 'barRadius',15.3,'faceSideInImage', 'bottom', 'framePeriodInSec',0.003225806451613,...
-                'imagePixelDimsXY',[width height],'pxPerMm',26.23,'mouseName',mouseName,'sessionName',sessionName,'protractionDirection','rightward');
-            % 'pxPerMm': 17.81002608 for telecentric lens
-            % 'pxPerMm': 10.56526073 for microVideo lens
-
+                'imagePixelDimsXY',[width height],'pxPerMm',ppm,'mouseName',mouseName,'sessionName',sessionName,'protractionDirection','rightward');
             Whisker.makeAllDirectory_WhiskerSignalTrial_2pad(whisker_d,'include_files',includef,'polyRoiInPix',[20 80]);
             Whisker.makeAllDirectory_WhiskerTrialLite_2pad(whisker_d,'include_files',includef,'r_in_mm',3,'calc_forces',false,'behavior',b_session);
         end
