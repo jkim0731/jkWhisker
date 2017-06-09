@@ -16,8 +16,6 @@ if exist('optional','var')
 else
     d = (['Z:\Data\Video\' videoloc filesep mouseName sessionName filesep])
 end
-% load(['Z:\Users\Jon\DATA\BehaviorArrays\solo_' mouseName '_' sessionName '.mat'])
-
 cd(d)
 
 maskfn = [mouseName sessionName 'follicle_n_mask.mat'];
@@ -32,8 +30,6 @@ inflate_rate = 1.02;
 %% Follicle
 flist = dir('*.mp4');
 v = VideoReader(flist(1).name);
-% length_threshold = 40;
-% follicle_threshold = 40; % 40 pixels movement of follicle in x and y is tolerable
 follicle_first = zeros(2,2);
 width = v.Width; height = v.Height; % to save these parameters
 vavg = zeros(height,width);
@@ -114,7 +110,7 @@ while (i < 3)
     temp_ind = sub2ind(size(temp_bw),temp_i,temp_j);
     temp_bw(temp_ind) = 1;
     bl = bwlabel(temp_bw);        
-    [mask_i,mask_j] = ind2sub(size(vavg),find(bl == bl(temp_i(1),temp_j(1) | bl(temp_i(2),temp_j(2)))));
+    [mask_i,mask_j] = ind2sub(size(vavg),find(bl == bl(temp_i(1),temp_j(1)) | bl == bl(temp_i(end),temp_j(end))));
 
     obj_h = scatter(mask_j,mask_i,3,'bo');
     drawnow;
