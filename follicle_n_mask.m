@@ -67,18 +67,34 @@ end
 drawnow;
 
 %% Mask
-vavg = zeros(v.Height,v.Width);
+
 randlist = randi(length(flist), 1, number_of_random_trials);
-for i = 1 : number_of_random_trials
-    v = VideoReader(flist(randlist(i)).name);
-    temp_vavg = zeros(v.Height,v.Width);
-    nof = fix(v.FrameRate*v.Duration); % number of frames
-    while hasFrame(v)
-        vtemp = readFrame(v);    
-        vtemp = double(vtemp(:,:,1));
-        temp_vavg = temp_vavg + vtemp/nof;
+if exist('parfor','builtin')
+    vstack = zeros(v.Height,v.Width,number_of_random_trials);
+    parfor i = 1 : number_of_random_trials
+        v = VideoReader(flist(randlist(i)).name);
+        temp_vavg = zeros(v.Height,v.Width);
+        nof = fix(v.FrameRate*v.Duration); % number of frames
+        while hasFrame(v)
+            vtemp = readFrame(v);    
+            vtemp = double(vtemp(:,:,1));
+            vstack(:,:,i) = vstack(:,:,i) + vtemp/nof;
+        end
     end
-    vavg = vavg + temp_vavg/number_of_random_trials;
+    vavg = mean(vstack,3);
+else
+    vavg = zeros(v.Height,v.Width);
+    for i = 1 : number_of_random_trials
+        v = VideoReader(flist(randlist(i)).name);
+        temp_vavg = zeros(v.Height,v.Width);
+        nof = fix(v.FrameRate*v.Duration); % number of frames
+        while hasFrame(v)
+            vtemp = readFrame(v);    
+            vtemp = double(vtemp(:,:,1));
+            temp_vavg = temp_vavg + vtemp/nof;
+        end
+        vavg = vavg + temp_vavg/number_of_random_trials;
+    end
 end
 vavg_filt = imgaussfilt(vavg,3);
 maskx = {[],[]};

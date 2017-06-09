@@ -1,7 +1,7 @@
 
 %% basic information
-% mice = {'AH0648', 'AH0650', 'AH0651', 'AH0652', 'AH0653'};
-mice = {'AH0650'};
+mice = {'AH0648', 'AH0650', 'AH0651', 'AH0652', 'AH0653'};
+% mice = {'AH0650'};
 videoloc = 'JK';
 d = (['Z:\Data\Video\' videoloc filesep]);
 
@@ -9,8 +9,7 @@ ppm = 17.81002608;
             % 'pxPerMm': 17.81002608 for telecentric lens
             % 'pxPerMm': 10.56526073 for microVideo lens
 % comment out when doing for all of the sessions in the mouse directory
-% sessions = {{'S02'}, {'S02'}, {'S02'}, {'S04'}, {'S03'}}; 
-sessions = {[21:24]}; 
+sessions = {[1:4,6:15],[1,2,4:6,8:10,19,20,25],[2,4:6,8:19],[6,8:13],[2,4:8,11,19]};  
 all_session = 0; % 1 if using all sessions, 0 if using selected sessions
 % sessions_exc= {{'S02'}, {'S02'}, {'S02'}, {'S04'}, {'S03'}};
 %% Define follicle points and masks
@@ -164,7 +163,7 @@ if all_session == 1
                     end
                 end
             
-                Whisker.makeAllDirectory_WhiskerTrial(whisker_d,[0 1],'mask', {[maskx(1,:);masky(1,:)],[maskx(2,:);masky(2,:)]},...
+                Whisker.makeAllDirectory_WhiskerTrial(whisker_d,[0 1],'mask', {[maskx{1}';masky{1}'],[maskx{2}';masky{2}']},...
                     'trial_nums',trialNums,'include_files',includef,...
                     'barRadius',15.3,'faceSideInImage', 'bottom', 'framePeriodInSec',.0032,...
                     'imagePixelDimsXY',[width height],'pxPerMm',ppm,'mouseName',mouseName,'sessionName',sessionName,'protractionDirection','rightward');
@@ -227,7 +226,7 @@ else
                     end
                 end
 
-                Whisker.makeAllDirectory_WhiskerTrial(whisker_d,[0 1],'mask', {[maskx(1,:);masky(1,:)],[maskx(2,:);masky(2,:)]},...
+                Whisker.makeAllDirectory_WhiskerTrial(whisker_d,[0 1],'mask', {[maskx{1}';masky{1}'],[maskx{2}';masky{2}']},...
                     'trial_nums',trialNums,'include_files',includef,...
                     'barRadius',15.3,'faceSideInImage', 'bottom', 'framePeriodInSec',0.003225806451613,...
                     'imagePixelDimsXY',[width height],'pxPerMm',ppm,'mouseName',mouseName,'sessionName',sessionName,'protractionDirection','rightward');
