@@ -35,7 +35,8 @@ v = VideoReader(flist(1).name);
 % length_threshold = 40;
 % follicle_threshold = 40; % 40 pixels movement of follicle in x and y is tolerable
 follicle_first = zeros(2,2);
-vavg = zeros(v.Height,v.Width);
+width = v.Width; height = v.Height; % to save these parameters
+vavg = zeros(height,width);
 nof = fix(v.FrameRate*v.Duration); % number of frames
 while hasFrame(v)
     vtemp = readFrame(v);    
@@ -84,9 +85,6 @@ for i = 1 : number_of_random_trials
     vavg = vavg + temp_vavg/number_of_random_trials;
 end
 vavg_filt = imgaussfilt(vavg,3);
-BW = edge(vavg_filt,'Prewitt');
-[edge_i,edge_j] = ind2sub([v.Height,v.Width],find(BW));
-
 maskx = {[],[]};
 masky = {[],[]};
 
@@ -116,7 +114,7 @@ while (i < 3)
     temp_ind = sub2ind(size(temp_bw),temp_i,temp_j);
     temp_bw(temp_ind) = 1;
     bl = bwlabel(temp_bw);        
-    [mask_i,mask_j] = ind2sub(size(vavg),find(bl == bl(temp_i(1),temp_j(1))));
+    [mask_i,mask_j] = ind2sub(size(vavg),find(bl == bl(temp_i(1),temp_j(1) | bl(temp_i(2),temp_j(2)))));
 
     obj_h = scatter(mask_j,mask_i,3,'bo');
     drawnow;
