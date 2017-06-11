@@ -6,8 +6,9 @@ touch_boundary_thickness = 2; % include # of pixels outer space from the hp_peak
 behavior_base_dir = 'Z:\Data\2p\soloData\';
 whisker_base_dir = 'Z:\Data\Video\JK\';
 % mice = {'AH0648','AH0650','AH0651','AH0652','AH0653'};
-mice = {'AH0650'};
-sessionNum = [21:24];
+mice = {'AH0650','AH0651','AH0652','AH0653'};
+sessionNum = {[1,2,4:6,8:10,19,20,25],[2,4:6,8:19],[6,8:13],[2,4:8,11,19]};
+
 for mi = 1 : size(mice,2)
     mouseName = mice{mi};
     behavior_d = [behavior_base_dir mouseName '\'];
