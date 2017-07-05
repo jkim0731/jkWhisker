@@ -1,21 +1,21 @@
 % For 2pad (2-port angle distance), WT, WST, and WL is generated during prebuild_JK.m
-% build WL again using information from touch_hyperplane.
+% WL is quired to calculate touch hyperplane.
+% WL_2pad builds WL again using the information from touch_hyperplane.
 tic
 touch_boundary_thickness = 2; % include # of pixels outer space from the hp_peak boundary. Default = 2.
 
 behavior_base_dir = 'Z:\Data\2p\soloData\';
 whisker_base_dir = 'Z:\Data\Video\JK\';
 % mice = {'AH0648','AH0650','AH0651','AH0652','AH0653'};
-mice = {'AH0650','AH0651','AH0652','AH0653'};
-sessionNum = {[1,2,4:6,8:10,19,20,25],[2,4:6,8:19],[6,8:13],[2,4:8,11,19]};
-
+mice = {'AH0650'};
+sessionNum = [22:25];
 for mi = 1 : size(mice,2)
     mouseName = mice{mi};
     behavior_d = [behavior_base_dir mouseName '\'];
     try
         load([behavior_d 'behavior.mat']) % loading b of the mouse (all the sessions)
     catch
-        error(['No behavior.mat file in ' mouseName ' ' sessionName])
+        error(['No behavior.mat file in ' mouseName])
     end
     
     for si = 1 : length(sessionNum)

@@ -5,8 +5,8 @@ whisker_base_dir = 'Z:\Data\Video\JK\';
 
 mice = {'AH0648','AH0650','AH0651','AH0652','AH0653'};
 
-mouseName = 'AH0650';
-sessionName = 'S10';
+mouseName = 'AH0653';
+sessionName = 'S18';
 trial_types = {'rc', 'rf', 'lc', 'lf'};
 % trial_types = {'rn', 'ln'};
 behavior_d = [behavior_base_dir mouseName '\'];
@@ -79,10 +79,23 @@ for trial_type_num = 1 : length(trial_types)
     wl_array{trial_type_num} = wl;
 end
 %%
+close all
 base_angle = 21;
 fw1 = []; fw2 = []; fw3 = []; fw4 = []; fw5 = []; fw6 = [];% free-whisking
 for wl_array_ind = 1 : length(trial_types)
-    figure, hold all
+    figure, set(gcf,'Units','centimeters','Position',[wl_array_ind+3 wl_array_ind+3 11.7 9.5]); hold all
+    switch wl_array_ind
+        case 1
+            tt_text = 'Close Down';
+        case 2
+            tt_text = 'Far Down';
+        case 3
+            tt_text = 'Close Up';
+        case 4
+            tt_text = 'Far Up';
+    end
+    title([tt_text 'touch frames'])
+            
     sp1 = []; sp2 = []; sp3 = []; sp4 = []; sp5 = []; sp6 = []; %subplot 1~6
     for wl_ind = 1 : length(wl_array{wl_array_ind}.trials)
         wt = wl_array{wl_array_ind}.trials{wl_ind};      
@@ -100,33 +113,86 @@ for wl_array_ind = 1 : length(trial_types)
         fw5 = [fw5; wt.thetaAtBase{1}(fw_frames)'+base_angle, wt.deltaKappa{2}(fw_frames)'];        
     end
     subplot(3,2,1), % top-view theta vs front-view theta
-    plot(sp1(:,1),sp1(:,2),'k.'), title('top-view theta vs front-view theta'), xlim([-30 30]), ylim([-10 30]);
+    plot(sp1(:,1),sp1(:,2),'k.'), title({['                                                       ',tt_text,' touch frames'];'\theta_T vs \theta_F'}); hold on;    
+%     hold on, plot_and_write_corr(sp1(:,1),sp1(:,2)); xlim([-30 30]), ylim([-10 30]); hold off    
     subplot(3,2,2), % top-view kappa vs front-view kappa
-    plot(sp2(:,1),sp2(:,2),'k.'), title('top-view kappa vs front-view kappa'), xlim([-0.01 0.01]), ylim([-0.01 0.01]);
+    plot(sp2(:,1),sp2(:,2),'k.'), title('\kappa_T vs \kappa_F');
+%     hold on, plot_and_write_corr(sp2(:,1),sp2(:,2)); xlim([-0.01 0.01]), ylim([-0.01 0.01]); hold off    
     subplot(3,2,3) % top-view theta vs top-view kappa
-    plot(sp3(:,1),sp3(:,2),'k.'), title('top-view theta vs kappa'), xlim([-30 30]), ylim([-0.01 0.01]);
+    plot(sp3(:,1),sp3(:,2),'k.'), title('\theta_T vs \kappa_T');
+%     hold on, plot_and_write_corr(sp3(:,1),sp3(:,2)); xlim([-30 30]), ylim([-0.01 0.01]); hold off
     subplot(3,2,4) % front-view theta vs front-view kappa
-    plot(sp4(:,1),sp4(:,2),'k.'), title('front-view theta vs kappa'), xlim([-10 30]), ylim([-0.01 0.01]);
+    plot(sp4(:,1),sp4(:,2),'k.'), title('\theta_F vs \kappa_F');
+%     hold on, plot_and_write_corr(sp4(:,1),sp4(:,2)); xlim([-10 30]), ylim([-0.01 0.01]); hold off
     subplot(3,2,5) % top-view theta vs front-view kappa
-    plot(sp5(:,1),sp5(:,2),'k.'), title('top-view theta vs front-view kappa'), xlim([-30 30]), ylim([-0.01 0.01]);
- 
+    plot(sp5(:,1),sp5(:,2),'k.'), title('\theta_T vs \kappa_F'); 
+%     hold on, plot_and_write_corr(sp5(:,1),sp5(:,2)); xlim([-30 30]), ylim([-0.01 0.01]); hold off
 end
 
 % free whisking
-figure, 
+figure, title('Free Whisking Before Pole Up'), set(gcf,'Units','centimeters','Position',[8 8 11.7 9.5])
 subplot(3,2,1), % top-view theta vs front-view theta
-    plot(fw1(:,1),fw1(:,2),'k.'), title(sprintf('top-view theta vs front-view theta')), xlim([-30 30]), ylim([-10 30]);
-    subplot(3,2,2), % top-view kappa vs front-view kappa
-    plot(fw2(:,1),fw2(:,2),'k.'), title(sprintf('top-view kappa vs front-view kappa')), xlim([-0.01 0.01]), ylim([-0.01 0.01]);
-    subplot(3,2,3) % top-view theta vs top-view kappa
-    plot(fw3(:,1),fw3(:,2),'k.'), title(sprintf('top-view theta vs kappa')), xlim([-30 30]), ylim([-0.01 0.01]);
-    subplot(3,2,4) % front-view theta vs front-view kappa
-    plot(fw4(:,1),fw4(:,2),'k.'), title(sprintf('front-view theta vs kappa')), xlim([-10 30]), ylim([-0.01 0.01]);
-    subplot(3,2,5) % top-view theta vs front-view kappa
-    plot(fw5(:,1),fw5(:,2),'k.'), title(sprintf('top-view theta vs front-view kappa')), xlim([-30 30]), ylim([-0.01 0.01]);
+plot(fw1(:,1),fw1(:,2),'k.'), title({'                                                        Free Whisking';'\theta_T vs \theta_F'});
+%     hold on, plot_and_write_corr(fw1(:,1),fw1(:,2)); xlim([-30 30]), ylim([-10 30]); hold off
+subplot(3,2,2), % top-view kappa vs front-view kappa
+plot(fw2(:,1),fw2(:,2),'k.'), title('\kappa_T vs \kappa_F');
+%     hold on, plot_and_write_corr(fw2(:,1),fw2(:,2)); xlim([-0.01 0.01]), ylim([-0.01 0.01]); hold off
+subplot(3,2,3) % top-view theta vs top-view kappa
+plot(fw3(:,1),fw3(:,2),'k.'), title('\theta_T vs \kappa_T');
+%     hold on, plot_and_write_corr(fw3(:,1),fw3(:,2)); xlim([-30 30]), ylim([-0.01 0.01]); hold off
+subplot(3,2,4) % front-view theta vs front-view kappa
+plot(fw4(:,1),fw4(:,2),'k.'), title('\theta_F vs \kappa_F');
+%     hold on, plot_and_write_corr(fw4(:,1),fw4(:,2)); xlim([-10 30]), ylim([-0.01 0.01]); hold off
+subplot(3,2,5) % top-view theta vs front-view kappa
+plot(fw5(:,1),fw5(:,2),'k.'), title('\theta_T vs \kappa_F');
+%     hold on, plot_and_write_corr(fw5(:,1),fw5(:,2)); xlim([-30 30]), ylim([-0.01 0.01]); hold off
 
-
-
-        
+% for wl_array_ind = 1 : length(trial_types)
+%     figure, hold all
+%     switch wl_array_ind
+%         case 1
+%             tt_text = 'Close Up';
+%         case 2
+%             tt_text = 'Far Up';
+%         case 3
+%             tt_text = 'Close Down';
+%         case 4
+%             tt_text = 'Far Down';
+%     end
+%     title([tt_text 'all frames'])
+%             
+%     sp1 = []; sp2 = []; sp3 = []; sp4 = []; sp5 = []; sp6 = []; %subplot 1~6
+%     for wl_ind = 1 : length(wl_array{wl_array_ind}.trials)
+%         wt = wl_array{wl_array_ind}.trials{wl_ind};      
+%         sp1 = [sp1; wt.thetaAtBase{1}'+base_angle, wt.thetaAtBase{2}'];
+%         sp2 = [sp2; wt.deltaKappa{1}', wt.deltaKappa{2}'];
+%         sp3 = [sp3; wt.thetaAtBase{1}'+base_angle, wt.deltaKappa{1}'];
+%         sp4 = [sp4; wt.thetaAtBase{2}', wt.deltaKappa{2}'];
+%         sp5 = [sp5; wt.thetaAtBase{1}'+base_angle, wt.deltaKappa{2}'];
+%         sp6 = [sp6; wt.thetaAtBase{1}'+base_angle, wt.intersect_coord(:,1)];
+%     end
+%     subplot(3,2,1), % top-view theta vs front-view theta
+%     plot(sp1(:,1),sp1(:,2),'k.'), title({[tt_text,' all frames'];'\theta_T vs \theta_F'}), xlim([-30 30]), ylim([-10 30]);
+%     subplot(3,2,2), % top-view kappa vs front-view kappa
+%     plot(sp2(:,1),sp2(:,2),'k.'), title('\kappa_T vs \kappa_F'), xlim([-0.01 0.01]), ylim([-0.01 0.01]);
+%     subplot(3,2,3) % top-view theta vs top-view kappa
+%     plot(sp3(:,1),sp3(:,2),'k.'), title('\theta_T vs \kappa_T'), xlim([-30 30]), ylim([-0.01 0.01]);
+%     subplot(3,2,4) % front-view theta vs front-view kappa
+%     plot(sp4(:,1),sp4(:,2),'k.'), title('\theta_F vs \kappa_F'), xlim([-10 30]), ylim([-0.01 0.01]);
+%     subplot(3,2,5) % top-view theta vs front-view kappa
+%     plot(sp5(:,1),sp5(:,2),'k.'), title('\theta_T vs \kappa_F'), xlim([-30 30]), ylim([-0.01 0.01]); 
+% end
+%%
+function plot_and_write_corr(x,y)
+[r, pval] = corrcoef(x,y,'rows','complete');
+    h = lsline; 
+    if pval(2) < 0.001 && abs(r(2)) > 0.2
+        if r(2) > 0
+            set(h,'Color','red'), text(0,0.9,num2str(round(r(2)*100)/100),'Color','red','Fontsize',14,'Fontweight','bold','Units','normalized');
+        else
+            set(h,'Color','red'), text(0.7,0.9,num2str(round(r(2)*100)/100),'Color','red','Fontsize',14,'Fontweight','bold','Units','normalized');
+        end
+    end
+end
         
         

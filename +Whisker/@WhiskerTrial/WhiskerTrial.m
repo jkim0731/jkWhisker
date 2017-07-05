@@ -536,7 +536,7 @@ classdef WhiskerTrial < handle
             % degree polynomial fit to the points for N < 6. For N >= 6
             % the polynomial will be 5-th degree.
             %
-            qnum = length(x);
+            qnum = length(x);            
             if length(x) ~= length(y)
                 error('Inputs x and y must be of equal length.')
             end
@@ -549,13 +549,14 @@ classdef WhiskerTrial < handle
                 y = y';
             end
             
-            if qnum < 2
-                error('Must define at least 2 points.')
-            elseif qnum < 6
-                polyDegree = qnum-1;
-            else
-                polyDegree = 5;
-            end
+%             if qnum < 2
+%                 error('Must define at least 2 points.')
+%             elseif qnum < 6
+%                 polyDegree = qnum-1;
+%             else
+%                 polyDegree = 5;
+%             end
+            polyDegree = 2;
             
             q = (0:(qnum-1))./(qnum-1); % [0,1]
             

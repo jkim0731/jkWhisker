@@ -16,6 +16,8 @@ if exist('optional','var')
 else
     d = (['Z:\Data\Video\' videoloc filesep mouseName sessionName filesep])
 end
+% load(['Z:\Users\Jon\DATA\BehaviorArrays\solo_' mouseName '_' sessionName '.mat'])
+
 cd(d)
 
 maskfn = [mouseName sessionName 'follicle_n_mask.mat'];
@@ -24,15 +26,18 @@ maskfn = [mouseName sessionName 'follicle_n_mask.mat'];
 %     return
 % end
 
-number_of_random_trials = 20; % for averaging for mask detection
+number_of_random_trials = 10; % for averaging for mask detection
 inflate_rate = 1.02;
 
 %% Follicle
 flist = dir('*.mp4');
 v = VideoReader(flist(1).name);
+% length_threshold = 40;
+% follicle_threshold = 40; % 40 pixels movement of follicle in x and y is tolerable
 follicle_first = zeros(2,2);
-width = v.Width; height = v.Height; % to save these parameters
-vavg = zeros(height,width);
+width = v.Width;
+height = v.Height;
+vavg = zeros(v.Height,v.Width);
 nof = fix(v.FrameRate*v.Duration); % number of frames
 while hasFrame(v)
     vtemp = readFrame(v);    
@@ -67,41 +72,26 @@ end
 drawnow;
 
 %% Mask
-
+vavg = zeros(v.Height,v.Width);
 randlist = randi(length(flist), 1, number_of_random_trials);
-if exist('parfor','builtin')
-    vstack = zeros(v.Height,v.Width,number_of_random_trials);
-    parfor i = 1 : number_of_random_trials
-        v = VideoReader(flist(randlist(i)).name);
-        temp_vavg = zeros(v.Height,v.Width);
-        nof = fix(v.FrameRate*v.Duration); % number of frames
-        while hasFrame(v)
-            vtemp = readFrame(v);    
-            vtemp = double(vtemp(:,:,1));
-            vstack(:,:,i) = vstack(:,:,i) + vtemp/nof;
-        end
+for i = 1 : number_of_random_trials
+    v = VideoReader(flist(randlist(i)).name);
+    temp_vavg = zeros(v.Height,v.Width);
+    nof = fix(v.FrameRate*v.Duration); % number of frames
+    while hasFrame(v)
+        vtemp = readFrame(v);    
+        vtemp = double(vtemp(:,:,1));
+        temp_vavg = temp_vavg + vtemp/nof;
     end
-    vavg = mean(vstack,3);
-else
-    vavg = zeros(v.Height,v.Width);
-    for i = 1 : number_of_random_trials
-        v = VideoReader(flist(randlist(i)).name);
-        temp_vavg = zeros(v.Height,v.Width);
-        nof = fix(v.FrameRate*v.Duration); % number of frames
-        while hasFrame(v)
-            vtemp = readFrame(v);    
-            vtemp = double(vtemp(:,:,1));
-            temp_vavg = temp_vavg + vtemp/nof;
-        end
-        vavg = vavg + temp_vavg/number_of_random_trials;
-    end
+    temp_vavg = imgaussfilt(temp_vavg,3);
+    vavg = vavg + temp_vavg/number_of_random_trials;
 end
 vavg_filt = imgaussfilt(vavg,3);
 maskx = {[],[]};
 masky = {[],[]};
 
 vavg_inflate = imresize(vavg_filt,inflate_rate);
-BW = edge(vavg_inflate,'Prewitt');
+BW = edge(vavg_inflate);
 [edge_i,edge_j] = ind2sub(size(BW),find(BW));
 top_ind = find(edge_j >= size(BW,2)/2);
 edge_i = edge_i - size(BW,2) + size(vavg,2);
@@ -126,7 +116,7 @@ while (i < 3)
     temp_ind = sub2ind(size(temp_bw),temp_i,temp_j);
     temp_bw(temp_ind) = 1;
     bl = bwlabel(temp_bw);        
-    [mask_i,mask_j] = ind2sub(size(vavg),find(bl == bl(temp_i(1),temp_j(1)) | bl == bl(temp_i(end),temp_j(end))));
+    [mask_i,mask_j] = ind2sub(size(vavg),find(bl == bl(temp_i(1),temp_j(1))));
 
     obj_h = scatter(mask_j,mask_i,3,'bo');
     drawnow;
@@ -141,7 +131,8 @@ while (i < 3)
             masky{i} = mask_i;
 
             qnum = length(mask_j);
-            polyDegree = min([qnum-1,6]);
+%             polyDegree = min([qnum-1,6]);
+            polyDegree = 2;
             mask_j = mask_j'; mask_i = mask_i';
             q = (0:(qnum-1))./(qnum-1);
             px = Whisker.polyfit(q,mask_j,polyDegree);
