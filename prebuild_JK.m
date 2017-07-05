@@ -1,55 +1,49 @@
 
 %% basic information
-mice = {'AH0650', 'AH0651', 'AH0652', 'AH0653'};
+mice = {'JK017', 'JK018', 'JK020'};
 % mice = {'AH0650'};
 videoloc = 'JK';
 d = (['Z:\Data\Video\' videoloc filesep]);
 
-ppm = 10.56526073;
+ppm = 17.81002608;
             % 'pxPerMm': 17.81002608 for telecentric lens
+% ppm = ppm / 2; % for binning 2
             % 'pxPerMm': 10.56526073 for microVideo lens
 % comment out when doing for all of the sessions in the mouse directory
 % sessions = {[1,2,4:6,8:10,19,20,25],[2,4:6,8:19],[6,8:13],[2,4:8,11,19]};  
-sessions = {[10,19,20,25],[2,4:6,8:19],[6,8:13],[2,4:8,11,19]};  
+% sessions = {[10,19,20,25],[2,4:6,8:19],[6,8:13],[2,4:8,11,19]};  
 
-all_session = 0; % 1 if using all sessions, 0 if using selected sessions
-% sessions_exc= {{'S02'}, {'S02'}, {'S02'}, {'S04'}, {'S03'}};
+all_session = 1; % 1 if using all sessions, 0 if using selected sessions
+
 %% Define follicle points and masks
 % saves follicle_n_mask.mat file consists of variables 'maskx','masky','width', 'height', and 'follicle_first'
-% if all_session == 1
-%     %% use this code when doing for all of the sessions in the mouse directory 
-%     for i = 1 : size(mice,2)
-%         cd(d)
-%         sn = dir([mice{i},'*']);
-%         for j = 1 : length(sn)
-%             if isempty(sessions_exc{i})
-%                 if sn(j).isdir
-%                     [mouseName, sessionName] = strtok(sn(j).name,'S');            
-%                     follicle_n_mask(mouseName,sessionName,videoloc)
-%                 end
-%             else
-%                 if sn(j).isdir && ~strcmp(sn(j).name,strcat(mice{i},sessions_exc{i}))
-%                     [mouseName, sessionName] = strtok(sn(j).name,'S');            
-%                     follicle_n_mask(mouseName,sessionName,videoloc)
-%                 end
-%             end
-%             close all
-%         end
-%     end
-% else
-%     %% use this code when doing for selected sessions in each mouse directory
-%     for i = 1 : size(mice,2)
-%         cd(d)
-%         if ~isempty(sessions{i})
-%             for j = 1 : length(sessions{i})
-%                 mouseName = mice{i};
-%                 sessionName = sprintf('S%02d',sessions{i}(j));
-%                 follicle_n_mask(mouseName,sessionName,videoloc)
-%                 close all
-%             end
-%         end
-%     end
-% end
+if all_session == 1
+    %% use this code when doing for all of the sessions in the mouse directory 
+    for i = 1 : size(mice,2)
+        cd(d)
+        sn = dir([mice{i},'*']);
+        for j = 1 : length(sn)
+            if sn(j).isdir
+                [mouseName, sessionName] = strtok(sn(j).name,'S');            
+                follicle_n_mask(mouseName,sessionName,videoloc)
+            end
+            close all
+        end
+    end
+else
+    %% use this code when doing for selected sessions in each mouse directory
+    for i = 1 : size(mice,2)
+        cd(d)
+        if ~isempty(sessions{i})
+            for j = 1 : length(sessions{i})
+                mouseName = mice{i};
+                sessionName = sprintf('S%02d',sessions{i}(j));
+                follicle_n_mask(mouseName,sessionName,videoloc)
+                close all
+            end
+        end
+    end
+end
 
 %%
 %%
@@ -71,16 +65,9 @@ if all_session == 1
         cd(d)
         sn = dir([mice{i},'*']);
         for j = 1 : length(sn)
-            if isempty(sessions_exc{i})
-                if sn(j).isdir
-                    [mouseName, sessionName] = strtok(sn(j).name,'S');
-                    postmeasurements(mouseName,sessionName,videoloc)
-                end
-            else
-                if sn(j).isdir && ~strcmp(sn(j).name,strcat(mice{i},sessions_exc{i}))
-                    [mouseName, sessionName] = strtok(sn(j).name,'S');
-                    postmeasurements(mouseName,sessionName,videoloc)
-                end
+            if sn(j).isdir
+                [mouseName, sessionName] = strtok(sn(j).name,'S');
+                postmeasurements(mouseName,sessionName,videoloc,ppm)
             end
         end
     end
@@ -92,7 +79,7 @@ else
             for j = 1 : length(sessions{i})
                 mouseName = mice{i};
                 sessionName = sprintf('S%02d',sessions{i}(j));
-                postmeasurements(mouseName,sessionName,videoloc)
+                postmeasurements(mouseName,sessionName,videoloc,ppm)
             end
         end
     end

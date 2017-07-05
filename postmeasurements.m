@@ -1,4 +1,4 @@
-function postmeasurements(mouseName,sessionName,videoloc,varargin)
+function postmeasurements(mouseName,sessionName,videoloc,ppm,varargin)
 
 %% Setup whisker array builder 
 % mouseName = 'AH0653'
@@ -6,12 +6,12 @@ function postmeasurements(mouseName,sessionName,videoloc,varargin)
 % videoloc = 'JK'
 % flag_skip = 'skip'
 % optional = 'Spont'
-if nargin > 3
+if nargin > 4
     flag_skip = varargin{1};
 end
-if nargin > 4
+if nargin > 5
     optional = varargin{2};
-elseif nargin > 5
+elseif nargin > 6
     error('Too many input arguments')
 end
 
@@ -35,7 +35,7 @@ if exist(savefn,'file')
     end    
 end
 %%
-excludef = jkmeasurements_dir();
+excludef = jkmeasurements_dir(ppm);
 %%
 filelist=dir([d '*.measurements']);
 

@@ -1,4 +1,4 @@
-function errorlist = jkmeasurements_dir()
+function errorlist = jkmeasurements_dir(ppm)
 
 save_filename = ['remeasure_', date, '.mat'];
 if exist(save_filename,'file')
@@ -13,11 +13,8 @@ w = width;
 h = height;
 f = follicle_first;
 
-% Adjust this accordingly
-follicle_threshold = 20;
-length_threshold = 30;
-
-
+follicle_threshold = ppm*5; % 5 mm threshold
+length_threshold = ppm*1; % 1 mm threshold
 
 flist = dir('*.measurements');
 % v = VideoReader([flist(1).name(1:end-13),'.mp4']);
