@@ -12,19 +12,19 @@ elseif nargin > 4
 end
 
 if exist('optional','var')
-    d = (['Z:\Data\Video\' videoloc filesep mouseName sessionName filesep optional filesep])
+    d = ([videoloc filesep mouseName sessionName filesep optional filesep])
 else
-    d = (['Z:\Data\Video\' videoloc filesep mouseName sessionName filesep])
+    d = ([videoloc filesep mouseName sessionName filesep])
 end
 % load(['Z:\Users\Jon\DATA\BehaviorArrays\solo_' mouseName '_' sessionName '.mat'])
 
 cd(d)
 
 maskfn = [mouseName sessionName 'follicle_n_mask.mat'];
-% if exist(maskfn,'file')
-%     disp([maskfn ' already exists. Skipping.'])
-%     return
-% end
+if exist(maskfn,'file')
+    disp([maskfn ' already exists. Skipping.'])
+    return
+end
 
 number_of_random_trials = 10; % for averaging for mask detection
 inflate_rate = 1.02;

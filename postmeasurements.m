@@ -16,9 +16,9 @@ elseif nargin > 6
 end
 
 if exist('optional','var')
-    d = (['Z:\Data\Video\' videoloc filesep mouseName sessionName filesep optional filesep])
+    d = ([videoloc filesep mouseName sessionName filesep optional filesep])
 else
-    d = (['Z:\Data\Video\' videoloc filesep mouseName sessionName filesep])
+    d = ([videoloc filesep mouseName sessionName filesep])
 end
 % load(['Z:\Users\Jon\DATA\BehaviorArrays\solo_' mouseName '_' sessionName '.mat'])
 
