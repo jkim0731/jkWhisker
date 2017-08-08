@@ -62,7 +62,7 @@ for mi = 1 : length(mice)
     end
 end
 
-%%
+% %%
 for i = 1 : length(mice)    
     for j = 1 : length(sessionNum{i})
         for k = 1 : length(trial_types)
@@ -72,6 +72,8 @@ for i = 1 : length(mice)
         end
     end
 end
+
+save('tethas.mat', 'theta_*')
 %%
 thetaTrange = -40:20;
 mouse = 2;
@@ -491,74 +493,76 @@ end
 % % end
 for mi = 1 : length(mice)
     mouseName = mice{mi};
-for sind = 1 : length(sessions{mi})
-    for s = 1 : length(sessions{mi}{sind})
-        sessionName = sprintf('S%02d', sessions{mi}{sind}(s));
-        whisker_d = [whisker_base_dir mouseName sessionName '\'];
-        if ~exist('b','var') || ~iscell(b) || ~isfield(b{1},'mouseName') || ~strcmp(b{1}.mouseName,mouseName)
-            load([behavior_base_dir mouseName filesep 'behavior.mat']) % load b
-        end
-        b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
-        b_session = b{b_ind};
-
-        tt_ind = cell(1,length(trial_types));
-        wl_array = cell(1,length(trial_types));
-
-        for trial_type_num = 1 : length(trial_types)    
-            tt_ind{trial_type_num} = find(cellfun(@(x) strcmp(x.trialType,trial_types{trial_type_num}),b_session.trials));
-            temp_files = cell(length(tt_ind{trial_type_num}),1);
-            for j = 1 : length(tt_ind{trial_type_num})
-                temp_files{j} = num2str(tt_ind{trial_type_num}(j));
+    for sind = 1 : length(sessions{mi})
+        for s = 1 : length(sessions{mi}{sind})
+            sessionName = sprintf('S%02d', sessions{mi}{sind}(s));
+            whisker_d = [whisker_base_dir mouseName sessionName '\'];
+            if ~exist('b','var') || ~iscell(b) || ~isfield(b{1},'mouseName') || ~strcmp(b{1}.mouseName,mouseName)
+                load([behavior_base_dir mouseName filesep 'behavior.mat']) % load b
             end
-            wl = Whisker.WhiskerTrialLiteArray_2pad(whisker_d,'include_files',temp_files);
-            wl_array{trial_type_num} = wl;
-        end
-        for wl_array_ind = 1 : length(trial_types)
-            for wl_ind = 1 : length(wl_array{wl_array_ind}.trials)
-                wt = wl_array{wl_array_ind}.trials{wl_ind};
-                trial_temp_ind = find(cellfun(@(x) x.trialNum == wt.trialNum,b_session.trials));
-                trial_temp = b_session.trials{trial_temp_ind};
-                
-                temp_touch = wt.th_touch_frames;
-                if ~isempty(temp_touch)
-                    touch_diff_inds = [0;find(diff(temp_touch) - 1);length(temp_touch)];
-                    for cind = 1 : length(touch_diff_inds)-1
-                        if length(wt.thetaAtBase{1}(temp_touch(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)))) * length(wt.deltaKappa{1}(temp_touch(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)))) * ...
-                                length(wt.thetaAtBase{2}(temp_touch(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)))) * length(wt.deltaKappa{2}(temp_touch(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)))) ...
-                                > 0 % non of these are empty
-                            theta_fw_T{mi}{sind}{wl_array_ind}{1}{end+1} = wt.thetaAtBase{1}(temp_touch(touch_diff_inds(cind)+1:touch_diff_inds(cind+1))) + base_angle;
-                            kappa_fw_T{mi}{sind}{wl_array_ind}{1}{end+1} = wt.deltaKappa{1}(temp_touch(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)));
-                            theta_fw_F{mi}{sind}{wl_array_ind}{1}{end+1} = wt.thetaAtBase{2}(temp_touch(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)));
-                            kappa_fw_F{mi}{sind}{wl_array_ind}{1}{end+1} = wt.deltaKappa{2}(temp_touch(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)));
+            b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
+            b_session = b{b_ind};
+
+            tt_ind = cell(1,length(trial_types));
+            wl_array = cell(1,length(trial_types));
+
+            for trial_type_num = 1 : length(trial_types)    
+                tt_ind{trial_type_num} = find(cellfun(@(x) strcmp(x.trialType,trial_types{trial_type_num}),b_session.trials));
+                temp_files = cell(length(tt_ind{trial_type_num}),1);
+                for j = 1 : length(tt_ind{trial_type_num})
+                    temp_files{j} = num2str(tt_ind{trial_type_num}(j));
+                end
+                wl = Whisker.WhiskerTrialLiteArray_2pad(whisker_d,'include_files',temp_files);
+                wl_array{trial_type_num} = wl;
+            end
+            for wl_array_ind = 1 : length(trial_types)
+                for wl_ind = 1 : length(wl_array{wl_array_ind}.trials)
+                    wt = wl_array{wl_array_ind}.trials{wl_ind};
+                    trial_temp_ind = find(cellfun(@(x) x.trialNum == wt.trialNum,b_session.trials));
+                    trial_temp = b_session.trials{trial_temp_ind};
+
+                    temp_touch = wt.th_touch_frames;
+                    if ~isempty(temp_touch)
+                        touch_diff_inds = [0;find(diff(temp_touch) - 1);length(temp_touch)];
+                        for cind = 1 : length(touch_diff_inds)-1
+                            if length(wt.thetaAtBase{1}(temp_touch(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)))) * length(wt.deltaKappa{1}(temp_touch(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)))) * ...
+                                    length(wt.thetaAtBase{2}(temp_touch(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)))) * length(wt.deltaKappa{2}(temp_touch(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)))) ...
+                                    > 0 % non of these are empty
+                                theta_fw_T{mi}{sind}{wl_array_ind}{1}{end+1} = wt.thetaAtBase{1}(temp_touch(touch_diff_inds(cind)+1:touch_diff_inds(cind+1))) + base_angle;
+                                kappa_fw_T{mi}{sind}{wl_array_ind}{1}{end+1} = wt.deltaKappa{1}(temp_touch(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)));
+                                theta_fw_F{mi}{sind}{wl_array_ind}{1}{end+1} = wt.thetaAtBase{2}(temp_touch(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)));
+                                kappa_fw_F{mi}{sind}{wl_array_ind}{1}{end+1} = wt.deltaKappa{2}(temp_touch(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)));
+                            end
                         end
-                    end
-                end                
-                
-                if ~isempty(trial_temp.beamBreakTimes)
-                    first_lick_time = min(trial_temp.beamBreakTimes);                    
-                else
-                    first_lick_frame = 0;
-                end                
-                before_frames_max = find(wt.time{1} < first_lick_time,1,'last');
-                before_frames = wt.th_touch_frames(wt.th_touch_frames < before_frames_max);                
-                if ~isempty(before_frames)
-                    touch_diff_inds = [0; find(diff(before_frames) - 1)];
-                    for cind = 1 : length(touch_diff_inds)-1
-                        if length(wt.thetaAtBase{1}(before_frames(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)))) * length(wt.deltaKappa{1}(before_frames(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)))) * ...
-                                length(wt.thetaAtBase{2}(before_frames(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)))) * length(wt.deltaKappa{2}(before_frames(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)))) ...
-                                > 0 % non of these are empty
-                            theta_fw_T{mi}{sind}{wl_array_ind}{2}{end+1} = wt.thetaAtBase{1}(before_frames(touch_diff_inds(cind)+1:touch_diff_inds(cind+1))) + base_angle;
-                            kappa_fw_T{mi}{sind}{wl_array_ind}{2}{end+1} = wt.deltaKappa{1}(before_frames(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)));
-                            theta_fw_F{mi}{sind}{wl_array_ind}{2}{end+1} = wt.thetaAtBase{2}(before_frames(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)));
-                            kappa_fw_F{mi}{sind}{wl_array_ind}{2}{end+1} = wt.deltaKappa{2}(before_frames(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)));
+                    end                
+
+                    if ~isempty(trial_temp.beamBreakTimes)
+                        first_lick_time = min(trial_temp.beamBreakTimes);                    
+                    else
+                        first_lick_frame = 0;
+                    end                
+                    before_frames_max = find(wt.time{1} < first_lick_time,1,'last');
+                    before_frames = wt.th_touch_frames(wt.th_touch_frames < before_frames_max);                
+                    if ~isempty(before_frames)
+                        touch_diff_inds = [0; find(diff(before_frames) - 1)];
+                        for cind = 1 : length(touch_diff_inds)-1
+                            if length(wt.thetaAtBase{1}(before_frames(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)))) * length(wt.deltaKappa{1}(before_frames(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)))) * ...
+                                    length(wt.thetaAtBase{2}(before_frames(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)))) * length(wt.deltaKappa{2}(before_frames(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)))) ...
+                                    > 0 % non of these are empty
+                                theta_fw_T{mi}{sind}{wl_array_ind}{2}{end+1} = wt.thetaAtBase{1}(before_frames(touch_diff_inds(cind)+1:touch_diff_inds(cind+1))) + base_angle;
+                                kappa_fw_T{mi}{sind}{wl_array_ind}{2}{end+1} = wt.deltaKappa{1}(before_frames(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)));
+                                theta_fw_F{mi}{sind}{wl_array_ind}{2}{end+1} = wt.thetaAtBase{2}(before_frames(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)));
+                                kappa_fw_F{mi}{sind}{wl_array_ind}{2}{end+1} = wt.deltaKappa{2}(before_frames(touch_diff_inds(cind)+1:touch_diff_inds(cind+1)));
+                            end
                         end
-                    end
-                end                
+                    end                
+                end
             end
         end
     end
 end
-end
+
+save('thetakappa.mat','theta_*','kappa_*')
 
 %% 
 % xlim_val = 40;
