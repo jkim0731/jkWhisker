@@ -4,11 +4,10 @@
 tic
 touch_boundary_thickness = 2; % include # of pixels outer space from the hp_peak boundary. Default = 2.
 
-behavior_base_dir = 'Z:\Data\2p\soloData\';
-whisker_base_dir = 'Z:\Data\Video\JK\';
-% mice = {'AH0648','AH0650','AH0651','AH0652','AH0653'};
-mice = {'AH0650'};
-sessionNum = [22:25];
+behavior_base_dir = 'Y:\JK_temp\SoloData\';
+whisker_base_dir = 'Y:\JK_temp\whisker\tracked\';
+mice = {'JK017','JK018','JK020'};
+sessionNum = [1:10];
 for mi = 1 : size(mice,2)
     mouseName = mice{mi};
     behavior_d = [behavior_base_dir mouseName '\'];

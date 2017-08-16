@@ -1,6 +1,6 @@
 
 %% basic information
-mice = {'JK017', 'JK018', 'JK020'};
+mice = {'JK017', 'JK018','JK020'};
 % mice = {'AH0650'};
 videoloc = 'Y:\JK_temp\whisker\tracked';
 d = ([videoloc filesep]);
@@ -11,7 +11,7 @@ ppm = 17.81002608;
             % 'pxPerMm': 10.56526073 for microVideo lens
 % comment out when doing for all of the sessions in the mouse directory
 % sessions = {[1,2,4:6,8:10,19,20,25],[2,4:6,8:19],[6,8:13],[2,4:8,11,19]};  
-sessions = {[7:13],[7,9:10],[6:9]};  
+sessions = {[14:20],[8,11:19]};  
 
 % sessions = {[7,8],[7],[6]};  
 all_session = 0; % 1 if using all sessions, 0 if using selected sessions
@@ -89,7 +89,7 @@ else
 end
 
 %% build WT, WST, and WL
-behavior_base_dir = 'Z:\Data\2p\soloData\';
+behavior_base_dir = 'Y:\JK_temp\SoloData\';
 if all_session == 1
     for mi = 1 : size(mice,2) % mouse index
         sn = dir([mice{mi},'*']);
