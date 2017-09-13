@@ -1,17 +1,16 @@
 % For 2pad (2-port angle distance), WT, WST, and WL is generated during prebuild_JK.m
 
 %% Setup whisker array builder 
-behavior_base_dir = 'Z:\Data\2p\soloData\';
-whisker_base_dir = 'Z:\Data\Video\JK\';
-
-mice = {'AH0648','AH0650','AH0651','AH0652','AH0653'};
-
+behavior_base_dir = 'Y:\JK_temp\SoloData\';
+whisker_base_dir = 'Y:\JK_temp\whisker\tracked\';
+% mice = {'AH0648','AH0650','AH0651','AH0652','AH0653'};
+mice = {'JK017','JK018','JK020'};
 %%%%%%%%%%%%%%%%%%%%%% manual selection
 steps = {[10:70],[20:80],[140:200],[140:200]};
 %%%%%%%%%%%%%%%%%%%%%% try as short as possible to reduce time next step
-mouseName = 'AH0653';
+mouseName = mice{1};
 % sessionNum = [2,4:8,11,14:18];
-sessionNum =[19];
+sessionNum =[3:13];
 trial_types = {'rc', 'rf', 'lc', 'lf'};
 % trial_types = {'rn', 'ln'};
 %%

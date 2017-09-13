@@ -125,7 +125,7 @@ classdef WhiskerTrialLite_2pad < handle
             end
             
             p = inputParser;
-            p.addRequired('w', @(x) isa(x,'Whisker.WhiskerSignalTrial'));                      
+            p.addRequired('w', @(x) isa(x,'Whisker.WhiskerSignalTrial_2pad'));                      
             p.addParameter('r_in_mm', 1, @(x) isnumeric(x) && numel(x)==1);
             p.addParameter('calc_forces', false, @islogical);
        
@@ -134,6 +134,8 @@ classdef WhiskerTrialLite_2pad < handle
             p.addParameter('youngs_modulus', 5e9, @isnumeric);
             p.addParameter('baseline_time_or_kappa_value', [0 0.1], @isnumeric);
             p.addParameter('proximity_threshold', -1, @isnumeric);
+            
+            p.addParameter('behavior',[], @(x) isa(x,'Solo.BehavTrial2padArray'));
             
             p.addParameter('pole_pos',[], @isnumeric);
             p.addParameter('trial_type',{}, @ischar);
@@ -175,8 +177,13 @@ classdef WhiskerTrialLite_2pad < handle
             
             obj.M0I = w.M0I;
 
-            obj.pole_pos = p.Results.pole_pos;
-            obj.trial_type = p.Results.trial_type;
+            if ~isempty(p.Results.behavior)
+                b_ind = find(cellfun(@(x) x.trialNum,p.Results.behavior.trials)==obj.trialNum);
+                if ~isempty(b_ind)
+                    obj.pole_pos = p.Results.behavior.trials{b_ind}.motorApPosition;
+                    obj.trial_type = p.Results.behavior.trials{b_ind}.trialType;
+                end
+            end
             obj.th_polygon = p.Results.th_polygon;
                     
             obj.pole_axes = w.pole_axes;

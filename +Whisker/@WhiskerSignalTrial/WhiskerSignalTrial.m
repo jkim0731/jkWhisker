@@ -1748,7 +1748,7 @@ classdef WhiskerSignalTrial < handle
             end
         end
         
-        function [R,THETA,varargout] = arc_length_and_theta(obj,tid,varargin)
+        function [R,THETA,varargout] = arc_length_theta(obj,tid,varargin)
             % 
             % POINT OF THIS IS THAT IT'S FASTER THAN arc_length_theta_and_kappa when
             % KAPPA IS NOT NEEDED.****
@@ -2592,6 +2592,88 @@ classdef WhiskerSignalTrial < handle
                         ind = find(r==rval,1,'first');
                         thetap(k) = THETA{k}(ind);
                         kappap(k) = KAPPA{k}(ind);
+                        y(k) = Y{k}(ind);
+                        x(k) = X{k}(ind);
+                    end
+                end
+            end
+            
+            
+        end
+        
+        function [thetap,y,x,t] = get_theta_at_point(obj,tid,r_in_mm)
+            %
+            %   [thetap,y,x,t] = get_theta_point(obj,tid,r_in_mm)
+            %
+            %   INPUTS:
+            %       tid:  Trajectory ID (as an integer) or whisker name (as a string).
+            %
+            %       r_in_mm: Distance along whisker at which to measure theta and kappa.
+            %                Note that this calculation does not extrapolate back
+            %                to the follicle. Alternatively, this argument can be given
+            %                as the string 'max', in which case theta, kappa, y, x are
+            %                given for the furthest arc-length distance along the whisker.
+            %
+            %
+            %
+            %   OUTPUTS:
+            %
+            %       thetap: Theta at radial distance specified by r_in_mm.
+            %                     Radial distance is measured outward from the
+            %                     intersection of the whisker and the mask, if present.
+            %                     In degrees.
+            %
+            %       x,y: The image (pixel) coordinates of the point at r_in_mm.
+            %
+            %       t: The corresponding times of each observation.
+            %
+            if isnumeric(tid) % Trajectory ID specified.
+                ind = find(obj.trajectoryIDs == tid);
+            elseif ischar(tid) % Whisker name specified.
+                ind = strmatch(tid,obj.whiskerNames,'exact');
+            else
+                error('Invalid type for argument ''tid''.')
+            end
+            
+            if isempty(ind)
+                error('Could not find specified trajectory ID.')
+            end
+            t = obj.time{ind};
+            f = t / obj.framePeriodInSec;
+            nframes = length(f);
+            
+            [R,THETA,Y,X] = obj.arc_length_theta(tid);
+            
+            thetap = zeros(1,nframes);
+            x = zeros(1,nframes);
+            y = zeros(1,nframes);
+            
+            if ischar(r_in_mm)
+                if ~strcmp(r_in_mm,'max')
+                    error('Invalid value for argument ''r_in_mm''')
+                end
+                for k=1:nframes
+                    if isempty(R{k})
+                        thetap(k) = NaN;
+                        y(k) = NaN;
+                        x(k) = NaN;
+                    else
+                        thetap(k) = THETA{k}(end);
+                        y(k) = Y{k}(end);
+                        x(k) = X{k}(end);
+                    end
+                end
+            else
+                for k=1:nframes
+                    r = R{k} / obj.pxPerMm;
+                    rval = min(r(r >= r_in_mm)); % Take the minimum value >= r_in_mm.
+                    if isempty(rval)
+                        thetap(k) = NaN;
+                        y(k) = NaN;
+                        x(k) = NaN;
+                    else
+                        ind = find(r==rval,1,'first');
+                        thetap(k) = THETA{k}(ind);
                         y(k) = Y{k}(ind);
                         x(k) = X{k}(ind);
                     end
