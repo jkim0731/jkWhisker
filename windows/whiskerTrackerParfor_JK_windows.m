@@ -5,21 +5,25 @@
 % Created by SAH and JS, 2014-08-04
 
 %% (1) TRACE: Uses Janelia Farm's whisker tracking software to track all whiskers in a directory 
-function whiskerTrackerParfor_JK()
+function whiskerTrackerParfor_JK_windows(pixDen, whiskerNum)
 % cd(['Z:\Data\Video\JON\AH0717\170901'])
 
 % delete(gcp('nocreate')); %turns off all other parallel pool processes
 % numCores = feature('numcores'); %identify number of cores available for MATLAB to use
 % parpool('local',numCores); %parallel pool using max number of cores available
 
+%%
 traces = dir('*.mp4'); %Searches only for .mp4 files, change if using other type (e.g. SEQ)
 
+% for n=1
 parfor n=1:length(traces)
     [~, outputFileName] = fileparts(traces(n).name);
+%     system(['trace ' traces(n).name ' test'])
     system(['trace ' traces(n).name ' ' outputFileName])
-    display([traces(n).name ' has been traced'])
+    display([traces(n).name ' has been traced'])   
 end
 
+%%
 % (2) MEASURE: Generates measurements of traced shapes for later evaluation
 measures = dir('*.whiskers');
 
@@ -35,7 +39,7 @@ classes = dir('*.measurements');
 
 parfor n=1:length(classes)
     [~, outputFileName] = fileparts(classes(n).name);
-    system(['classify ' classes(n).name ' ' outputFileName '.measurements ' 'bottom ' '--px2mm ' '0.033 ' '-n ' '-1 ']);
+    system(['classify ' classes(n).name ' ' outputFileName '.measurements ' 'bottom ' '--px2mm ' pixDen ' -n ' whiskerNum]);
     display([classes(n).name ' has been classified'])
 end
 
@@ -54,7 +58,7 @@ classes = dir('*.measurements');
 
 parfor n=1:length(classes)
     [~, outputFileName] = fileparts(classes(n).name);
-    system(['reclassify ' classes(n).name ' ' outputFileName '.measurements' ' ' '-n ' '1']);
+    system(['reclassify ' classes(n).name ' ' outputFileName '.measurements' ' ' '-n ' whiskerNum]);
     display([classes(n).name ' has been reclassified'])
     display([classes(n).name ' completed'])
 end

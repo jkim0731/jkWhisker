@@ -18,7 +18,7 @@ ffmpeg               https://www.ffmpeg.org/download.html
 
 Called with format mp4_converter_parallel(directory, temp directory location, header, parallel [Y/N]) 
 %} 
-function [] = mp4_converter_parallel(varargin)
+function [] = mp4_converter_parallel_windows(varargin)
 parallelRunYes = 1; %Converter runs in parallel by default
 headerSize = 8192; %Our current default header, changed with a  varargin call
 tempPath = 'C:\Users\shires\Documents\scratch'; %Default scratch folder
@@ -126,12 +126,11 @@ function process_to_mp4(myFile, myDir, header, temp, fPath, rPath)
     
     %Now run ffmpeg to create a .mp4 out of the tiff stack
     ffmpegOutPath = [myDir filesep fname '.mp4'];
-    ffmpegCMD = sprintf('%s -y -i %s\\%%5d.tif -b:v 800k %s', fPath, tempDir, ffmpegOutPath);
+    ffmpegCMD = sprintf('%s -y -i %s\\%%5d.tif -b:v 800k -codec:v mpeg4 %s', fPath, tempDir, ffmpegOutPath);
     system(ffmpegCMD);
     fprintf('Converted file %s successfully', fname) 
     
     %Clear the tiff stack this processor just created to save space
-    system(['rmdir ' tempDir '/s /q'])
-    
+    system(['rmdir ' tempDir '/s /q'])    
 end 
-    
+
