@@ -334,7 +334,7 @@ classdef WhiskerTrial < handle
             if isnumeric(tid) % Trajectory ID specified.
                 ind = find(obj.trajectoryIDs == tid);
             elseif ischar(tid) % Whisker name specified.
-                ind = strmatch(tid,obj.whiskerNames,'exact');
+                ind = strcmp(tid,obj.whiskerNames);
             else
                 error('Invalid type for argument ''tid''.')
             end
