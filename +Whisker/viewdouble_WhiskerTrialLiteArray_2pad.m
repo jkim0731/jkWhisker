@@ -11,7 +11,7 @@ function viewdouble_WhiskerTrialLiteArray(w,varargin)
 %
 g.plotOnlyFirstContacts = false; 
 
-if isa(w,'Whisker.WhiskerTrialLiteArray') % Initialize
+if isa(w,'Whisker.WhiskerTrialLiteArray_2pad') % Initialize
     
     if nargin==1  % tid, contact_tid not given.
         tid = 0;
