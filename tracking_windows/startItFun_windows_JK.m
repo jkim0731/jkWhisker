@@ -41,17 +41,20 @@ if length(mp4_list) < length(seq_list)
     disp('CONVERTING TO .MP4')    
     mp4_converter_parallel_windows;
     system('dir')
-    disp('Finished converting')
-    
-    mp4files = dir('*.mp4');
-    if length(mp4files) ~= nfiles
-        error('mp4 conversion error (mistmatch in file number)')
-    elseif        
-        for i = 1 : length(mp4files)
-            if strcmp(mp4files(i).name
-            
+    disp('Finished converting')        
 else
     disp('Already converted')
+end
+mp4files = dir('*.mp4');
+if length(mp4files) ~= nfiles
+        error('mp4 conversion error: mistmatch in file number')
+else        
+    for i = 1 : length(mp4files)
+        if strcmp(strtok(mp4files(i).name,'.'), strtok(seq_list(i).name,'.'))
+        else
+            error('mp4 conversion error: file name mismatch in %s', seq_list(i).name)
+        end        
+    end
 end
 conv_time = toc;
 % Section 3: Upload data to NAS and track the .mp4 files
@@ -78,7 +81,7 @@ track_time = toc;
 
 tic;
 system(['copy ', startDir, '\*.mp4 ', endDir]) 
-system(['copy ', startDir, '\*.whiskers ', endDir]) 
+system(['copy ', startDir, '\*.whiskers ', endDir])
 system(['copy ', startDir, '\*.measurements ', endDir]) 
 system(['copy ', startDir, '\default.parameters ', endDir]) 
 system(['copy ', startDir, '\*.detectorbank ', endDir]) 
