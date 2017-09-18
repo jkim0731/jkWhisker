@@ -47,7 +47,7 @@ dirTrialNums=zeros(1,size(filelist,1));
 % name. These index numbers may need to be changed to match up to the
 % numerical code of the trial number.  (2016/09/05 JK)
 
-for i=1:length(filelist);
+for i=1:length(filelist)
     dirTrialNums(i)=str2double(filelist(i).name(1:end-13)); % extract out the trial number from each measurements file present in directory
 end
 dirTrialNums = setdiff(dirTrialNums,excludef);

@@ -13,16 +13,20 @@ classdef WhiskerTrial < handle
         trialNum = [];
         trialType = NaN;
         whiskerNames = {};
-        trajectoryIDs = {};
+        trajectoryIDs = []; % changed from {}, to reduce any confusion. 2017/09/16 JK (it's going to be numeric anyway, when called by trajectory_nums{1}
         trackerData = {};
         barPos = []; % [frameNum XPosition YPosition]
         barRadius = 17; % In pixels. Must be radius of bar tracked by the bar tracker.
         barPosOffset = [0 0]; % In pixels. Displacement from the center of the large pole to the 'contact point'
         % (either on the edge of the large pole or small pole).
+        
         % polyFits: Time-consuming to compute; not computed upon object construction;
         % need to resave object after computing.
         % Cell array of length length(trajectoryIDs), of format:
         % {{XPolyCoeffs_tid0, YPolyCoeffs_tid0},...,{XPolyCoeffs_tidN, YPolyCoeffs_tidN}};
+        
+        % Changed to apply mask, because noisy ugly tracking near whisker
+        % pad leads to false fitting at the base 2017/09/16
         polyFits = {};
         
         polyFitsROI = {}; % Same format as polyFits but polynomials are fitted only to a
@@ -245,7 +249,7 @@ classdef WhiskerTrial < handle
             %--- .trajectories files don't necessarily have frameNums in order,
             % so sort them here:
             f =  cellfun(@(x) x{2}, D);
-            [tmp,ind] = sort(f,2,'ascend');
+            [~,ind] = sort(f,2,'ascend');
             D = D(ind);
             %-----------------------------------------------------------
             
@@ -330,7 +334,7 @@ classdef WhiskerTrial < handle
             if isnumeric(tid) % Trajectory ID specified.
                 ind = find(obj.trajectoryIDs == tid);
             elseif ischar(tid) % Whisker name specified.
-                ind = strmatch(tid,obj.whiskerNames,'exact');
+                ind = strcmp(tid,obj.whiskerNames);
             else
                 error('Invalid type for argument ''tid''.')
             end
@@ -440,7 +444,7 @@ classdef WhiskerTrial < handle
             if isnumeric(tid) % Trajectory ID specified.
                 ind = find(obj.trajectoryIDs == tid);
             elseif ischar(tid) % Whisker name specified.
-                ind = strmatch(tid,obj.whiskerNames,'exact');
+                ind = strcmp(tid,obj.whiskerNames);
             else
                 error('Invalid type for argument ''tid''.')
             end
@@ -1127,6 +1131,9 @@ classdef WhiskerTrial < handle
             % length(obj.trajectoryIDs), one element per trajectory ID.
             % Each element of this cell array is an
             %
+            
+            % Changed to fit only after the mask. 2017/09/16 JK
+            
             polyDegree = 5;
             
             numCoeff = polyDegree+1;
@@ -1191,6 +1198,78 @@ classdef WhiskerTrial < handle
                                 yy = yy(end:-1:1);
                             end
                             
+                            % Applying the mask, if there is any 2017/09/16 JK
+                            % This treatment affects x and yy only. 
+                            if ~isempty(obj.polyFitsMask) 
+                            % for multiple masks and whiskers, choose the
+                            % mask that is closest to the point closest to wpo (calculated at just above this line) for safety
+                            % (usually, it is better to have constraint on the order of whisker and mask (when numbering the whiskers and drawing masks)
+                                if length(obj.polyFitsMask) > 1                                    
+                                    wpo_dist = zeros(1,length(obj.polyFitsMask));
+                                    for temp_m_ind = 1 : length(obj.polyFitsMask)
+                                        fittedXMask = obj.polyFitsMask{temp_m_ind}{1};
+                                        fittedYMask = obj.polyFitsMask{temp_m_ind}{2};
+                                        if size(fittedXMask,1) > 1
+                                            pxm = fittedXMask(k,:);
+                                            pym = fittedYMask(k,:);
+                                        else
+                                            pxm = fittedXMask;
+                                            pym = fittedYMask;
+                                        end
+                                        wpo_dist(temp_m_ind) = mean(sum(abs([x(1);yy(1)] - [polyval(pxm,linspace(0,1,100));polyval(pym,linspace(0,1,100))]))); % x and yy are already ordered to start from closest to wpo
+                                    end
+                                    [~, m_ind] = min(wpo_dist);
+                                else 
+                                    m_ind = 1;
+                                end
+
+                                if iscell(obj.maskTreatment)
+                                    if length(obj.maskTreatment) ~= length(obj.trajectoryIDs)
+                                        error('obj.maskTreatment and obj.trajectoryIDs must have the same length and matching entries.')
+                                    end
+                                    mask_treatment = obj.maskTreatment{m_ind};
+                                else
+                                    mask_treatment = obj.maskTreatment;
+                                end
+
+                                fittedXMask = obj.polyFitsMask{m_ind}{1};
+                                fittedYMask = obj.polyFitsMask{m_ind}{2};
+                                if size(fittedXMask,1) > 1
+                                    pxm = fittedXMask(k,:);
+                                    pym = fittedYMask(k,:);
+                                else
+                                    pxm = fittedXMask;
+                                    pym = fittedYMask;
+                                end
+
+                                C1 = [x; yy];
+                                C2 = [polyval(pxm,linspace(0,1,100)); polyval(pym,linspace(0,1,100))];
+                                P = Whisker.InterX(C1,C2); % Find points where whisker and mask curves intersect. Slower but more
+                                %  accurate version that isn't limited in resolution by the number of
+                                %  points whisker and mask are evaluated at.
+                                if size(P,2) > 1   % Don't need for faster version, which handles this.
+                                    disp('Found more than 1 intersection of whisker and mask curves; using only first.')
+                                    P = P(:,1);
+                                end
+
+                                %                 P = Whisker.InterXFast(C1,C2); % Find points where whisker and mask curves intersect. Much faster version
+                                %                                                 % that is limited in resolution by the number of
+                                %                                                 % points whisker and mask are evaluated at (i.e., by number of points in q).
+
+                                if isempty(P)
+                                    if strcmp(mask_treatment,'maskNaN')
+                                        fprintf('No intersection with the mask, returning NaNs in frame #%d.\n', k)
+                                        x = nan(size(x));
+                                        yy = nan(size(yy));
+                                    end % else x = x, yy = yy (no change)
+                                else
+                                    % starting from the point closest to the intersection (P)
+                                    [~,c_ind] = min(abs([x;yy] - P));
+                                    x = x(c_ind:end);
+                                    yy = yy(c_ind:end);
+                                end
+                            end
+
                             % Need to fit x and y as function of radial
                             % distance (normalized to be [0,1]), not simply index values, since
                             % x values from the tracker are not necessarily
@@ -1220,7 +1299,7 @@ classdef WhiskerTrial < handle
                         %                     disp(['On frame ' int2str(k)])
                         f = trajectoryData{k};
                         if numel(f{4}) > 1 % Tracker can sometimes (rarely) leave frame entries for a trajectory in whiskers file that have no pixels.
-                            [xp(k,:), yp(k,:)] = doFits(f);
+                            [xp(k,:), yp(k,:)] = doFits(f,k);
                         else
                             xp(k,:) = nan(1,numCoeff);
                             yp(k,:) = nan(1,numCoeff);
@@ -1234,7 +1313,7 @@ classdef WhiskerTrial < handle
             
             obj.polyFits = fitted;
             
-            function [coeffX,coeffY] = doFits(frame) % SUBFUNCTION
+            function [coeffX,coeffY] = doFits(frame,k) % SUBFUNCTION
                 %
                 %
                 x = frame{4};
@@ -1252,22 +1331,6 @@ classdef WhiskerTrial < handle
                     yy = yy';
                 end
                 
-                % Need to fit x and y as function of radial
-                % distance (normalized to be [0,1]), not simply index values, since
-                % x values from the tracker are not necessarily
-                % evenly spaced.
-                %
-                s = cumsum(sqrt([0 diff(x)].^2 + [0 diff(yy)].^2));
-                q = s ./ max(s); % now [0,1].
-                
-                
-                if length(q) <= polyDegree
-                    disp('Number of samples not more than polynomial order, returning NaNs.')
-                    coeffX = nan(1,numCoeff);
-                    coeffY = nan(1,numCoeff);
-                    return
-                end
-                
                 % Check which end of the whisker is closer to the whisker pad origin; make
                 % sure that c(q) = (x(q),y(q)) pairs are moving away from follice as q increase:
                 x0 = x(1);
@@ -1282,9 +1345,94 @@ classdef WhiskerTrial < handle
                     yy = yy(end:-1:1);
                 end
                 
-                coeffX = Whisker.polyfit(q,x,polyDegree);
-                coeffY = Whisker.polyfit(q,yy,polyDegree);
+                % Applying the mask, if there is any 2017/09/16 JK
+                % This treatment affects x and yy only. 
+                if ~isempty(obj.polyFitsMask) 
+                    % for multiple masks and whiskers, choose the
+                    % mask that is closest to the point closest to wpo (calculated at just above this line) for safety
+                    % (usually, it is better to have constraint on the order of whisker and mask (when numbering the whiskers and drawing masks)
+                    if length(obj.polyFitsMask) > 1                                    
+                        wpo_dist = zeros(1,length(obj.polyFitsMask));
+                        for temp_m_ind = 1 : length(obj.polyFitsMask)
+                            fittedXMask = obj.polyFitsMask{temp_m_ind}{1};
+                            fittedYMask = obj.polyFitsMask{temp_m_ind}{2};
+                            if size(fittedXMask,1) > 1
+                                pxm = fittedXMask(k,:);
+                                pym = fittedYMask(k,:);
+                            else
+                                pxm = fittedXMask;
+                                pym = fittedYMask;
+                            end
+                            wpo_dist(temp_m_ind) = mean(sum(abs([x(1);yy(1)] - [polyval(pxm,linspace(0,1,100));polyval(pym,linspace(0,1,100))]))); % x and yy are already ordered to start from closest to wpo
+                        end
+                        [~, m_ind] = min(wpo_dist);
+                    else 
+                        m_ind = 1;
+                    end
+                    
+                    if iscell(obj.maskTreatment)
+                        if length(obj.maskTreatment) ~= length(obj.trajectoryIDs)
+                            error('obj.maskTreatment and obj.trajectoryIDs must have the same length and matching entries.')
+                        end
+                        mask_treatment = obj.maskTreatment{m_ind};
+                    else
+                        mask_treatment = obj.maskTreatment;
+                    end
+                    
+                    fittedXMask = obj.polyFitsMask{m_ind}{1};
+                    fittedYMask = obj.polyFitsMask{m_ind}{2};
+                    if size(fittedXMask,1) > 1
+                        pxm = fittedXMask(k,:);
+                        pym = fittedYMask(k,:);
+                    else
+                        pxm = fittedXMask;
+                        pym = fittedYMask;
+                    end
+
+                    C1 = [x; yy];
+                    C2 = [polyval(pxm,linspace(0,1,100)); polyval(pym,linspace(0,1,100))];
+                    P = Whisker.InterX(C1,C2); % Find points where whisker and mask curves intersect. Slower but more
+                    %  accurate version that isn't limited in resolution by the number of
+                    %  points whisker and mask are evaluated at.
+                    if size(P,2) > 1   % Don't need for faster version, which handles this.
+                        disp('Found more than 1 intersection of whisker and mask curves; using only first.')
+                        P = P(:,1);
+                    end
+
+                    %                 P = Whisker.InterXFast(C1,C2); % Find points where whisker and mask curves intersect. Much faster version
+                    %                                                 % that is limited in resolution by the number of
+                    %                                                 % points whisker and mask are evaluated at (i.e., by number of points in q).
+
+                    if isempty(P)
+                        if strcmp(mask_treatment,'maskNaN')
+                            fprintf('No intersection with the mask, returning NaNs in frame #%d.\n', k)
+                            x = nan(size(x));
+                            yy = nan(size(yy));
+                        end % else x = x, yy = yy (no change)
+                    else
+                        % starting from the point closest to the intersection (P)
+                        [~,c_ind] = min(abs([x;yy] - P));
+                        x = x(c_ind:end);
+                        yy = yy(c_ind:end);
+                    end
+                end
+                % Need to fit x and y as function of radial
+                % distance (normalized to be [0,1]), not simply index values, since
+                % x values from the tracker are not necessarily
+                % evenly spaced.
+                %
+                s = cumsum(sqrt([0 diff(x)].^2 + [0 diff(yy)].^2));
+                q = s ./ max(s); % now [0,1].
                 
+                
+                if length(q) <= polyDegree
+                    disp('Number of samples not more than polynomial order, returning NaNs.')
+                    coeffX = nan(1,numCoeff);
+                    coeffY = nan(1,numCoeff);
+                else
+                    coeffX = Whisker.polyfit(q,x,polyDegree);
+                    coeffY = Whisker.polyfit(q,yy,polyDegree);
+                end
                 %                 disp(k); qq=linspace(0,1);
                 %                 subplot(131); hold on; plot(x,yy,'k.-'); plot(polyval(coeffX,qq),polyval(coeffY,qq),'r.-');
                 %                 title('Fitted vs measure whisker')
@@ -1383,9 +1531,6 @@ classdef WhiskerTrial < handle
                 %                 warning('off','MATLAB:polyfit:RepeatedPointsOrRescale');
                 
                 if exist('parfor','builtin') % parfor to enhance speed (2017/04/03 JK)
-                    xp = nan(k,numCoeff);
-                    yp = nan(k,numCoeff);
-                    qp = nan(k,4);
                     if strcmp(obj.trackerFileFormat,'whisker0')
                         whisker0Format = true;
                     else
@@ -1453,6 +1598,9 @@ classdef WhiskerTrial < handle
 
                         if length(q) <= polyDegree
                             disp('Number of samples not more than polynomial order, returning NaNs.')
+                            xp(k,:) = nan(1,numCoeff);
+                            yp(k,:) = nan(1,numCoeff);
+                            qp(k,:) = nan(1,4);
                         else
                             xp(k,:) = Whisker.polyfit(q,x,polyDegree);
                             yp(k,:) = Whisker.polyfit(q,yy,polyDegree);

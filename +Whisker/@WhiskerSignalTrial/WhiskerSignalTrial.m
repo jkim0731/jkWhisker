@@ -210,19 +210,18 @@ classdef WhiskerSignalTrial < handle
                 if numel(ind) ~= 1
                     error('Trajectory either not found or found multiple times; argument varargin{1} must be incorrect.')
                 end
-                
-                disp(['Fitting polys for TID = ' int2str(tid)])
-                
-                if ~isnan(roiAll{ind})
-                    w.fit_polys_roi(roiAll{ind});
-                end
-                
-                obj.polyFits = w.polyFits; % Put this here so that if WhiskerTrial had empty polyFits property
-                                            % before calling w.mean_theta_and_kappa, it will now be transferred
-                                            % to WhiskerSignalTrial.
-                obj.polyFitsROI = w.polyFitsROI;
                 obj.time{k} = w.get_time(tid);
             end
+%                 
+%                 disp(['Fitting polys for TID = ' int2str(tid)])%                 
+                
+            w.fit_polys_roi(roiAll);
+
+            obj.polyFits = w.polyFits; % Put this here so that if WhiskerTrial had empty polyFits property
+                                        % before calling w.mean_theta_and_kappa, it will now be transferred
+                                        % to WhiskerSignalTrial.
+            obj.polyFitsROI = w.polyFitsROI;
+
             obj.videoFrames = w.get_videoFrames; % 2017/04/03 JK
             obj.pole_available_timepoints = p.Results.pole_available_frames(1) : obj.videoFrames - p.Results.pole_available_frames(2);
         end
@@ -2473,7 +2472,7 @@ classdef WhiskerSignalTrial < handle
             if isnumeric(tid) % Trajectory ID specified.
                 ind = find(obj.trajectoryIDs == tid);
             elseif ischar(tid) % Whisker name specified.
-                ind = strmatch(tid,obj.whiskerNames,'exact');
+                ind = strcmp(tid,obj.whiskerNames);
             else
                 error('Invalid type for argument ''tid''.')
             end
