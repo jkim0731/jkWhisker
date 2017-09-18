@@ -2494,7 +2494,7 @@ classdef WhiskerSignalTrial < handle
             f = t / obj.framePeriodInSec;
             nframes = length(f);
             
-            [R,THETA] = obj.arc_length_and_theta(tid); % mask is accounted for.
+            [R,THETA] = obj.arc_length_theta(tid); % mask is accounted for.
             
             theta0 = zeros(1,nframes);
             

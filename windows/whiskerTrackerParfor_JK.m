@@ -12,7 +12,7 @@
 % numCores = feature('numcores'); %identify number of cores available for MATLAB to use
 % parpool('local',numCores); %parallel pool using max number of cores available
 
-traces = dir('*.mp4'); %Searches only for .mp4 files, change if using other type (e.g. SEQ)
+traces = dir('*.avi'); %Searches only for .mp4 files, change if using other type (e.g. SEQ)
 
 parfor n=1:length(traces)
     [~, outputFileName] = fileparts(traces(n).name);

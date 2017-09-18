@@ -467,10 +467,15 @@ classdef WhiskerTrial < handle
             %
             %   2017/04/03 JK
             %   
-            
-            fn = [obj.trackerFileName, '.mp4'];
-            v = VideoReader(fn);
-            f = v.NumberOfFrames;            
+            try
+                fn = [obj.trackerFileName, '.mp4'];
+                v = VideoReader(fn);
+                f = v.NumberOfFrames;            
+            catch
+                fn = [obj.trackerFileName, '.avi'];
+                v = VideoReader(fn);
+                f = v.NumberOfFrames;            
+            end
         end
         
         function set_face_coords_all(obj, x, y)
