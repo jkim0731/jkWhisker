@@ -9,7 +9,7 @@
 %% Section 1: Directories
 % We've got to set a few directories straight here. For usability, input
 % commands will be used
-function [conv_time, track_time, copy_time, nfiles] = startItFun_windows(startDir, endDir, pixDen, whiskerNumber)
+function [conv_time, track_time, copy_time, nfiles] = startItFun_windows_JK(startDir, endDir)
 options.Resize ='on';
 options.WindowStyle='normal';
 options.Interpreter='none';
@@ -68,7 +68,7 @@ disp('STARTING WHISKER TRACKING')
 disp('Note: This will take some time') 
 
 if exist('default.parameters','file')
-    whiskerTrackerParfor_JK_windows(pixDen, whiskerNumber) % Uses 'classify' for multiple whisker tracking. 
+    whiskerTrackerParfor_JK_windows % Uses 'classify' for multiple whisker tracking. 
 else
     try
         system('copy C:\Users\shires\Documents\GitHub\jkWhisker\default.parameters startDir')
@@ -80,6 +80,12 @@ disp('Finished tracking')
 track_time = toc;
 
 tic;
+nf_mp4 = length(dir('*.mp4'));
+nf_whiskers = length(dir('*.whiskers'));
+nf_measurements = length(dir('*.measurements'));
+if nf_mp4 ~= nf_whiskers || nf_mp4 ~= nf_measurements
+    error('Number of files do not match')
+end
 system(['copy ', startDir, '\*.mp4 ', endDir]) 
 system(['copy ', startDir, '\*.whiskers ', endDir])
 system(['copy ', startDir, '\*.measurements ', endDir]) 

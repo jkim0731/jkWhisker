@@ -88,36 +88,36 @@ if length(measure_flist) < length(mp4_flist)
         end
     end
     % 2) re-measure    
-    measure_list = zeros(length(measure_flist,1));
+    measure_list = zeros(length(measure_flist),1);
     for i = 1 : length(measure_flist)
         measure_list(i) = str2double(strtok(measure_flist(i).name,'.'));
     end
     measure_errorlist = setdiff(mp4_list,measure_list);
     parfor i = 1 : length(measure_errorlist)
         temp_fname = num2str(measure_errorlist(i));
-        sout = system(['measure ' '--face ' 'bottom ' temp_fname '.whiskers ' outputFileName '.measurements']);
+        sout = system(['measure ' '--face ' 'bottom ' temp_fname '.whiskers ' temp_fname '.measurements']);
         trial_ind = 0;
         while (sout ~= 0 && trial_ind < 3)
-            sout = system(['measure ' '--face ' 'bottom ' measures(n).name ' ' outputFileName '.measurements']);
+            sout = system(['measure ' '--face ' 'bottom ' temp_fname '.whiskers ' temp_fname '.measurements']);
             trial_ind = trial_ind + 1;
         end
         if sout == 0
-            disp([measures(n).name ' has been measured'])
+            disp([temp_fname '.whiskers has been measured'])
         else
-            disp(['Failed to measure ' measures(n).name])
+            disp(['Failed to measure ' temp_fname '.whiskers'])
         end
     end
 end
-% 3) for those still remaining not measured, trace again and then  measure them
+%% 3) for those still remaining not measured, trace again and then  measure them
 measure_flist = dir('*.measurements');
 if length(measure_flist) < length(mp4_flist)
-    measure_list = zeros(length(measure_flist,1));
+    measure_list = zeros(length(measure_flist),1);
     for i = 1 : length(measure_flist)
         measure_list(i) = str2double(strtok(measure_flist(i).name,'.'));
     end
     measure_errorlist = setdiff(mp4_list,measure_list);
     parfor i = 1 : length(measure_errorlist)
-        temp_fname = num2strmeasure_errorlist(i);
+        temp_fname = num2str(measure_errorlist(i));
         sout = system(['trace ' temp_fname '.mp4 ' temp_fname]);
         trial_ind = 0;
         while (sout ~= 0 && trial_ind < 3)
@@ -131,7 +131,7 @@ if length(measure_flist) < length(mp4_flist)
         end
     end
     parfor i = 1 : length(measure_errorlist)
-        temp_fname = num2strmeasure_errorlist(i);
+        temp_fname = num2str(measure_errorlist(i));
         sout = system(['measure --face bottom ' temp_fname '.whiskers ' temp_fname '.measurements']);
         trial_ind = 0;
         while (sout ~= 0 && trial_ind < 3)
