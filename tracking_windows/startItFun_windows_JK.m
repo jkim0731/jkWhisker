@@ -10,9 +10,9 @@
 % We've got to set a few directories straight here. For usability, input
 % commands will be used
 function [conv_time, track_time, copy_time, nfiles] = startItFun_windows_JK(startDir, endDir)
-options.Resize ='on';
-options.WindowStyle='normal';
-options.Interpreter='none';
+% options.Resize ='on';
+% options.WindowStyle='normal';
+% options.Interpreter='none';
 
 % trackingInfo = inputdlg({'Enter directory where your .seq files are found',...
 %     'Enter directory where you would like to place your tracked .mp4s (Should be on NAS mounted under /mnt)',...
@@ -34,6 +34,9 @@ tic;
 % Uses python script mp4_converterJS3.py, originally written by
 % S. Peron, to convert files
 cd(startDir);
+if exist('.seq','file')
+    system('del .seq')
+end
 mp4_list = dir('*.mp4');
 seq_list = dir('*.seq');
 nfiles = length(seq_list);

@@ -58,19 +58,23 @@ end
 
 %% (2)-1 Error check and re-do the analysis (2017/09/18 JK)
 mp4_flist = dir('*.mp4');
+mp4_list = zeros(length(mp4_flist),1);
+for i = 1 : length(mp4_flist)
+    mp4_list(i) = str2double(strtok(mp4_flist(i).name,'.')); % assume that all filenames are integers
+end
 whiskers_flist = dir('*.whiskers');
+whiskers_list = zeros(length(whiskers_flist),1);
+for i = 1 : length(whiskers_flist)
+    whiskers_list(i) = str2double(strtok(whiskers_flist(i).name,'.'));
+end
 measure_flist = dir('*.measurements');
-if length(measure_flist) < length(mp4_flist)
+measure_list = zeros(length(measure_flist),1);
+for i = 1 : length(measure_flist)
+    measure_list(i) = str2double(strtok(measure_flist(i).name,'.'));
+end
+if length(measure_flist) < length(mp4_flist)    
     % 1) re-trace those failed to trace before
-    if length(whiskers_flist) < length(mp4_flist)
-        mp4_list = zeros(length(mp4_flist),1);
-        for i = 1 : length(mp4_flist)
-            mp4_list(i) = str2double(strtok(mp4_flist(i).name,'.')); % assume that all filenames are integers
-        end
-        whiskers_list = zeros(length(whiskers_flist),1);
-        for i = 1 : length(whiskers_flist)
-            whiskers_list(i) = str2double(strtok(whiskers_flist(i).name,'.'));
-        end
+    if length(whiskers_flist) < length(mp4_flist)        
         trace_errorlist = setdiff(mp4_list,whiskers_list);    
         parfor i = 1 : length(trace_errorlist)
             temp_fname = num2str(trace_errorlist(i));
@@ -88,10 +92,6 @@ if length(measure_flist) < length(mp4_flist)
         end
     end
     % 2) re-measure    
-    measure_list = zeros(length(measure_flist),1);
-    for i = 1 : length(measure_flist)
-        measure_list(i) = str2double(strtok(measure_flist(i).name,'.'));
-    end
     measure_errorlist = setdiff(mp4_list,measure_list);
     parfor i = 1 : length(measure_errorlist)
         temp_fname = num2str(measure_errorlist(i));
