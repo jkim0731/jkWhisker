@@ -42,7 +42,8 @@ for i = 1 : 5
     system(['copy ', startDir, '\default.parameters ', endDir]) 
     system(['copy ', startDir, '\*.detectorbank ', endDir]) 
 end
-for i = 6 : length(dirlist)        
+%%
+for i = 17 : length(dirlist)        
     delete(gcp('nocreate'))
     tic
     if dirlist(i).isdir

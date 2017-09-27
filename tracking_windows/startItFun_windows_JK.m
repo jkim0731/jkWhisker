@@ -70,15 +70,15 @@ tic;
 disp('STARTING WHISKER TRACKING')
 disp('Note: This will take some time') 
 
-if exist('default.parameters','file')
-    whiskerTrackerParfor_JK_windows % Uses 'classify' for multiple whisker tracking. 
-else
-    try
-        system('copy C:\Users\shires\Documents\GitHub\jkWhisker\default.parameters startDir')
-    catch
-        error('No default.parameters')
-    end
+if ~strcmp(startDir(end),filesep)
+    startDir = [startDir, filesep];
 end
+copy_answer = system('copy C:\Users\shires\Documents\GitHub\jkWhisker\default.parameters ', startDir);
+if copy_answer ~= 0
+    error('No default.parameters')
+end
+whiskerTrackerParfor_JK_windows
+
 disp('Finished tracking')
 track_time = toc;
 
@@ -89,11 +89,11 @@ nf_measurements = length(dir('*.measurements'));
 if nf_mp4 ~= nf_whiskers || nf_mp4 ~= nf_measurements
     error('Number of files do not match')
 end
-system(['copy ', startDir, '\*.mp4 ', endDir]) 
-system(['copy ', startDir, '\*.whiskers ', endDir])
-system(['copy ', startDir, '\*.measurements ', endDir]) 
-system(['copy ', startDir, '\default.parameters ', endDir]) 
-system(['copy ', startDir, '\*.detectorbank ', endDir]) 
+system(['copy ', startDir, '*.mp4 ', endDir]) 
+system(['copy ', startDir, '*.whiskers ', endDir])
+system(['copy ', startDir, '*.measurements ', endDir]) 
+system(['copy ', startDir, 'default.parameters ', endDir]) 
+system(['copy ', startDir, '*.detectorbank ', endDir]) 
 copy_time = toc;
 
 % Section 4: Finish program and display time statistics
