@@ -42,7 +42,7 @@ seq_list = dir('*.seq');
 nfiles = length(seq_list);
 if length(mp4_list) < length(seq_list)
     disp('CONVERTING TO .MP4')    
-    mp4_converter_parallel_windows;
+    mp4_converter_parallel_windows_JK;
     system('dir')
     disp('Finished converting')        
 else
@@ -73,7 +73,7 @@ disp('Note: This will take some time')
 if ~strcmp(startDir(end),filesep)
     startDir = [startDir, filesep];
 end
-copy_answer = system('copy C:\Users\shires\Documents\GitHub\jkWhisker\default.parameters ', startDir);
+copy_answer = system(['copy C:\Users\shires\Documents\GitHub\jkWhisker\default.parameters ', startDir]);
 if copy_answer ~= 0
     error('No default.parameters')
 end

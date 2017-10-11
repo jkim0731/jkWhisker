@@ -18,7 +18,7 @@ ffmpeg               https://www.ffmpeg.org/download.html
 
 Called with format mp4_converter_parallel(directory, temp directory location, header, parallel [Y/N]) 
 %} 
-function [] = mp4_converter_parallel_windows(varargin)
+function [] = mp4_converter_parallel_windows_JK(varargin)
 parallelRunYes = 1; %Converter runs in parallel by default
 headerSize = 8192; %Our current default header, changed with a  varargin call
 tempPath = 'C:\Users\shires\Documents\scratch'; %Default scratch folder
