@@ -11,9 +11,25 @@ ppm = ppm / 2; % for binning 2
             % 'pxPerMm': 10.56526073 for microVideo lens
 % comment out when doing for all of the sessions in the mouse directory
 % sessions = {[1,2,4:6,8:10,19,20,25],[2,4:6,8:19],[6,8:13],[2,4:8,11,19]};  
-sessions = {[0:4,6:8],[0:7],[0:6]};  
+sessions = {[0:14],[0:15],[0:11]};  
 
 all_session = 0; % 1 if using all sessions, 0 if using selected sessions
+
+base_dir = 'Z:\Data\2p\SoloData\';
+for i = 1 : length(mice)
+% for i = 2
+    td = [base_dir mice{i} '\'];
+    cd(td)    
+    merge_error_saved_dir
+    flist = dir('data_@*x.mat');
+    
+    b = cell(1,length(flist));
+
+    for j = 1 : length(flist)            
+        b{j} = Solo.BehavTrial2padArray(flist(j).name);
+    end    
+    save('behavior.mat','b')
+end
 
 %% Define follicle points and masks
 % saves follicle_n_mask.mat file consists of variables 'maskx','masky','width', 'height', and 'follicle_first'
@@ -88,7 +104,7 @@ else
 end
 
 %% build WT, WST, and WL
-behavior_base_dir = 'Y:\JK_temp\SoloData\';
+behavior_base_dir = 'Z:\Data\2p\soloData\';
 if all_session == 1
     for mi = 1 : size(mice,2) % mouse index
         sn = dir([mice{mi},'*']);
@@ -145,10 +161,10 @@ if all_session == 1
             
                 Whisker.makeAllDirectory_WhiskerTrial(whisker_d,[0 1],'mask', {[maskx{1}';masky{1}'],[maskx{2}';masky{2}']},...
                     'trial_nums',trialNums,'include_files',includef,...
-                    'barRadius',15.3,'faceSideInImage', 'bottom', 'framePeriodInSec',.0032,...
+                    'barRadius',15.3,'faceSideInImage', 'bottom', 'framePeriodInSec',0.003225806451613,...
                     'imagePixelDimsXY',[width height],'pxPerMm',ppm,'mouseName',mouseName,'sessionName',sessionName,'protractionDirection','rightward');
-                Whisker.makeAllDirectory_WhiskerSignalTrial_2pad(whisker_d,'include_files',includef,'polyRoiInPix',[20 80]);
-                Whisker.makeAllDirectory_WhiskerTrialLite(whisker_d,'include_files',includef,'r_in_mm',3,'calc_forces',false,'behavior',b_session);
+                Whisker.makeAllDirectory_WhiskerSignalTrial_2pad(whisker_d,'include_files',includef,'polyRoiInPix',[ppm 6*ppm]);
+                Whisker.makeAllDirectory_WhiskerTrialLite_2pad(whisker_d,'include_files',includef,'r_in_mm',3,'calc_forces',false,'behavior',b_session);
             end
         end
     end
@@ -157,12 +173,6 @@ else
         mouseName = mice{mi};
         if ~isempty(sessions{mi})
             for j = 1 : length(sessions{mi})
-                if j == 1
-                    ppm = 17.81002608/2;
-                else
-                    ppm = 17.81002608;
-                end
-                
                 sessionName = sprintf('S%02d',sessions{mi}(j));
                 behavior_d = [behavior_base_dir mouseName '\'];
                 whisker_d = [d, mouseName, sessionName, filesep];
@@ -216,8 +226,8 @@ else
                     'trial_nums',trialNums,'include_files',includef,...
                     'barRadius',15.3,'faceSideInImage', 'bottom', 'framePeriodInSec',0.003225806451613,...
                     'imagePixelDimsXY',[width height],'pxPerMm',ppm,'mouseName',mouseName,'sessionName',sessionName,'protractionDirection','rightward');
-                Whisker.makeAllDirectory_WhiskerSignalTrial_2pad(whisker_d,'include_files',includef,'polyRoiInPix',[20 80]);
-                Whisker.makeAllDirectory_WhiskerTrialLiteI(whisker_d,'include_files',includef,'r_in_mm',3,'calc_forces',false,'behavior',b_session);
+                Whisker.makeAllDirectory_WhiskerSignalTrial_2pad(whisker_d,'include_files',includef,'polyRoiInPix',[ppm 6*ppm]);
+                Whisker.makeAllDirectory_WhiskerTrialLite_2pad(whisker_d,'include_files',includef,'r_in_mm',3,'calc_forces',false,'behavior',b_session);
             end
         end
     end

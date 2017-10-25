@@ -45,7 +45,7 @@ while hasFrame(v)
     vavg = vavg + vtemp/nof;
 end
 vavg = mat2gray(vavg);
-figure('units','normalized','outerposition',[0 0 1 1]), imshow(vavg,'InitialMagnification','fit'), axis off, axis image, title('Select follicle points, first top-view, and then front-view'), hold all
+figure('units','normalized','outerposition',[0 0 1 1]), imshow(vavg,'InitialMagnification','fit'), axis off, axis image, title({[mouseName, ' ', sessionName];'Select follicle points, first top-view, and then front-view'}), hold all
 i = 1;
 while (i < 3)
     [y, x] = ginput(1);
@@ -119,6 +119,21 @@ while (i < 3)
     [mask_i,mask_j] = ind2sub(size(vavg),find(bl == bl(temp_i(1),temp_j(1))));
 
     obj_h = scatter(mask_j,mask_i,3,'bo');
+    
+    maskx{i} = mask_j;
+    masky{i} = mask_i;
+    qnum = length(mask_j);
+%             polyDegree = min([qnum-1,6]);
+    polyDegree = 2;
+    mask_j = mask_j'; mask_i = mask_i';
+    q = (0:(qnum-1))./(qnum-1);
+    px = Whisker.polyfit(q,mask_j,polyDegree);
+    py = Whisker.polyfit(q,mask_i,polyDegree);
+    q = linspace(0,1);
+    x = polyval(px,q);
+    y = polyval(py,q);
+    plot_h = plot(x,y,'g-','LineWidth',2);
+    
     drawnow;
     if i == 1
         button = questdlg('is this correct?', 'Top-view mask', 'Yes', 'No', 'Cancel', 'Yes');
@@ -127,24 +142,10 @@ while (i < 3)
     end
     switch button
         case 'Yes'
-            maskx{i} = mask_j;
-            masky{i} = mask_i;
-
-            qnum = length(mask_j);
-%             polyDegree = min([qnum-1,6]);
-            polyDegree = 2;
-            mask_j = mask_j'; mask_i = mask_i';
-            q = (0:(qnum-1))./(qnum-1);
-            px = Whisker.polyfit(q,mask_j,polyDegree);
-            py = Whisker.polyfit(q,mask_i,polyDegree);
-            q = linspace(0,1);
-            x = polyval(px,q);
-            y = polyval(py,q);
-            plot(x,y,'g-','LineWidth',2)
-
             i = i + 1;
         case 'No' 
             delete(obj_h);
+            delete(plot_h);
             continue
         case 'Cancel'
             disp('measurements adjustment aborted')
