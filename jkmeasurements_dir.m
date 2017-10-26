@@ -13,7 +13,7 @@ w = width;
 h = height;
 f = follicle_first;
 
-follicle_threshold = ppm*5; % 5 mm threshold
+follicle_threshold = ppm*1; % 1 mm threshold
 length_threshold = ppm*1; % 1 mm threshold
 
 flist = dir('*.measurements');

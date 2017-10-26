@@ -14,7 +14,7 @@ ppm = ppm / 2; % for binning 2
 sessions = {[0:14],[0:15],[0:11]};  
 
 all_session = 0; % 1 if using all sessions, 0 if using selected sessions
-
+%%
 base_dir = 'Z:\Data\2p\SoloData\';
 for i = 1 : length(mice)
 % for i = 2
@@ -83,8 +83,8 @@ if all_session == 1
         for j = 1 : length(sn)
             if sn(j).isdir
                 [mouseName, sessionName] = strtok(sn(j).name,'S');
-%                 postmeasurements(mouseName,sessionName,videoloc,ppm)
-                postmeasurements(mouseName,sessionName,videoloc,ppm,'skip')
+                postmeasurements(mouseName,sessionName,videoloc,ppm)
+%                 postmeasurements(mouseName,sessionName,videoloc,ppm,'skip')
             end
         end
     end
@@ -96,8 +96,8 @@ else
             for j = 1 : length(sessions{i})
                 mouseName = mice{i};
                 sessionName = sprintf('S%02d',sessions{i}(j));
-%                 postmeasurements(mouseName,sessionName,videoloc,ppm)
-                postmeasurements(mouseName,sessionName,videoloc,ppm,'skip')
+                postmeasurements(mouseName,sessionName,videoloc,ppm)
+%                 postmeasurements(mouseName,sessionName,videoloc,ppm,'skip')
             end
         end
     end

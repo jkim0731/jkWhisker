@@ -15,8 +15,8 @@ b = LoadMeasurements(fn);
 
 
 %% Setting some constraints from the first frame
-f1 = follicle_first(1,1);
-f2 = follicle_first(2,1);
+f1 = follicle_first(1,:);
+f2 = follicle_first(2,:);
 for i = 1 : length(b)
     if b(i).tip_y > b(i).follicle_y
         temp = b(i).tip_y;
@@ -27,9 +27,9 @@ for i = 1 : length(b)
         b(i).follicle_x = temp;
     end
     
-    if abs(b(i).follicle_y - f1) < follicle_threshold && b(i).follicle_x > width/2 && b(i).length > length_threshold % top-view whisker
+    if sqrt((b(i).follicle_y - f1(1))^2 + (b(i).follicle_x - f1(2))^2) < follicle_threshold && b(i).length > length_threshold % top-view whisker
         b(i).label = 0;
-    elseif abs(b(i).follicle_y - f2) < follicle_threshold && b(i).follicle_x < width/2 && b(i).length > length_threshold % front-view whisker
+    elseif sqrt((b(i).follicle_y - f2(1))^2 + (b(i).follicle_x - f2(2))^2) < follicle_threshold && b(i).length > length_threshold % front-view whisker
         b(i).label = 1;
     else
         b(i).label = -1;
