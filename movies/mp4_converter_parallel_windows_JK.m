@@ -77,7 +77,7 @@ end
 if parallelRunYes == 1
     coreNum = feature('numcores');
     delete(gcp('nocreate'));
-    parpool(coreNum);
+    parpool(coreNum-2);
     parfor i = 1:numSeq
         process_to_mp4(seqList(i).name, seqDir, headerSize, tempPath, ffmpegPath, raw2tiffPath)
     end

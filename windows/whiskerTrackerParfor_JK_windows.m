@@ -16,7 +16,7 @@ end
 
 delete(gcp('nocreate')); %turns off all other parallel pool processes
 numCores = feature('numcores'); %identify number of cores available for MATLAB to use
-parpool('local',numCores); %parallel pool using max number of cores available
+parpool('local',numCores-2); %parallel pool using max number of cores available
 
 %%
 traces = dir('*.mp4'); %Searches only for .mp4 files, change if using other type (e.g. SEQ)

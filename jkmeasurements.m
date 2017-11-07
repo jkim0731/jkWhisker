@@ -27,9 +27,9 @@ for i = 1 : length(b)
         b(i).follicle_x = temp;
     end
     
-    if sqrt((b(i).follicle_y - f1(1))^2 + (b(i).follicle_x - f1(2))^2) < follicle_threshold && b(i).length > length_threshold % top-view whisker
+    if abs(b(i).follicle_y - f1(1)) < follicle_threshold && abs(b(i).follicle_x - f1(2)) < follicle_threshold*2 && b(i).length > length_threshold % top-view whisker
         b(i).label = 0;
-    elseif sqrt((b(i).follicle_y - f2(1))^2 + (b(i).follicle_x - f2(2))^2) < follicle_threshold && b(i).length > length_threshold % front-view whisker
+    elseif abs(b(i).follicle_y - f2(1)) < follicle_threshold && abs(b(i).follicle_x - f2(2)) < follicle_threshold*2 && b(i).length > length_threshold % front-view whisker
         b(i).label = 1;
     else
         b(i).label = -1;

@@ -175,8 +175,6 @@ classdef WhiskerTrialLite_2pad < handle
             obj.barPosOffset = w.barPosOffset; % Inherited from WhiskerSignalTrial. [x y], either 1X2 or nframesX2
             obj.barRadius = w.barRadius; % Inherited from WhiskerSignalTrial.  In pixels. Must be radius of bar tracked by the bar tracker.
             
-            obj.M0I = w.M0I;
-
             if ~isempty(p.Results.behavior)
                 b_ind = find(cellfun(@(x) x.trialNum,p.Results.behavior.trials)==obj.trialNum);
                 if ~isempty(b_ind)
@@ -191,7 +189,6 @@ classdef WhiskerTrialLite_2pad < handle
             obj.pole_available_timepoints = w.pole_available_timepoints;
             
             obj.videoFrames = w.videoFrames;
-            obj.pole_available_timepoints = w.pole_available_timepoints;
             
             for k=1:ntraj
                 tid = obj.trajectoryIDs(k);
@@ -227,11 +224,11 @@ classdef WhiskerTrialLite_2pad < handle
                 end
             end
             %% Temporary remedy 2017/05/30
-            thp1 = obj.th_polygon(1:end/2,:);
-            thp1 = [2*thp1(1,:) - thp1(end,:); thp1; 2*thp1(end,:) - thp1(1,:)];
-            thp2 = obj.th_polygon(end/2+1:end,:);
-            thp2 = [2*thp2(1,:) - thp2(end,:); thp2; 2*thp2(end,:) - thp2(1,:)];
-            obj.th_polygon = [thp1; thp2];            
+%             thp1 = obj.th_polygon(1:end/2,:);
+%             thp1 = [2*thp1(1,:) - thp1(end,:); thp1; 2*thp1(end,:) - thp1(1,:)];
+%             thp2 = obj.th_polygon(end/2+1:end,:);
+%             thp2 = [2*thp2(1,:) - thp2(end,:); thp2; 2*thp2(end,:) - thp2(1,:)];
+%             obj.th_polygon = [thp1; thp2];            
             %%
             obj.th_touch_frames = find(inpolygon(obj.intersect_coord(:,1),obj.intersect_coord(:,2), ...
                 obj.th_polygon(:,1), obj.th_polygon(:,2)));

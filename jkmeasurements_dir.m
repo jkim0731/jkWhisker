@@ -1,10 +1,23 @@
-function errorlist = jkmeasurements_dir(ppm)
+function errorlist = jkmeasurements_dir(ppm, varargin)
+
+if nargin > 2
+    skip_flag = varargin{1};
+else
+    skip_flag = 'no';
+end
 
 save_filename = ['remeasure_', date, '.mat'];
+
 if exist(save_filename,'file')
-    disp([save_filename ' already exists. Errorlist is returned without jkmeasurements.'])
-    load(save_filename)
-    return
+    if strcmp(skip_flag,'skip')    
+        disp([save_filename ' already exists. Errorlist is returned without jkmeasurements.'])
+        load(save_filename)
+        return
+    elseif strcmp(skip_flag,'no')
+        disp('Overwriting remeasure file');
+    else
+        error('Not identified skip_flag argument in');
+    end    
 end
 
 load_fn = ls('*follicle_n_mask.mat');
@@ -14,7 +27,7 @@ h = height;
 f = follicle_first;
 
 follicle_threshold = ppm*1; % 1 mm threshold
-length_threshold = ppm*1; % 1 mm threshold
+length_threshold = ppm*3; % 3 mm threshold
 
 flist = dir('*.measurements');
 % v = VideoReader([flist(1).name(1:end-13),'.mp4']);
@@ -24,8 +37,8 @@ errorlist = zeros(size(flist,1),1); % List of files having error(s) in whisker t
 %% Listing error files
 
 parfor i = 1 : size(flist,1)
-    error = jkmeasurements(flist(i).name(1:end-13), w, h, f, follicle_threshold, length_threshold);
-    if error == 1
+    error_flag = jkmeasurements(flist(i).name(1:end-13), w, h, f, follicle_threshold, length_threshold);
+    if error_flag == 1
 %         errorlist = [errorlist; str2double(flist(i).name(1:end-13))];
         errorlist(i) = str2double(flist(i).name(1:end-13));
     end

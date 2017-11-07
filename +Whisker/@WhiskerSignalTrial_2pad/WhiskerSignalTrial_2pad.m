@@ -1,4 +1,4 @@
-classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrialI
+classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
    
     % Infer whisker-pole contact frames (index and time) from angle &
     % radial distance tasks (2pad, by JK). The calculation is based on the
@@ -32,7 +32,7 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrialI
     methods (Access = public)
         function obj = WhiskerSignalTrial_2pad(w, varargin)
 
-            obj = obj@Whisker.WhiskerSignalTrialI(w,varargin{:});
+            obj = obj@Whisker.WhiskerSignalTrial(w,varargin{:});
             
             ntraj = length(obj.trajectoryIDs);
             nframes = size(obj.polyFits{1}{1},1);
