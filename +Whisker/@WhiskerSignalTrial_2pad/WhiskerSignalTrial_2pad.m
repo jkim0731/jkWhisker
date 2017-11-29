@@ -74,7 +74,7 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
                 error('obj.polyFits is empty.')
             end
             if isempty(obj.pole_edge{1}) || isempty(obj.pole_edge{2})
-                [obj.pole_edge, obj.pole_axes, obj.vavg] = Whisker.pole_edge_detection(obj.trackerFileName);
+                [obj.pole_edge, obj.pole_axes, obj.vavg, obj.pole_available_frames] = Whisker.pole_edge_detection(obj.trackerFileName);
             end
             
             for i = 1 : 2

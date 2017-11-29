@@ -115,5 +115,9 @@ function [pole_edge, varargout] = pole_edge_detection(video_fn)
     pole_edge{1} = [result_i, result_j];
     varargout{1}{1} = [polyval(p,q); q];
     
-    varargout{2} = vavg;
+    varargout{2} = vavg; 
+    
+    %% Calculating pole available time (based on top view pole movement)
+    
+    
 end
