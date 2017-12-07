@@ -96,6 +96,12 @@ system(['copy ', startDir, 'default.parameters ', endDir])
 system(['copy ', startDir, '*.detectorbank ', endDir]) 
 copy_time = toc;
 
+system(['del ', startDir, '*.mp4']) 
+system(['del ', startDir, '*.whiskers'])
+system(['del ', startDir, '*.measurements']) 
+system(['del ', startDir, 'default.parameters']) 
+system(['del ', startDir, '*.detectorbank']) 
+
 % Section 4: Finish program and display time statistics
 % Indicates end of program and displays start time, end time, and elapsed
 % time 

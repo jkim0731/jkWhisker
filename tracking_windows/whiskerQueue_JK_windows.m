@@ -6,7 +6,7 @@
 delete(gcp('nocreate'))
 
 %%
-cd('D:\TPM\JK\Video\')
+cd('Y:\Whiskernas\JK_temp\whisker')
 dirlist = dir('JK*');
 conv_time = zeros(length(dirlist)-1,1);
 track_time = zeros(length(dirlist)-1,1);
@@ -18,8 +18,8 @@ for i = 1 : length(dirlist)
     delete(gcp('nocreate'))
     tic
     if dirlist(i).isdir
-        startDir = ['D:\TPM\JK\Video\', dirlist(i).name];
-        endDir = ['D:\TPM\JK\tracked\', dirlist(i).name];
+        startDir = ['Y:\Whiskernas\JK_temp\whisker', dirlist(i).name];
+        endDir = ['Y:\Whiskernas\JK_temp\whisker\tracked\', dirlist(i).name];
         system(['mkdir ', endDir])        
         [conv_time(i), track_time(i), copy_time(i), nfiles(i)] = startItFun_windows_JK(startDir, endDir);
     end
