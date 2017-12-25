@@ -55,12 +55,32 @@ function read_the_seq(seqFullPath)
 
 
   for currentFrame=allFrames
-    seqID.seek(currentFrame);
-    [idx, ~] =seqID.getframe();
-    shiftedIdx = idx(16:end,:);
-    shiftedIdx = circshift(shiftedIdx, 272,2);
-
-    writeVideo(mp4Writer, shiftedIdx);
+%         seqID.seek(currentFrame);
+%         [frame2write, ~] =seqID.getframe();
+%         frame2write = circshift(frame2write, [-16, 33]);        
+%         %
+%         moveTheseBits = circshift(frame2write(end-15:end,:), 321, 2);
+%         frame2write(end-15:end,:) = moveTheseBits;
+%         moveTheseBits = circshift(frame2write(:,1:33), 1, 1);
+%         frame2write(:,1:33) = moveTheseBits;
+%         writeVideo(mp4Writer, frame2write);
+%         clear frame2write moveTheseBits;
+%         
+        
+        seqID.seek(currentFrame);
+        [initialFrame, ~] = seqID.getframe();
+        adjustedFrame = initialFrame;
+        %
+        moveTheseBits = initialFrame(1:16,:);
+        moveTheseBits = circshift(moveTheseBits, 354, 2);
+        adjustedFrame(1:16,:) = [];
+        adjustedFrame = circshift(adjustedFrame, 33,2);
+        adjustedFrame = [adjustedFrame; moveTheseBits];
+        %
+        
+        writeVideo(mp4Writer, adjustedFrame);
+        clear initialFrame adjustedFrame;
+        
   end
 
   seqID.close();

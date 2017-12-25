@@ -77,7 +77,7 @@ copy_answer = system(['copy C:\Users\shires\Documents\GitHub\jkWhisker\default.p
 if copy_answer ~= 0
     error('No default.parameters')
 end
-whiskerTrackerParfor_JK_windows
+whisker_tracker_true_parallel_JK
 
 disp('Finished tracking')
 track_time = toc;

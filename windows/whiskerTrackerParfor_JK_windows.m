@@ -147,13 +147,13 @@ if length(measure_flist) < length(mp4_flist)
 end
 %% (3) CLASSIFY: Helps refine tracing to more accurately determine which shapes are whiskers
 %Use for multiple whiskers
-% classes = dir('*.measurements');
-% 
-% parfor n=1:length(classes)
-%     [~, outputFileName] = fileparts(classes(n).name);
-%     system(['classify ' classes(n).name ' ' outputFileName '.measurements ' 'bottom ' '--px2mm ' pixDen ' -n ' whiskerNum]);
-%     display([classes(n).name ' has been classified'])
-% end
+classes = dir('*.measurements');
+
+parfor n=1:length(classes)
+    [~, outputFileName] = fileparts(classes(n).name);
+    system(['classify ' classes(n).name ' ' outputFileName '.measurements ' 'bottom ' '--px2mm ' pixDen ' -n ' whiskerNum]);
+    display([classes(n).name ' has been classified'])
+end
 
 
     

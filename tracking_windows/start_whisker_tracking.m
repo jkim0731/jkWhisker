@@ -70,7 +70,9 @@ function [copyTime, trackTime, convertTime, totalFiles] = start_whisker_tracking
         error('There are no MP4 files to track in the directory: %s', startDir)
     end
     tic;
-    disp('STARTING WHISKER TRACKING OF %s \n', startDir)
+    jkname = split(startDir,'\');
+    jkname = jkname{end};
+    fprintf('STARTING WHISKER TRACKING OF %s \n', jkname)
 
     try
         system('copy C:\Users\shires\Documents\GitHub\jkWhisker\default.parameters startDir');

@@ -32,11 +32,19 @@ numCores = feature('numcores'); %Number of cores to run on, by default, all of t
 errorCheck = true;
 
 %Reset inputs
-if nargin == 4
+if nargin >= 1
     pixDen = varargin{1};
+end
+if nargin >= 2
     whiskerNum = varargin{2};
+end
+if nargin >= 3
     faceSide = varargin{3};
+end
+if nargin >= 4
     numCores = varargin{4};
+end
+if nargin >= 5
     errorCheck = varargin{5};
 end
 
