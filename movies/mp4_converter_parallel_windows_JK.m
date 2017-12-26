@@ -74,23 +74,22 @@ if numSeq == 0
     error('No .seq files in directory')
 end
 
-for i1 = 1:numSeq
-    process_to_mp4(seqList(i1).name, seqDir, headerSize, tempPath, ffmpegPath, raw2tiffPath, parallelRunYes);
-end
-
-
-% error check for 0 bytes mp4 files
-mp4files = dir('*.mp4');
-
-for i2 = 1 : length(mp4files)
-    if mp4files(i2).bytes < 100
-        process_to_mp4([mp4files(i2).name(1:end-4),'.seq'], seqDir, headerSize, tempPath, ffmpegPath, raw2tiffPath, parallelRunYes);
+if parallelRunYes == 1
+    coreNum = feature('numcores');
+    delete(gcp('nocreate'));
+    parpool(coreNum-2);
+    parfor i = 1:numSeq
+        process_to_mp4(seqList(i).name, seqDir, headerSize, tempPath, ffmpegPath, raw2tiffPath)
+    end
+else
+    for i = 1:numSeq
+        process_to_mp4(seqList(i).name, seqDir, headerSize, tempPath, ffmpegPath, raw2tiffPath)
     end
 end
 
 end
 
-function process_to_mp4(myFile, myDir, header, temp, fPath, rPath, parallelRunYes)
+function process_to_mp4(myFile, myDir, header, temp, fPath, rPath)
     %This function does the actual processing of things
     myPath = [myDir filesep myFile];
     [~,fname] = fileparts(myFile); 
@@ -120,22 +119,12 @@ function process_to_mp4(myFile, myDir, header, temp, fPath, rPath, parallelRunYe
     fprintf('Created temporary directory: %s',tempDir)
     
     %Run raw2tiff to createa tiff stack out of the .seqs
-    if parallelRunYes
-        coreNum = feature('numcores');
-        delete(gcp('nocreate'));
-        parpool(coreNum-2);
-        parfor i = 0:nFrames
-            offset = header + (i*trueSize);
-            raw2tiffCMD = sprintf('%s -H %d -c none -M -w %d -l %d %s %s\\%05d.tif', rPath, offset, width, height, myPath, tempDir, i+1);
-            system(raw2tiffCMD);
-        end 
-    else
-        for i = 0:nFrames
-            offset = header + (i*trueSize);
-            raw2tiffCMD = sprintf('%s -H %d -c none -M -w %d -l %d %s %s\\%05d.tif', rPath, offset, width, height, myPath, tempDir, i+1);
-            system(raw2tiffCMD);
-        end 
-    end
+    for i = 0:nFrames
+        offset = header + (i*trueSize);
+        raw2tiffCMD = sprintf('%s -H %d -c none -M -w %d -l %d %s %s\\%05d.tif', rPath, offset, width, height, myPath, tempDir, i+1);
+        system(raw2tiffCMD);
+    end 
+    
     %Now run ffmpeg to create a .mp4 out of the tiff stack
     ffmpegOutPath = [myDir filesep fname '.mp4'];
     ffmpegCMD = sprintf('%s -y -i %s\\%%5d.tif -b:v 800k -codec:v mpeg4 %s', fPath, tempDir, ffmpegOutPath);
