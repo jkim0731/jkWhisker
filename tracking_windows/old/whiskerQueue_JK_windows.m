@@ -6,7 +6,7 @@
 delete(gcp('nocreate'))
 
 %%
-cd('Y:\Whiskernas\JK_temp\whisker')
+cd('F:\')
 dirlist = dir('JK*');
 conv_time = zeros(length(dirlist)-1,1);
 track_time = zeros(length(dirlist)-1,1);
@@ -18,23 +18,35 @@ for i = 1 : length(dirlist)
     delete(gcp('nocreate'))
     tic
     if dirlist(i).isdir
-        startDir = ['Y:\Whiskernas\JK_temp\whisker\', dirlist(i).name];
-        endDir = ['Y:\Whiskernas\JK_temp\whisker\tracked\', dirlist(i).name];
-        system(['mkdir ', endDir])        
-        [conv_time(i), track_time(i), copy_time(i), nfiles(i)] = startItFun_windows_JK(startDir, endDir);
+        if isempty(strfind(dirlist(i).name,'spont'))
+            startDir = ['F:\', dirlist(i).name];
+            endDir = ['Y:\Whiskernas\JK_temp\whisker\tracked\', dirlist(i).name];
+            system(['mkdir ', endDir])        
+            [conv_time(i), track_time(i), copy_time(i), nfiles(i)] = startItFun_windows_JK(startDir, endDir);
+        end
     end
     session_time = toc;
 end
 
-% %%
-% startDir = 'Y:\JK_temp\whisker\JK018S20';
-% endDir = 'Y:\JK_temp\whisker\tracked\JK018S20';
-% system(['mkdir ', endDir])   
-% cd(startDir)
-% whiskerTrackerParfor_JK_windows(pixDen, whiskerNumber)
-% 
-% system(['copy ', startDir, '\*.mp4 ', endDir]) 
-% system(['copy ', startDir, '\*.whiskers ', endDir]) 
-% system(['copy ', startDir, '\*.measurements ', endDir]) 
-% system(['copy ', startDir, '\default.parameters ', endDir]) 
-% system(['copy ', startDir, '\*.detectorbank ', endDir]) 
+%%
+cd('H:\')
+dirlist = dir('JK*');
+conv_time = zeros(length(dirlist)-1,1);
+track_time = zeros(length(dirlist)-1,1);
+copy_time = zeros(length(dirlist)-1,1);
+nfiles = zeros(length(dirlist)-1,1);
+
+%%
+for i = 21 : length(dirlist)        
+    delete(gcp('nocreate'))
+    tic
+    if dirlist(i).isdir
+        if isempty(strfind(dirlist(i).name,'spont'))
+            startDir = ['H:\', dirlist(i).name];
+            endDir = ['Y:\Whiskernas\JK_temp\whisker\tracked\', dirlist(i).name];
+            system(['mkdir ', endDir])        
+            [conv_time(i), track_time(i), copy_time(i), nfiles(i)] = startItFun_windows_JK(startDir, endDir);
+        end
+    end
+    session_time = toc;
+end

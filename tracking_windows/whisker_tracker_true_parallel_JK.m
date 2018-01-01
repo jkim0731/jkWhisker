@@ -22,7 +22,7 @@ function [traceTime, totalTime] = whisker_tracker_true_parallel_JK(varargin)
 %% (0) SET PARAMETERS: set parameters based on inputs
 totalTStart = tic;
 
-% DEFAULTS
+%% DEFAULTS
 ppm = 17.81002608/2; % for TPM telecentric lens  
 pixDen = 1/ppm; %This is the default pixel density
 whiskerNum = 2;

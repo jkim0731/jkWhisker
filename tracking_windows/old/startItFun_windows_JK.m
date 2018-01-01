@@ -87,8 +87,25 @@ nf_mp4 = length(dir('*.mp4'));
 nf_whiskers = length(dir('*.whiskers'));
 nf_measurements = length(dir('*.measurements'));
 if nf_mp4 ~= nf_whiskers || nf_mp4 ~= nf_measurements
-    error('Number of files do not match')
+    disp('Number of files do not match')
+    [diff1, diff2] = when_number_of_files_dont_match;
+    if ~isempty(diff1) % not traced
+        %% (1) TRACE: Uses Janelia Farm's whisker tracking software to track all whiskers in a directory         
+        parfor n=1:length(diff1)            
+            system(['trace ' num2str(diff1(n)) '.mp4 ' num2str(diff1(n))])
+            disp([num2str(diff1(n)) '.mp4 has been traced'])
+        end
+        diff2 = union(diff1,diff2);
+    end
+    if ~isempty(diff2) % not measured
+        parfor n=1:length(diff2)            
+            system(['measure ' '--face ' 'bottom ' num2str(diff2(n)) '.whiskers ' num2str(diff2(n)) '.measurements']);
+            disp([num2str(diff2(n)) '.whiskers has been measured'])
+        end
+    end    
 end
+
+%%
 system(['copy ', startDir, '*.mp4 ', endDir]) 
 system(['copy ', startDir, '*.whiskers ', endDir])
 system(['copy ', startDir, '*.measurements ', endDir]) 
