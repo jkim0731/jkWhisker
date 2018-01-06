@@ -111,6 +111,7 @@ system(['copy ', startDir, '*.whiskers ', endDir])
 system(['copy ', startDir, '*.measurements ', endDir]) 
 system(['copy ', startDir, 'default.parameters ', endDir]) 
 system(['copy ', startDir, '*.detectorbank ', endDir]) 
+system(['copy ', startDir, '*.xml ', endDir]) 
 copy_time = toc;
 
 system(['del ', startDir, '*.mp4']) 

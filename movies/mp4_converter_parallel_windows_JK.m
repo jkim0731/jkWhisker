@@ -89,7 +89,7 @@ end
 
 % error check for 0 bytes mp4 files
 mp4files = dir('*.mp4');
-
+%%
 parfor i2 = 1 : length(mp4files)
     if mp4files(i2).bytes < 100
         process_to_mp4([mp4files(i2).name(1:end-4),'.seq'], seqDir, headerSize, tempPath, ffmpegPath, raw2tiffPath, parallelRunYes);
