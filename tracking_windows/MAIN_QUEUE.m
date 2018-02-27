@@ -13,16 +13,17 @@ DISPLAY_STATISTICS = true;
 CONVERT_ALL_VIDEOS = true;
 NUMBER_OF_RESERVED_CORES = 0;
 USE_ERROR_CHECK = true;
+base_dir = 'E:\';
 
 % DIRECTORY LIST ----------------------------------------------------------
 %Directory to find files to convert or track
-cd('Y:\Whiskernas\JK_temp\whisker')
-dirlist = dir('JK*');
+cd(base_dir)
+dirlist = dir('JK*spont');
 convertVid = {true, false, true, false};
 % =========================================================================
 % Queue settings should only be changed above this line
 % =========================================================================
-
+%%
 %TRACKING STARTS HERE!
 allFileClock = tic;
 sumFiles = 0;
@@ -31,8 +32,8 @@ sumConversionTime = 0;
 sumCopyTime = 0;
 for i = 1:length(dirlist)
     if dirlist(i).isdir
-        startDir = ['Y:\Whiskernas\JK_temp\whisker\', dirlist(i).name];
-        endDir = ['Y:\Whiskernas\JK_temp\whisker\tracked\', dirlist(i).name];
+        startDir = [base_dir, dirlist(i).name];
+        endDir = [base_dir, 'tracked\', dirlist(i).name];
         system(['mkdir ', endDir])
         if CONVERT_ALL_VIDEOS == true
             [copyTime, trackTime, convertTime, totalFiles] = start_whisker_tracking(...

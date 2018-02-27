@@ -20,9 +20,14 @@
 
 function [traceTime, totalTime] = whisker_tracker_true_parallel(varargin)
 %% (0) SET PARAMETERS: set parameters based on inputs
+% DEFAULTS
+if nargin >= 1
+    startDir = varargin{1};
+    curr_dir = pwd;
+    cd(startDir)
+end
 totalTStart = tic;
 
-% DEFAULTS
 ppm = 17.81002608/2; % for TPM telecentric lens  
 pixDen = 1/ppm; %This is the default pixel density
 whiskerNum = 2;
@@ -32,19 +37,19 @@ numCores = feature('numcores'); %Number of cores to run on, by default, all of t
 errorCheck = true;
 
 %Reset inputs
-if nargin >= 1
+if nargin >= 2
     pixDen = varargin{1};
 end
-if nargin >= 2
+if nargin >= 3
     whiskerNum = varargin{2};
 end
-if nargin >= 3
+if nargin >= 4
     faceSide = varargin{3};
 end
-if nargin >= 4
+if nargin >= 5
     numCores = varargin{4};
 end
-if nargin >= 5
+if nargin >= 6
     errorCheck = varargin{5};
 end
 
@@ -55,7 +60,7 @@ if exist('MParallel.exe','file') == 2
 else
     try
         %See if we can get MParallel from the NAS
-        system('copy Z:\Software\WhiskerTracking\MParallel.exe startDir');
+        system(['copy Z:\Software\WhiskerTracking\MParallel.exe ', startDir]);
         mpPath = which('MParallel.exe');
     catch
         error('Cannot find MParallel.exe on the path')
@@ -64,13 +69,14 @@ end
 %% (1) TRACE: Uses Janelia Farm's whisker tracking software to track all whiskers in a directory
 traceTStart = tic;
 tracecmd = sprintf(['dir /b *%s | %s --count=%.00f --shell --stdin'...
-' --pattern="trace {{0}} {{0:N}}.whiskers"'], vidType, mpPath, numCores);
+' --pattern="trace {{0}} {{0:N}}.whiskers\n"'], vidType, mpPath, numCores);
 system(tracecmd);
 traceTime = toc(traceTStart);
+pause(10) % for whatever reason for long spontaneous imaging, it takes some time to process after tracing (maybe). 2018/02/26 JK
 
 %% (2) MEASURE: Generates measurements of traced shapes for later evaluation
-measurecmd = sprintf(['dir /b *.whiskers | %s --count=%.00f --shell --stdin'...
-' --pattern="measure --face %s {{0}} {{0:N}}.whiskers"'], mpPath, numCores, faceSide);
+measurecmd = sprintf(['dir /b *.whiskers | %s --count=%.00f --shell --stdin'... 
+' --pattern="measure --face %s {{0}} {{0:N}}.measurements\n"'], mpPath, numCores, faceSide);
 system(measurecmd);
 
 %% (2)-1 Error check and re-do the analysis (2017/09/18 JK)
@@ -151,10 +157,10 @@ if errorCheck == true
         end
         for i = 1 : length(measure_errorlist)
             temp_fname = num2str(measure_errorlist(i));
-            sout = system(['measure --face' faceSide ' ' temp_fname '.whiskers ' temp_fname '.measurements']);
+            sout = system(['measure --face ' faceSide ' ' temp_fname '.whiskers ' temp_fname '.measurements']);
             trial_ind = 0;
             while (sout ~= 0 && trial_ind < 3)
-                sout = system(['measure --face' faceSide ' ' temp_fname '.whiskers ' temp_fname '.measurements']);
+                sout = system(['measure --face ' faceSide ' ' temp_fname '.whiskers ' temp_fname '.measurements']);
                 trial_ind = trial_ind + 1;
             end
             if sout == 0
@@ -169,7 +175,7 @@ end
 %Use for multiple whiskers
 
 classifycmd = sprintf(['dir /b *.measurements | %s --count=%.00f --shell --stdin'...
-' --pattern="measure {{0}} {{0:N}}.whiskers %s --px2mm %.02f -n %.00f"'], mpPath, numCores, faceSide, pixDen, whiskerNum);
+' --pattern="classify {{0}} {{0:N}}.measurements %s --px2mm %.02f -n %d\n"'], mpPath, numCores, faceSide, pixDen, whiskerNum);
 system(classifycmd);
 
 %% (4) RECLASSIFY: Refines previous step
@@ -183,7 +189,11 @@ system(classifycmd);
 % end
 %%
 totalTime = toc(totalTStart);
+if nargin >= 1
+    cd(curr_dir)
 end
+end
+
 %Please visit http://whiskertracking.janelia.org/wiki/display/MyersLab/Whisker+Tracking+Tutorial
 %for more information
 %   Clack NG, O'Connor DH, Huber D, Petreanu L, Hires A., Peron, S., Svoboda, K., and Myers, E.W. (2012)

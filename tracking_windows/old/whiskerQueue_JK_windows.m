@@ -6,7 +6,7 @@
 delete(gcp('nocreate'))
 
 %%
-cd('F:\')
+cd('D:\')
 dirlist = dir('JK*');
 conv_time = zeros(length(dirlist)-1,1);
 track_time = zeros(length(dirlist)-1,1);
@@ -19,8 +19,8 @@ for i = 1 : length(dirlist)
     tic
     if dirlist(i).isdir
         if isempty(strfind(dirlist(i).name,'spont'))
-            startDir = ['F:\', dirlist(i).name];
-            endDir = ['Y:\Whiskernas\JK_temp\whisker\tracked\', dirlist(i).name];
+            startDir = ['D:\', dirlist(i).name];
+            endDir = ['D:\tracked\', dirlist(i).name];
             system(['mkdir ', endDir])        
             [conv_time(i), track_time(i), copy_time(i), nfiles(i)] = startItFun_windows_JK(startDir, endDir);
         end
@@ -29,7 +29,7 @@ for i = 1 : length(dirlist)
 end
 
 %%
-cd('Y:\Whiskernas\JK_temp\whisker\')
+cd('E:\JK036spont')
 dirlist = dir('JK*');
 conv_time = zeros(length(dirlist)-1,1);
 track_time = zeros(length(dirlist)-1,1);
@@ -37,13 +37,13 @@ copy_time = zeros(length(dirlist)-1,1);
 nfiles = zeros(length(dirlist)-1,1);
 
 %%
-for i = 17 : length(dirlist)        
+for i = 1 : length(dirlist)        
     delete(gcp('nocreate'))
     tic
     if dirlist(i).isdir
         if isempty(strfind(dirlist(i).name,'spont'))
-            startDir = ['Y:\Whiskernas\JK_temp\whisker\', dirlist(i).name];
-            endDir = ['Y:\Whiskernas\JK_temp\whisker\tracked\', dirlist(i).name];
+            startDir = ['E:\JK036spont\', dirlist(i).name];
+            endDir = ['E:\JK036spont\tracked\', dirlist(i).name];
             system(['mkdir ', endDir])        
             [conv_time(i), track_time(i), copy_time(i), nfiles(i)] = startItFun_windows_JK(startDir, endDir);
         end
