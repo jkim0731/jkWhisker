@@ -41,9 +41,8 @@ function [copyTime, trackTime, convertTime, totalFiles] = start_whisker_tracking
         transferVideo = false;
     end
     numCores = feature('numcores'); %identify number of cores available for MATLAB to use
-%     numCores = numCores - reservedCores; 
-    numCores = 1; 
-
+    numCores = numCores - reservedCores; 
+  
     %% SECTION 2: CONVERT .SEQ TO .MP4 --------------------------------------
     mp4List = dir([startDir filesep '*mp4']);
     seqList = dir([startDir filesep '*seq']);
@@ -58,7 +57,7 @@ function [copyTime, trackTime, convertTime, totalFiles] = start_whisker_tracking
         
         tic
         fprintf('STARTING MP4 CONVERSION OF %s \n', startDir)
-        seq_to_mp4(startDir,'dir', 1)
+        seq_to_mp4(startDir,'dir', numCores)
         fprintf('FINISHED MP4 CONVERSION \n')
         convertTime = toc;
     else

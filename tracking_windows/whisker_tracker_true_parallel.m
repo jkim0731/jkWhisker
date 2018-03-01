@@ -38,19 +38,19 @@ errorCheck = true;
 
 %Reset inputs
 if nargin >= 2
-    pixDen = varargin{1};
+    pixDen = varargin{2};
 end
 if nargin >= 3
-    whiskerNum = varargin{2};
+    whiskerNum = varargin{3};
 end
 if nargin >= 4
-    faceSide = varargin{3};
+    faceSide = varargin{4};
 end
 if nargin >= 5
-    numCores = varargin{4};
+    numCores = varargin{5};
 end
 if nargin >= 6
-    errorCheck = varargin{5};
+    errorCheck = varargin{6};
 end
 
 %Find MParallel
@@ -72,7 +72,6 @@ tracecmd = sprintf(['dir /b *%s | %s --count=%.00f --shell --stdin'...
 ' --pattern="trace {{0}} {{0:N}}.whiskers\n"'], vidType, mpPath, numCores);
 system(tracecmd);
 traceTime = toc(traceTStart);
-pause(10) % for whatever reason for long spontaneous imaging, it takes some time to process after tracing (maybe). 2018/02/26 JK
 
 %% (2) MEASURE: Generates measurements of traced shapes for later evaluation
 measurecmd = sprintf(['dir /b *.whiskers | %s --count=%.00f --shell --stdin'... 
@@ -175,7 +174,7 @@ end
 %Use for multiple whiskers
 
 classifycmd = sprintf(['dir /b *.measurements | %s --count=%.00f --shell --stdin'...
-' --pattern="classify {{0}} {{0:N}}.measurements %s --px2mm %.02f -n %d\n"'], mpPath, numCores, faceSide, pixDen, whiskerNum);
+' --pattern="classify {{0}} {{0:N}}.measurements bottom --px2mm %.02f -n %d\n"'], mpPath, numCores, pixDen, whiskerNum);
 system(classifycmd);
 
 %% (4) RECLASSIFY: Refines previous step

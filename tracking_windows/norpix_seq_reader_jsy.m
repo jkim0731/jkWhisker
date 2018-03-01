@@ -29,7 +29,7 @@ mp4Name = [path filesep seqName '.mp4'];
 if totalFrameNumber > nframes_threshold
     frameNum = 0;
     for i = 1 : ceil(totalFrameNumber/nframes_threshold)        
-        mp4Name = sprintf([path filesep seqName '_%02d.mp4'],i);
+        mp4Name = [path filesep seqName sprintf('_%02d.mp4',i)];
         newVid = VideoWriter(mp4Name, 'MPEG-4');
         open(newVid)
         temp_nframes = 0;
@@ -39,7 +39,7 @@ if totalFrameNumber > nframes_threshold
             if validPos == -1
                 break
             end
-            currentFrame = fread(seqID, [iWidth,iHeight], 'uint8');
+            currentFrame = uint8(fread(seqID, [iWidth,iHeight], 'uint8'));
             [checkW, checkH] = size(currentFrame);
             if currentFrame == -1
                 break

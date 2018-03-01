@@ -13,7 +13,7 @@ DISPLAY_STATISTICS = true;
 CONVERT_ALL_VIDEOS = true;
 NUMBER_OF_RESERVED_CORES = 0;
 USE_ERROR_CHECK = true;
-base_dir = 'E:\';
+base_dir = 'Y:\Whiskernas\JK_temp\whisker\';
 
 % DIRECTORY LIST ----------------------------------------------------------
 %Directory to find files to convert or track
