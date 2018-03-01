@@ -148,6 +148,36 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
             end
         end
         
+        function show_nan_polyfits_with_mask(obj, varargin)
+            % to graphically check what went wrong for NaN frames of
+            % polyFits. Currently for 2pad top and front view
+            % 2018/02/27 JK
+            num_whisker = length(obj.polyFits);
+            if length(obj.polyFitsMask) ~= num_whisker
+                error('Number of masks does not match with number of whiskers.')
+            end
+            errorframes = [];
+            for i = 1 : num_whisker
+                errorframes = union(errorframes, find(isnan(obj.polyFits{i}{1}(:,1))));
+            end            
+            q = linspace(0,1);            
+            figure
+            for k = 1 : length(errorframes)
+                for i = 1 : num_whisker    
+                    hold all
+                    plot(obj.trackerData{i}{errorframes(k)}{4}, obj.trackerData{i}{errorframes(k)}{5}, 'k-')
+                    plot(polyval(obj.polyFitsMask{i}{1},q), polyval(obj.polyFitsMask{i}{2},q), 'r-')           
+                    title(['Frame # ', num2str(errorframes(k))])                    
+                end
+                w = 0;
+                while w == 0
+                    w = waitforbuttonpress;
+                end
+                clf
+            end
+            
+        end
+        
     end
     
     methods (Access = private)

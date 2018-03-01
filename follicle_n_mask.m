@@ -4,34 +4,38 @@ function follicle_n_mask(mouseName,sessionName,videoloc,varargin)
 % mouseName = 'AH0653'
 % sessionName ='S03'
 % videoloc = 'JK'
-% optional = 'Spont'
+% optional = 'noskip'
+optional = 'skip';
 if nargin > 3
-    optional = varargin{4};
+    optional = varargin{1};
 elseif nargin > 4
     error('Too many input arguments')
 end
 
-if exist('optional','var')
-    d = ([videoloc filesep mouseName sessionName filesep optional filesep])
-else
+% if exist('optional','var')
+%     d = ([videoloc filesep mouseName sessionName filesep optional filesep])
+% else
     d = ([videoloc filesep mouseName sessionName filesep])
-end
+% end
 % load(['Z:\Users\Jon\DATA\BehaviorArrays\solo_' mouseName '_' sessionName '.mat'])
 
 cd(d)
 
 maskfn = [mouseName sessionName 'follicle_n_mask.mat'];
-if exist(maskfn,'file')
-    disp([maskfn ' already exists. Skipping.'])
+if exist(maskfn,'file') && strcmp(optional, 'skip')
+    disp([maskfn ' already exists. Skipping.'])    
     return
+elseif exist(maskfn,'file') && strcmp(optional, 'noskip')
+    disp([maskfn ' already exists. Overriding.'])    
 end
 
 number_of_random_trials = 10; % for averaging for mask detection
-inflate_rate = 1.02;
+inflate_rate = 1.04;
 
 %% Follicle
 flist = dir('*.mp4');
-v = VideoReader(flist(1).name);
+center_ind = round(length(flist)/2);
+v = VideoReader(flist(center_ind).name);
 % length_threshold = 40;
 % follicle_threshold = 40; % 40 pixels movement of follicle in x and y is tolerable
 follicle_first = zeros(2,2);
@@ -129,7 +133,7 @@ while (i < 3)
     q = (0:(qnum-1))./(qnum-1);
     px = Whisker.polyfit(q,mask_j,polyDegree);
     py = Whisker.polyfit(q,mask_i,polyDegree);
-    q = linspace(0,1);
+    q = linspace(-0.2,1.2);
     x = polyval(px,q);
     y = polyval(py,q);
     plot_h = plot(x,y,'g-','LineWidth',2);

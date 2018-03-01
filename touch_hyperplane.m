@@ -9,11 +9,10 @@ steps = {[10:70],[20:80],[140:200],[140:200]};
 %%%%%%%%%%%%%%%%%%%%%% try as short as possible to reduce time next step
 mouseName = mice{1};
 sessionNum =[3:13];
-trial_types = {'rc', 'rf', 'lc', 'lf'};
-% trial_types = {'rn', 'ln'};
+% trial_types = {'rc', 'rf', 'lc', 'lf'};
+
 %%
 for sessionInd = 1 : length(sessionNum)
-% for sessionInd = 1:3    
     sessionName = sprintf('S%02d',sessionNum(sessionInd));
 
     behavior_d = [behavior_base_dir mouseName '\'];
@@ -72,6 +71,12 @@ for sessionInd = 1 : length(sessionNum)
     % Should make something different for straight pole touch in S00. 
     % 2017/04/11 JK
     
+    % Modifying to deal with different types of session, such as DISCRETE
+    % target angles and distractors.
+    % 2018/02/26 JK
+    
+    hyperplane_initialize(b_session);
+    
     steps_hp = cell(1,length(trial_types));
     num_points_in_hp = cell(1,length(trial_types));
     tt_ind = cell(1,length(trial_types));
@@ -80,7 +85,6 @@ for sessionInd = 1 : length(sessionNum)
     hp_peaks = cell(1,length(trial_types)); % touch hyperplane peak points. 2 points for each hyperplane
 
     for trial_type_num = 1 : length(trial_types)    
-    % trial_type_num = 1
         tt_ind{trial_type_num} = find(cellfun(@(x) strcmp(x.trialType,trial_types{trial_type_num}),b_session.trials));
         temp_files = cell(length(tt_ind{trial_type_num}),1);
         for j = 1 : length(tt_ind{trial_type_num})
@@ -91,7 +95,6 @@ for sessionInd = 1 : length(sessionNum)
     end
     %%
     for trial_type_num = 1 : length(trial_types)
-    %   for trial_type_num = 4  
         done_flag = 1; 
         psi1_polygon_answer = 'Yes'; % for re-drawing of polygon for psi1
         while (done_flag)

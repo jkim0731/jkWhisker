@@ -1156,7 +1156,7 @@ classdef WhiskerTrial < handle
                 % polynomials. Turn off.
                 %                 warning('off','MATLAB:polyfit:RepeatedPointsOrRescale');
                 
-                if exist('parfor','builtin')
+                if exist('parfor','builtin')                
                     if strcmp(obj.trackerFileFormat,'whisker0')
                         whisker0Format = true;
                     else

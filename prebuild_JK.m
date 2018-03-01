@@ -1,9 +1,13 @@
 
 %% basic information
-mice = {'JK025', 'JK027','JK030'};
+mice = {'JK025'};
 % mice = {'AH0650'};
-videoloc = 'D:\TPM\JK\tracked';
-d = ([videoloc filesep]);
+videoloc = 'Y:\Whiskernas\JK_temp\whisker\tracked\';
+if strcmp(videoloc(end),filesep)
+    d = ([videoloc filesep]);
+else
+    d = videoloc;
+end
 
 ppm = 17.81002608;
             % 'pxPerMm': 17.81002608 for telecentric lens
@@ -11,7 +15,7 @@ ppm = ppm / 2; % for binning 2
             % 'pxPerMm': 10.56526073 for microVideo lens
 % comment out when doing for all of the sessions in the mouse directory
 % sessions = {[1,2,4:6,8:10,19,20,25],[2,4:6,8:19],[6,8:13],[2,4:8,11,19]};  
-sessions = {[1:20,22],[1:22],[1:22]};  
+sessions = {[0:20,22],[1:22],[1:22]};  
 
 all_session = 0; % 1 if using all sessions, 0 if using selected sessions
 % %%
@@ -37,11 +41,11 @@ if all_session == 1
     %% use this code when doing for all of the sessions in the mouse directory 
     for i = 1 : size(mice,2)
         cd(d)
-        sn = dir([mice{i},'*']);
+        sn = dir([mice{i},'S*']);
         for j = 1 : length(sn)
             if sn(j).isdir
                 [mouseName, sessionName] = strtok(sn(j).name,'S');            
-                follicle_n_mask(mouseName,sessionName,videoloc)
+                follicle_n_mask(mouseName,sessionName,videoloc,'noskip')
             end
             close all
         end
@@ -54,7 +58,7 @@ else
             for j = 1 : length(sessions{i})
                 mouseName = mice{i};
                 sessionName = sprintf('S%02d',sessions{i}(j));
-                follicle_n_mask(mouseName,sessionName,videoloc)
+                follicle_n_mask(mouseName,sessionName,videoloc,'noskip')
                 close all
             end
         end
@@ -91,6 +95,7 @@ if all_session == 1
 else
     %% use this code when doing for selected sessions in each mouse directory
     for i = 1 : size(mice,2)
+
         cd(d)
         if ~isempty(sessions{i})
             for j = 1 : length(sessions{i})
@@ -103,13 +108,11 @@ else
     end
 end
 
-
-
-%% build WT_2pad and WST_2pad
-% WL_2pad AFTER touch plane
-behavior_base_dir = 'D:\TPM\JK\soloData\';
+%% build WT_2pad, WST_2pad, and WL_2pad
+% rebuild WL_2pad after touch plane
+behavior_base_dir = 'Y:\Whiskernas\JK_temp\SoloData\';
 if all_session == 1
-    for mi = 3 : size(mice,2) % mouse index
+    for mi = 1 : size(mice,2) % mouse index
         sn = dir([mice{mi},'*']);
         for si = 1 : length(sn)
             if sn(si).isdir
@@ -167,7 +170,7 @@ if all_session == 1
                     'barRadius',15.3,'faceSideInImage', 'bottom', 'framePeriodInSec',0.003225806451613,...
                     'imagePixelDimsXY',[width height],'pxPerMm',ppm,'mouseName',mouseName,'sessionName',sessionName,'protractionDirection','rightward');
                 Whisker.makeAllDirectory_WhiskerSignalTrial_2pad(whisker_d,'include_files',includef,'polyRoiInPix',[ppm 6*ppm]);
-%                 Whisker.makeAllDirectory_WhiskerTrialLite_2pad(whisker_d,'include_files',includef,'r_in_mm',3,'calc_forces',false,'behavior',b_session);
+                Whisker.makeAllDirectory_WhiskerTrialLite_2pad(whisker_d,'include_files',includef,'r_in_mm',3,'calc_forces',false,'behavior',b_session);
             end
         end
     end
@@ -176,7 +179,23 @@ else
         mouseName = mice{mi};
         if ~isempty(sessions{mi})
             for j = 1 : length(sessions{mi})
+                %%
                 sessionName = sprintf('S%02d',sessions{mi}(j));
+% videoloc = 'Y:\Whiskernas\JK_temp\whisker\tracked\';
+% if strcmp(videoloc(end),filesep)
+%     d = ([videoloc filesep]);
+% else
+%     d = videoloc;
+% end
+% 
+% ppm = 17.81002608;
+%             % 'pxPerMm': 17.81002608 for telecentric lens
+% ppm = ppm / 2; % for binning 2
+% sessionName = 'S01';
+% mouseName = 'JK025';
+% behavior_base_dir = 'Y:\Whiskernas\JK_temp\SoloData\';
+
+                %%
                 behavior_d = [behavior_base_dir mouseName '\'];
                 whisker_d = [d, mouseName, sessionName, filesep];
                 load([whisker_d, mouseName, sessionName, '_post.mat'])
@@ -194,8 +213,9 @@ else
                 b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                 b_session = b{b_ind};
 
-                load_fn = [mouseName sessionName '_post.mat'];
-                load([whisker_d load_fn]); % loading errorlist
+%                 load_fn = [mouseName sessionName '_post.mat'];
+%                 load([whisker_d load_fn]); % loading errorlist
+%                   No need to load errorlist 2018/02/28 JK
 
                 if ~isempty(b_ind) % try only the ones with behavior session
                     % %%
@@ -214,7 +234,16 @@ else
                     for i=1:length(filelist)
                         dirTrialNums(i)=str2double(filelist(i).name(1:end-13)); % extract out the trial number from each measurements file present in directory
                     end
-                    dirTrialNums = setdiff(dirTrialNums,errorlist);
+%                     dirTrialNums = setdiff(dirTrialNums,errorlist); % need to keep it this way since non-tracked whisker is not recorded as NaN, just the frame with only that whisker is gone, making the numbers of front-view whisker and top-view whisker unmatched.
+                    % not only that... it's hard to match ws.time with tpm
+                    % time because it's hard to know which frame lost the
+                    % whisker. Think about this again when too many data
+                    % are lost. 2018/02/27 JK
+                    
+%                   There are too many trials with errors in tracking front
+%                   view, which is not that critical for touch analysis.
+%                   Need to find a way to include these. 2018/02/28 JK
+                    
                     trialNums = sort(dirTrialNums);
                     trialNums = trialNums(~isnan(trialNums));
                     trialNums = intersect(trialNums,b{b_ind}.trialNums); % try only the ones with behavior trials
@@ -225,27 +254,17 @@ else
                     end
                 end
 
-%                 Whisker.makeAllDirectory_WhiskerTrial(whisker_d,[0 1],'mask', {[maskx{1}';masky{1}'],[maskx{2}';masky{2}']},...
-%                     'trial_nums',trialNums,'include_files',includef,...
-%                     'barRadius',15.3,'faceSideInImage', 'bottom', 'framePeriodInSec',0.003225806451613,...
-%                     'imagePixelDimsXY',[width height],'pxPerMm',ppm,'mouseName',mouseName,'sessionName',sessionName,'protractionDirection','rightward');                
-%                 mp4list = dir('*.mp4');
-%                 wt_elist = {};
-%                 trialNums = [];
-%                 for mp4i = 1 : length(mp4list)
-%                     if ~exist([mp4list(mp4i).name(1:end-4),'_WT.mat'], 'file')
-%                         wt_elist{end+1} = mp4list(mp4i).name(1:end-4);
-%                         trialNums(end+1) = str2double(mp4list(mp4i).name(1:end-4));
-%                     end
-%                 end
-%                 if ~isempty(wt_elist)
-%                     Whisker.makeAllDirectory_WhiskerTrial(whisker_d,[0 1],'mask', {[maskx{1}';masky{1}'],[maskx{2}';masky{2}']},...
-%                     'trial_nums',trialNums,'include_files',wt_elist,...
-%                     'barRadius',15.3,'faceSideInImage', 'bottom', 'framePeriodInSec',0.003225806451613,...
-%                     'imagePixelDimsXY',[width height],'pxPerMm',ppm,'mouseName',mouseName,'sessionName',sessionName,'protractionDirection','rightward'); 
-%                 end
-%                 Whisker.makeAllDirectory_WhiskerSignalTrial_2pad(whisker_d,'include_files',includef,'polyRoiInPix',[ppm 6*ppm]);
-                Whisker.makeAllDirectory_WhiskerTrialLite_2pad(whisker_d,'include_files',includef,'r_in_mm',3,'calc_forces',false,'behavior',b_session);
+                Whisker.makeAllDirectory_WhiskerTrial(whisker_d,[0 1],'mask', {[maskx{1}';masky{1}'],[maskx{2}';masky{2}']},...
+                    'trial_nums',trialNums,'include_files',includef,...
+                    'barRadius',15.3,'faceSideInImage', 'bottom', 'framePeriodInSec',0.003225806451613,...
+                    'imagePixelDimsXY',[width height],'pxPerMm',ppm,'mouseName',mouseName,'sessionName',sessionName,'protractionDirection','rightward');                
+                mp4list = dir('*.mp4');
+                wt_elist = {};
+                trialNums = [];
+
+                Whisker.makeAllDirectory_WhiskerSignalTrial_2pad(whisker_d,'include_files',includef,'polyRoiInPix',[ppm 6*ppm]);
+%                 Whisker.makeAllDirectory_WhiskerTrialLite_2pad(whisker_d,'include_files',includef,'r_in_mm',3,'calc_forces',false,'behavior',b_session);
+                
             end
         end
     end

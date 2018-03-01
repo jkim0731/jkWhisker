@@ -3710,9 +3710,6 @@ classdef WhiskerSignalTrial < handle
             
         end
         
-        
-        
-        
     end
     methods % Dependent property methods; cannot have attributes.
         
