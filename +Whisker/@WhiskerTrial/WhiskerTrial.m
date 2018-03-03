@@ -103,6 +103,9 @@ classdef WhiskerTrial < handle
         trackerFileName = '';
         trackerFileFormat = 'whisker0'; % Format (version) of tracker file: whisker0 or whisker1
         useFlag = 1;
+        
+        stretched_mask = [];
+        stretched_whisker = [];        
     end
     
     properties (Dependent = true)
@@ -530,7 +533,7 @@ classdef WhiskerTrial < handle
             end
         end
         
-        function obj = set_mask_from_points(obj,tid,x,y)
+        function obj = set_mask_from_points(obj,tid,x,y, varargin)
             %
             % Sets obj.polyFitsMask in order
             % to create a mask defined by the points in x and y.
@@ -545,6 +548,11 @@ classdef WhiskerTrial < handle
             % degree polynomial fit to the points for N < 6. For N >= 6
             % the polynomial will be 5-th degree.
             %
+            %
+            % varargin about stretching the mask. 1.2 as 20% stretching in both sides 2018/03/01 JK
+            %
+            %
+            
             qnum = length(x);            
             if length(x) ~= length(y)
                 error('Inputs x and y must be of equal length.')
@@ -567,7 +575,11 @@ classdef WhiskerTrial < handle
 %             end
             polyDegree = 2;
             
-            q = (0:(qnum-1))./(qnum-1); % [0,1]
+            if nargin > 4
+                q = ( 0-(varargin{1}-1) : (qnum-1)*varargin{1})./(qnum-1); % [0,1] stretched both ways
+            else
+                q = (0 : (qnum-1))./(qnum-1); % [0,1]
+            end
             
             % polyfit() gives warnings that indicate that we don't need such a high degree
             % polynomials. Turn off.
@@ -1256,12 +1268,56 @@ classdef WhiskerTrial < handle
                                 %                                                 % that is limited in resolution by the number of
                                 %                                                 % points whisker and mask are evaluated at (i.e., by number of points in q).
 
-                                if isempty(P)
-                                    if strcmp(mask_treatment,'maskNaN')
-                                        fprintf('No intersection with the mask, returning NaNs in frame #%d.\n', k)
-                                        x = nan(size(x));
-                                        yy = nan(size(yy));
-                                    end % else x = x, yy = yy (no change)
+                                if isempty(P)                                    
+                                    % first, stretch the mask (30% for now) and see if there is any intersection
+                                    disp('Stretching the mask fit 30% longer')
+                                    C2 = [polyval(pxm,linspace(-0.3,1.3,100)); polyval(pym,linspace(-0.3,1.3,100))];
+                                    P = Whisker.InterX(C1,C2);
+                                    if size(P,2) > 1
+                                        disp('Found more than 1 intersection of whisker and mask curves; using only first.')
+                                        P = P(:,1);
+                                    end
+                                    if isempty(P)
+                                        % if still the whisker and mask do not meet, stretch the whisker.
+                                        % In order to do this, I need to first fit the whisker with existing data points.
+                                        if length(x) <= polyDegree
+                                            if strcmp(mask_treatment,'maskNaN')
+                                            fprintf('No intersection with the mask, returning NaNs in frame #%d.\n', k)
+                                            x = nan(size(x));
+                                            yy = nan(size(yy));
+                                            end % else x = x, yy = yy (no change)
+                                        else
+                                            coeffX = Whisker.polyfit(linspace(0,1,length(x), x, polyDegree));
+                                            coeffY = Whisker.polyfit(linspace(0,1,length(yy), yy, polyDegree));
+                                            % stretch whisker 30% to wpo.
+                                            x = polyval(coeffX,linspace(-0.3,1,100));
+                                            yy = polyval(coeffY,linspace(-0.3,1,100));
+                                            C1 = [x;yy];
+                                            P = Whisker.InterX(C1,C2);
+                                            if size(P,2) > 1   % Don't need for faster version, which handles this.
+                                                disp('Found more than 1 intersection of whisker and mask curves; using only first.')
+                                                P = P(:,1);
+                                            end
+                                            if isempty(P)
+                                                if strcmp(mask_treatment,'maskNaN')
+                                                    fprintf('No intersection with the mask, returning NaNs in frame #%d.\n', k)
+                                                    frpintf('No intersection after stretching mask and whisker, returning NaNs in frame #%d.\n', k)
+                                                    x = nan(size(x));
+                                                    yy = nan(size(yy));
+                                                end
+                                            else
+                                                % starting from the point closest to the intersection (P)
+                                                [~,c_ind] = min(abs([x;yy] - P));
+                                                x = x(c_ind:end);
+                                                yy = yy(c_ind:end);
+                                            end
+                                        end
+                                    else
+                                        % starting from the point closest to the intersection (P)
+                                        [~,c_ind] = min(abs([x;yy] - P));
+                                        x = x(c_ind:end);
+                                        yy = yy(c_ind:end);
+                                    end
                                 else
                                     % starting from the point closest to the intersection (P)
                                     [~,c_ind] = min(abs([x;yy] - P));
@@ -1403,12 +1459,57 @@ classdef WhiskerTrial < handle
                     %                                                 % that is limited in resolution by the number of
                     %                                                 % points whisker and mask are evaluated at (i.e., by number of points in q).
 
-                    if isempty(P)
-                        if strcmp(mask_treatment,'maskNaN')
-                            fprintf('No intersection with the mask, returning NaNs in frame #%d.\n', k)
-                            x = nan(size(x));
-                            yy = nan(size(yy));
-                        end % else x = x, yy = yy (no change)
+                    if isempty(P)                                    
+                        % first, stretch the mask (30% for now) and see if there is any intersection
+                        disp('Stretching the mask fit 30% longer')
+                        C2 = [polyval(pxm,linspace(-0.3,1.3,100)); polyval(pym,linspace(-0.3,1.3,100))];
+                        P = Whisker.InterX(C1,C2);
+                        if size(P,2) > 1
+                            disp('Found more than 1 intersection of whisker and mask curves; using only first.')
+                            P = P(:,1);
+                        end
+                        if isempty(P)
+                            % if still the whisker and mask do not meet, stretch the whisker.
+                            % In order to do this, I need to first fit the whisker with existing data points.
+                            if length(x) <= polyDegree
+                                if strcmp(mask_treatment,'maskNaN')
+                                    fprintf('No intersection with the mask, returning NaNs in frame #%d.\n', k)
+                                    x = nan(size(x));
+                                    yy = nan(size(yy));
+                                end % else x = x, yy = yy (no change)
+                            else
+                                coeffX = Whisker.polyfit(linspace(0,1,length(x)), x, polyDegree);
+                                coeffY = Whisker.polyfit(linspace(0,1,length(yy)), yy, polyDegree);
+                                % stretch whisker 30% to wpo.
+                                x = polyval(coeffX,linspace(-0.3,1,round(length(x)*1.3)));
+                                yy = polyval(coeffY,linspace(-0.3,1,round(length(yy)*1.3)));
+                                C1 = [x;yy];
+                                P = Whisker.InterX(C1,C2);
+                                if size(P,2) > 1   % Don't need for faster version, which handles this.
+                                    disp('Found more than 1 intersection of whisker and mask curves; using only first.')
+                                    P = P(:,1);
+                                end
+                                if isempty(P)
+                                    if strcmp(mask_treatment,'maskNaN')                                        
+                                        frpintf('No intersection after stretching mask and whisker, returning NaNs in frame #%d.\n', k)
+                                        x = nan(size(x));
+                                        yy = nan(size(yy));
+                                    end
+                                else
+                                    % starting from the point closest to the intersection (P)
+                                    [~,c_ind] = min(abs([x;yy] - P));
+                                    x = x(c_ind:end);
+                                    yy = yy(c_ind:end);
+                                    obj.stretched_whisker = [obj.stretched_whisker, k];
+                                end
+                            end
+                        else
+                            % starting from the point closest to the intersection (P)
+                            [~,c_ind] = min(abs([x;yy] - P));
+                            x = x(c_ind:end);
+                            yy = yy(c_ind:end);
+                            obj.stretched_mask = [obj.stretched_mask, k];
+                        end
                     else
                         % starting from the point closest to the intersection (P)
                         [~,c_ind] = min(abs([x;yy] - P));

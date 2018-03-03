@@ -133,7 +133,7 @@ while (i < 3)
     q = (0:(qnum-1))./(qnum-1);
     px = Whisker.polyfit(q,mask_j,polyDegree);
     py = Whisker.polyfit(q,mask_i,polyDegree);
-    q = linspace(-0.2,1.2);
+    q = linspace(0,1);
     x = polyval(px,q);
     y = polyval(py,q);
     plot_h = plot(x,y,'g-','LineWidth',2);

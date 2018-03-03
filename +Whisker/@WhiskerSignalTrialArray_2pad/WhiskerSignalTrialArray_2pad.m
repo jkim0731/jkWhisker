@@ -18,7 +18,7 @@ classdef WhiskerSignalTrialArray_2pad < handle
 
     methods (Access = public)
 
-        function obj = WhiskerSignalTrialArray_2pad(w, varargin) 
+        function obj = WhiskerSignalTrialArray_2pad(w_or_d, varargin) 
             %
             % USAGE:
             %
@@ -50,26 +50,101 @@ classdef WhiskerSignalTrialArray_2pad < handle
             %
             %
             p = inputParser;
-            p.addOptional('w', @(x) isa(x,'Whisker.WhiskerTrialArray_2pad'));                      
+            p.addOptional('w_or_d', '', @(x) ischar(x) || isa(x,'Whisker.WhiskerTrialArray_2pad'));                      
             p.addParamValue('polyRoiInPix', NaN); 
-%             p.parse(varargin{:});
             
-            %-------------
+            % Arguments for use when w_or_d is a directory path:
+            p.addParamValue('include_files', {}, @(x) all(cellfun(@ischar,x)));
+            p.addParamValue('ignore_files', {}, @(x) all(cellfun(@ischar,x)));
+            p.addParamValue('behavior', [], @(x) isa(x,'Solo.BehavTrial2padArray'));
+            
+            p.parse(w_or_d,varargin{:});
+            
             if nargin==0
                 return
             end
-                        
-            obj.mouseName = w.mouseName;
-            obj.sessionName = w.sessionName;
-
-            ntrials = length(w);
-
-            obj.trials = cell(1, ntrials);
-            for k=1:ntrials
-                disp(['Trial = ' int2str(k)])
-                obj.trials{k} = Whisker.WhiskerSignalTrial(w.trials{k}, varargin{:}); 
+            
+            disp 'List of all arguments:'
+            disp(p.Results)
+            
+            if strcmp(p.Results.w_or_d,'')
+                error('First argument not valid or not given.')
             end
-
+            
+            if isa(p.Results.w_or_d,'Whisker.WhiskerTrialArray_2pad')
+                doConstructor_WhiskerTrialArray;
+            else % directory path given as first argument
+                doConstructor_directory;
+            end
+            
+            %-------------
+            function doConstructor_WhiskerTrialArray % subfunction
+                w = p.Results.w_or_d;
+                obj.mouseName = w.mouseName;
+                obj.sessionName = w.sessionName;
+                
+                ntrials = length(w);
+                
+                obj.trials = cell(1, ntrials);
+                for k=1:ntrials
+                    disp(['Trial = ' int2str(k)])
+                    obj.trials{k} = Whisker.WhiskerSignalTrial_2pad(w.trials{k}, varargin{:}); 
+                end
+            end
+            
+            function doConstructor_directory % subfunction
+                d = p.Results.w_or_d;
+                
+                if ~strcmp(d(end), filesep)
+                    d = [d filesep];
+                end
+                
+                currentDir = pwd;
+                cd(d)
+                
+                fnall = arrayfun(@(x) x.name(1:(end-8)), dir([d '*_WST.mat']),'UniformOutput',false);
+                
+                if ~isempty(p.Results.include_files) % Make sure files are found. If not, ignored.
+                    ind = ismember(p.Results.include_files,fnall);
+                    fnall = p.Results.include_files(ind);
+                    if sum(ind) ~= numel(ind)
+                        disp('The following files in ''include_files'' were not found in directory ''d'' and will be skipped:')
+                        disp(p.Results.include_files(~ind))
+                    end
+                end
+                
+                if ~isempty(p.Results.ignore_files)
+                    ind = ~ismember(fnall,p.Results.ignore_files);
+                    fnall = fnall(ind);
+                end
+                
+                inBoth = intersect(p.Results.include_files,p.Results.ignore_files);
+                if ~isempty(inBoth)
+                    disp('The following files were given in BOTH ''include_files'' and ''ignore files'' and will be ignored:')
+                    disp(inBoth)
+                end
+                
+                nfiles = length(fnall);
+                
+                obj.trials = cell(1, nfiles);
+                if ~isempty(fnall)
+                    for k=1:nfiles
+                        fn = fnall{k};
+                        disp(['Loading ''_WST.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
+                        
+                        load([fn '_WST.mat'],'ws');
+                        if ~isa(ws,'Whisker.WhiskerSignalTrial_2pad')
+                            error(['File ' fn '_WST.mat did not contain a WhiskerSignalTrial_2pad object.'])
+                        end
+                        obj.trials{k} = ws;
+                    end
+                    
+                    obj.mouseName = obj.trials{1}.mouseName; % Assume all files are from same mouse.
+                    obj.sessionName = obj.trials{1}.sessionName; % Assume all files are from same session.
+                end
+                
+                cd(currentDir)
+            end
         end
 
         function r = length(obj)

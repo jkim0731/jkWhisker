@@ -108,6 +108,9 @@ classdef WhiskerSignalTrial < handle
         pole_available_timepoints = [];
         
         useFlag = 1;
+        
+        stretched_mask = [];
+        stretched_whisker = []; 
     end
     
     properties (Dependent = true)
@@ -224,6 +227,9 @@ classdef WhiskerSignalTrial < handle
 
             obj.videoFrames = w.get_videoFrames; % 2017/04/03 JK
             obj.pole_available_timepoints = p.Results.pole_available_frames(1) : obj.videoFrames - p.Results.pole_available_frames(2);
+            
+            obj.stretched_mask = w.stretched_mask;
+            obj.stretched_whisker = w.stretched_whisker;
         end
         
         function obj = recompute_cached_mean_theta_kappa(obj, varargin)
