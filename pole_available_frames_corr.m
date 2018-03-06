@@ -55,7 +55,7 @@ parfor vind = 1 : length(vlist)
 
         im_corr = zeros(nof,1);
         for i = 1 : nof
-            im_corr(i) = sum(sum(xcorr2(uint8(pole_edge_ts(:,:,i)), uint8(pole_edge_ref))));
+            im_corr(i) = sum(sum(xcorr2(single(pole_edge_ts(:,:,i)), single(pole_edge_ref))));
         end                
 %         figure, plot(1:nof,im_corr), hold on, plot(1:nof, repmat(prctile(im_corr,50),nof,1))               
         pole_up_frames(vind).name = str2double(fn);
