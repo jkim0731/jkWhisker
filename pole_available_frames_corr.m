@@ -33,7 +33,7 @@ vlist = dir('*.mp4');
 firsts = zeros(length(vlist),1);
 lasts = zeros(length(vlist),1);
 pole_up_frames = struct;
-parfor vind = 1:length(vlist)
+for vind = 1:length(vlist)
     tic
     [~,fn,~] = fileparts(vlist(vind).name);
     if exist([fn,'_WT.mat'],'file') % Let's run this only on those with WT files (otherwise there has been an error in the video file, e.g., interruption)
@@ -44,18 +44,21 @@ parfor vind = 1:length(vlist)
         h = floor(v.height*height_factor);
         w =  floor(v.width*width_factor);
         pole_img_ts = zeros(h,w,nof);
-        pole_edge_ts = zeros(h,w,nof);
+%         pole_edge_ts = zeros(h,w,nof);
         for i = 1 : nof
             temp = readFrame(v);
             pole_img_ts(:,:,i) = adapthisteq(temp(1:h,1:w,1),'NumTiles',[5,20]);    
-            pole_edge_ts(:,:,i) = edge(imgaussfilt(pole_img_ts(:,:,i),3),'Roberts');
+%             pole_edge_ts(:,:,i) = edge(imgaussfilt(pole_img_ts(:,:,i),3),'Roberts');
         end
-        ref_img = mean(pole_img_ts,3);
+        ref_img = mean(pole_img_ts(:,:,floor(nof/2 - nof/10):floor(nof/2+nof/10)),3);
         pole_edge_ref = edge(imgaussfilt(ref_img,3),'Roberts');
 
         im_corr = zeros(nof,1);
         for i = 1 : nof
-            im_corr(i) = sum(sum(xcorr2(single(pole_edge_ts(:,:,i)), single(pole_edge_ref))));
+%             im_corr(i) = sum(sum(xcorr2(single(pole_edge_ts(:,:,i)), single(pole_edge_ref))));
+            pole_edge_ts = edge(pole_img_ts(:,:,i),'Roberts');
+            im_corr(i) = sum(sum(xcorr2(single(pole_edge_ts), single(pole_edge_ref))));
+%             im_corr(i) = sum(sum(xcorr2(single(pole_img_ts(:,:,i)), single(ref_img))));
         end                
         corr_upper = im_corr(im_corr > (max(im_corr)+min(im_corr))/2);
 %         corr_upper_ind = find(im_corr> (max(im_corr)+min(im_corr))/2);
@@ -65,8 +68,8 @@ parfor vind = 1:length(vlist)
 %         threshold = min(corr_upper(corr_upper_ind(first_ind):corr_upper_ind(last_ind)));
         threshold = prctile(corr_upper,20);
         
-%         figure, plot(1:nof,im_corr), hold on, plot(1:nof, repmat(threshold,nof,1))   
-%         implay(mat2gray(pole_img_ts))
+        figure, plot(1:nof,im_corr), hold on, plot(1:nof, repmat(threshold,nof,1))   
+        implay(mat2gray(pole_img_ts))
         pole_up_frames(vind).name = str2double(fn);
         pole_up_frames(vind).frames = find(im_corr >= threshold,1,'first') : find(im_corr >= threshold,1,'last');
         fprintf('%s %s %d/%d done.\n', mouseName, sessionName, vind, length(vlist));            
@@ -75,5 +78,5 @@ parfor vind = 1:length(vlist)
         fprintf('Whisker tracking error: %s %s %d/%d \n', mouseName, sessionName, vind, length(vlist));
     end
 end
-savefn = sprintf('pole_up_frames_%s%s.mat', mouseName, sessionName);
-save(savefn,'pole_up_frames')
+% savefn = sprintf('pole_up_frames_%s%s.mat', mouseName, sessionName);
+% save(savefn,'pole_up_frames')
