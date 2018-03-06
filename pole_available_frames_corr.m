@@ -33,7 +33,7 @@ vlist = dir('*.mp4');
 firsts = zeros(length(vlist),1);
 lasts = zeros(length(vlist),1);
 pole_up_frames = struct;
-parfor vind = 1 : length(vlist)       
+parfor vind = 1:length(vlist)
     tic
     [~,fn,~] = fileparts(vlist(vind).name);
     if exist([fn,'_WT.mat'],'file') % Let's run this only on those with WT files (otherwise there has been an error in the video file, e.g., interruption)
@@ -57,12 +57,21 @@ parfor vind = 1 : length(vlist)
         for i = 1 : nof
             im_corr(i) = sum(sum(xcorr2(single(pole_edge_ts(:,:,i)), single(pole_edge_ref))));
         end                
-%         figure, plot(1:nof,im_corr), hold on, plot(1:nof, repmat(prctile(im_corr,50),nof,1))               
+        corr_upper = im_corr(im_corr > (max(im_corr)+min(im_corr))/2);
+%         corr_upper_ind = find(im_corr> (max(im_corr)+min(im_corr))/2);
+%         corr_upper_diff = diff(corr_upper);
+%         first_ind = find(corr_upper_diff < 0, 1, 'first') + 1;
+%         last_ind = find(corr_upper_diff < 0, 1, 'last') + 1;
+%         threshold = min(corr_upper(corr_upper_ind(first_ind):corr_upper_ind(last_ind)));
+        threshold = prctile(corr_upper,20);
+        
+%         figure, plot(1:nof,im_corr), hold on, plot(1:nof, repmat(threshold,nof,1))   
+%         implay(mat2gray(pole_img_ts))
         pole_up_frames(vind).name = str2double(fn);
-        pole_up_frames(vind).frames = find(im_corr >= prctile(im_corr,50),1,'first') : find(im_corr >= prctile(im_corr,50),1,'last');
+        pole_up_frames(vind).frames = find(im_corr >= threshold,1,'first') : find(im_corr >= threshold,1,'last');
         fprintf('%s %s %d/%d done.\n', mouseName, sessionName, vind, length(vlist));            
     else
-        firsts(vind) = NaN; lasts(vind) = NaN;
+        pole_up_frames(vind).frames = NaN;
         fprintf('Whisker tracking error: %s %s %d/%d \n', mouseName, sessionName, vind, length(vlist));
     end
 end
