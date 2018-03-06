@@ -46,6 +46,7 @@ if all_session == 1
             if sn(j).isdir
                 [mouseName, sessionName] = strtok(sn(j).name,'S');            
                 follicle_n_mask(mouseName,sessionName,videoloc,'noskip')
+                pole_available_frames(mouseName,sessionName,videoloc,'noskip')
             end
             close all
         end
