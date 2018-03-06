@@ -51,12 +51,12 @@ for vind = 1:length(vlist)
 %             pole_edge_ts(:,:,i) = edge(imgaussfilt(pole_img_ts(:,:,i),3),'Roberts');
         end
         ref_img = mean(pole_img_ts(:,:,floor(nof/2 - nof/10):floor(nof/2+nof/10)),3);
-        pole_edge_ref = edge(imgaussfilt(ref_img,3),'Roberts');
+        [pole_edge_ref, edge_thresh] = edge(imgaussfilt(ref_img,3),'Prewitt','nothinning');
 
         im_corr = zeros(nof,1);
         for i = 1 : nof
 %             im_corr(i) = sum(sum(xcorr2(single(pole_edge_ts(:,:,i)), single(pole_edge_ref))));
-            pole_edge_ts = edge(pole_img_ts(:,:,i),'Roberts');
+            pole_edge_ts = edge(imgaussfilt(pole_img_ts(:,:,i),3),'Prewitt', 'nothinning', edge_thresh);
             im_corr(i) = sum(sum(xcorr2(single(pole_edge_ts), single(pole_edge_ref))));
 %             im_corr(i) = sum(sum(xcorr2(single(pole_img_ts(:,:,i)), single(ref_img))));
         end                
@@ -66,10 +66,10 @@ for vind = 1:length(vlist)
 %         first_ind = find(corr_upper_diff < 0, 1, 'first') + 1;
 %         last_ind = find(corr_upper_diff < 0, 1, 'last') + 1;
 %         threshold = min(corr_upper(corr_upper_ind(first_ind):corr_upper_ind(last_ind)));
-        threshold = prctile(corr_upper,20);
+        threshold = prctile(corr_upper(floor(length(corr_upper)/5) : length(corr_upper) - floor(length(corr_upper)/5)),20);
         
-        figure, plot(1:nof,im_corr), hold on, plot(1:nof, repmat(threshold,nof,1))   
-        implay(mat2gray(pole_img_ts))
+%         figure, plot(1:nof,im_corr), hold on, plot(1:nof, repmat(threshold,nof,1))   
+%         implay(mat2gray(pole_img_ts))
         pole_up_frames(vind).name = str2double(fn);
         pole_up_frames(vind).frames = find(im_corr >= threshold,1,'first') : find(im_corr >= threshold,1,'last');
         fprintf('%s %s %d/%d done.\n', mouseName, sessionName, vind, length(vlist));            
