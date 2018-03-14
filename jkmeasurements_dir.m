@@ -45,10 +45,10 @@ parfor i = 1 : size(flist,1)
 end
 
 %%
-% prev_result = ls('remeasure_*.mat');
-% if ~isempty(prev_result)
-%     for i = 1: size(prev_result,1)
-%         delete(prev_result(i,:))
-%     end
-% end
-% save(save_filename,'errorlist') 
+prev_result = ls('remeasure_*.mat');
+if ~isempty(prev_result)
+    for i = 1: size(prev_result,1)
+        delete(prev_result(i,:))
+    end
+end
+save(save_filename,'errorlist') 

@@ -1,12 +1,11 @@
 
 %% basic information
-mice = {'JK025'};
-% mice = {'AH0650'};
+mice = {'JK037','JK038','JK039','JK041'};
 videoloc = 'Y:\Whiskernas\JK_temp\whisker\tracked\';
 if strcmp(videoloc(end),filesep)
-    d = ([videoloc filesep]);
+    whisker_d = ([videoloc filesep]);
 else
-    d = videoloc;
+    whisker_d = videoloc;
 end
 
 ppm = 17.81002608;
@@ -14,57 +13,62 @@ ppm = 17.81002608;
 ppm = ppm / 2; % for binning 2
             % 'pxPerMm': 10.56526073 for microVideo lens
 % comment out when doing for all of the sessions in the mouse directory
-% sessions = {[1,2,4:6,8:10,19,20,25],[2,4:6,8:19],[6,8:13],[2,4:8,11,19]};  
-sessions = {[0:19,22],[1:22],[1:22]};  
+sessions = {[14:24],[1:31],[1:28],[1:30]};  
+sessions_pre = {[1:2],[1],[1],[1]};
 
 all_session = 0; % 1 if using all sessions, 0 if using selected sessions
-% %%
-% base_dir = 'Z:\Data\2p\SoloData\';
-% for i = 1 : length(mice)
-% % for i = 2
-%     td = [base_dir mice{i} '\'];
-%     cd(td)    
-%     merge_error_saved_dir
-%     flist = dir('data_@*x.mat');
-%     
-%     b = cell(1,length(flist));
-% 
-%     for j = 1 : length(flist)            
-%         b{j} = Solo.BehavTrial2padArray(flist(j).name);
-%     end    
-%     save('behavior.mat','b')
-% end
 
 %% Define follicle points and masks
 % saves follicle_n_mask.mat file consists of variables 'maskx','masky','width', 'height', and 'follicle_first'
-if all_session == 1
-    %% use this code when doing for all of the sessions in the mouse directory 
-    for i = 1 : size(mice,2)
-        cd(d)
-        sn = dir([mice{i},'S*']);
-        for j = 1 : length(sn)
-            if sn(j).isdir
-                [mouseName, sessionName] = strtok(sn(j).name,'S');            
-                follicle_n_mask(mouseName,sessionName,videoloc,'noskip')
-                pole_available_frames(mouseName,sessionName,videoloc,'noskip')
-            end
-            close all
-        end
-    end
-else
-    %% use this code when doing for selected sessions in each mouse directory
-    for i = 1 : size(mice,2)
-        cd(d)
-        if ~isempty(sessions{i})
-            for j = 1 : length(sessions{i})
-                mouseName = mice{i};
-                sessionName = sprintf('S%02d',sessions{i}(j));
-                follicle_n_mask(mouseName,sessionName,videoloc,'noskip')
-                close all
-            end
-        end
-    end
-end
+% if all_session == 1
+%     %% use this code when doing for all of the sessions in the mouse directory 
+%     for i = 1 : size(mice,2)
+%         cd(d)
+%         sn = dir([mice{i},'S*']);
+%         sn_pre = dir([mice{i},'pre*']); 
+%         if ~isempty(sn)
+%             for j = 1 : length(sn)
+%                 if sn(j).isdir
+%                     [mouseName, sessionName] = strtok(sn(j).name,'S');
+%                     if ~isempty(sessionName)
+%                         follicle_n_mask(mouseName,sessionName,videoloc,'skip')
+%                     end
+%                 end
+%                 close all
+%             end
+%         end
+%         if ~isempty(sn_pre)
+%             for j = 1 : length(sn_pre)
+%                 if sn_pre(j).isdir
+%                     [mouseName, sessionName] = strtok(sn_pre(j).name,'pre');            
+%                     follicle_n_mask(mouseName,sessionName,videoloc,'skip')                                        
+%                 end
+%                 close all
+%             end
+%         end        
+%     end
+% else
+%     %% use this code when doing for selected sessions in each mouse directory
+%     for i = 1 : size(mice,2)
+%         cd(d)
+%         if ~isempty(sessions{i})
+%             for j = 1 : length(sessions{i})
+%                 mouseName = mice{i};
+%                 sessionName = sprintf('S%02d',sessions{i}(j));
+%                 follicle_n_mask(mouseName,sessionName,videoloc,'skip')
+%                 close all
+%             end
+%         end
+%         if ~isempty(sessions_pre{i})
+%             for j = 1 : length(sessions_pre{i})
+%                 mouseName = mice{i};
+%                 sessionName = sprintf('pre%d',sessions_pre{i}(j));
+%                 follicle_n_mask(mouseName,sessionName,videoloc,'skip')
+%                 close all
+%             end
+%         end
+%     end
+% end
 
 %%
 %%
@@ -80,188 +84,153 @@ end
 % saves _post.mat file consists of variables 'maskx','masky', 'includef', 'errorlist', 'width', and 'height'
 % postmeasurements uses jk_measurements_dir()
 
-if all_session == 1
-    %% use this code when doing for all of the sessions in the mouse directory 
-    for i = 1 : size(mice,2)
-        cd(d)
-        sn = dir([mice{i},'*']);
-        for j = 1 : length(sn)
-            if sn(j).isdir
-                [mouseName, sessionName] = strtok(sn(j).name,'S');
-                postmeasurements(mouseName,sessionName,videoloc,ppm)
+% if all_session == 1
+%     %% use this code when doing for all of the sessions in the mouse directory 
+%     for i = 1 : size(mice,2)
+%         cd(d)
+%         sn = dir([mice{i},'S*']);
+%         sn_pre = dir([mice{i}, 'pre*']); 
+%         if ~isempty(sn)
+%             for j = 1 : length(sn)
+%                 if sn(j).isdir
+%                     [mouseName, sessionName] = strtok(sn(j).name,'S');        
+%                     if ~isempty(sessionName) 
+%                         postmeasurements(mouseName,sessionName,videoloc,ppm,'skip')
+%                     end
+%                 end
+%             end
+%         end
+%         if ~isempty(sn_pre)
+%             for j = 1 : length(sn_pre)
+%                 if sn_pre(j).isdir
+%                     [mouseName, sessionName] = strtok(sn_pre(j).name,'pre');
+%     %                 postmeasurements(mouseName,sessionName,videoloc,ppm)
+%                     postmeasurements(mouseName,sessionName,videoloc,ppm,'skip')
+%                 end
+%             end
+%         end
+%     end
+% else
+%     %% use this code when doing for selected sessions in each mouse directory
+%     for i = 1 : size(mice,2)
+%         cd(d)
+%         if ~isempty(sessions{i})
+%             for j = 1 : length(sessions{i})
+%                 mouseName = mice{i};
+%                 sessionName = sprintf('S%02d',sessions{i}(j));
+% %                 postmeasurements(mouseName,sessionName,videoloc,ppm)
 %                 postmeasurements(mouseName,sessionName,videoloc,ppm,'skip')
-            end
-        end
-    end
-else
-    %% use this code when doing for selected sessions in each mouse directory
-    for i = 1 : size(mice,2)
-
-        cd(d)
-        if ~isempty(sessions{i})
-            for j = 1 : length(sessions{i})
-                mouseName = mice{i};
-                sessionName = sprintf('S%02d',sessions{i}(j));
-                postmeasurements(mouseName,sessionName,videoloc,ppm)
+%             end
+%         end
+%         if ~isempty(sessions_pre{i})
+%             for j = 1 : length(sessions_pre{i})
+%                 mouseName = mice{i};
+%                 sessionName = sprintf('pre%d',sessions_pre{i}(j));
+% %                 postmeasurements(mouseName,sessionName,videoloc,ppm)
 %                 postmeasurements(mouseName,sessionName,videoloc,ppm,'skip')
-            end
-        end
-    end
-end
+%             end
+%         end
+%     end
+% end
 
 %% build WT_2pad, WST_2pad, and WL_2pad
-% rebuild WL_2pad after touch plane
+% build WL_2pad after touch plane
 behavior_base_dir = 'Y:\Whiskernas\JK_temp\SoloData\';
+cd(videoloc)
 if all_session == 1
     for mi = 1 : size(mice,2) % mouse index
-        sn = dir([mice{mi},'*']);
+        sn = dir([mice{mi},'S*']);
         for si = 1 : length(sn)
             if sn(si).isdir
-                [mouseName, sessionName] = strtok(sn(si).name,'S');      
+                [mouseName, sessionName] = strtok(sn(si).name,'S');
                 behavior_d = [behavior_base_dir mouseName '\'];
-                whisker_d = [d, mice{mi}, sn{si}, filesep];
-                load([whisker_d, mice{mi}, sn{si}, '_post.mat'])
-            
+                if ~isempty(sessionName)
+                    if exist('b','var')
+                        if strcmp(b{1}.mouseName, mouseName)
+                            disp('using the same behavior file')
+                        else
+                            disp('loading a new behavior file')
+                            load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+                        end
+                    else
+                        load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+                    end
+                    b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
+                    b_session = b{b_ind};
+
+                    buildWTandWST(mouseName, sessionName, whisker_d, b_session, ppm)
+                end
+            end
+        end
+        
+        sn_pre = dir([mice{mi},'pre*']);
+        for si = 1 : length(sn_pre)
+            if sn_pre(si).isdir
+                [mouseName, sessionName] = strtok(sn_pre(si).name,'pre');
+                behavior_d = [behavior_base_dir mouseName '\'];
                 if exist('b','var')
                     if strcmp(b{1}.mouseName, mouseName)
                         disp('using the same behavior file')
                     else
                         disp('loading a new behavior file')
-                        load([behavior_d 'behavior.mat']) % loading b of the mouse (all the sessions)
+                        load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
                     end
                 else
-                    load([behavior_d 'behavior.mat']) % loading b of the mouse (all the sessions)
+                    load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
                 end
                 b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                 b_session = b{b_ind};
-
-                load_fn = [mouseName sessionName '_post.mat'];
-                load([whisker_d load_fn]); % loading errorlist
-
-                if ~isempty(b_ind) % try only the ones with behavior session
-                    % %%
-                    filelist=dir([whisker_d '*.measurements']);
-
-                    dirTrialNums=zeros(1,size(filelist,1));
-                    % trialNums=[];  % enter which trial nums to process 
-
-                    % %%
-                    % Assign the trial numbers to existing .measurements files in the directory
-                    % NOTE : This assumes that the .measurements files have leading numbers
-                    % corresponding to trial number in string positions 1:end-13 of the file
-                    % name. These index numbers may need to be changed to match up to the
-                    % numerical code of the trial number.  (2016/09/05 JK)
-
-                    for i=1:length(filelist)
-                        dirTrialNums(i)=str2double(filelist(i).name(1:end-13)); % extract out the trial number from each measurements file present in directory
-                    end
-                    dirTrialNums = setdiff(dirTrialNums,errorlist);
-                    trialNums = sort(dirTrialNums);
-                    trialNums = trialNums(~isnan(trialNums));
-                    trialNums = intersect(trialNums,b{b_ind}.trialNums); % try only the ones with behavior trials
-
-                    includef=cell(size(trialNums,1),1);
-                    for i = 1: length(trialNums)
-                        includef{i} = num2str(trialNums(i));
-                    end
-                end
-            
-%                 Whisker.makeAllDirectory_WhiskerTrial(whisker_d,[0 1],'mask', {[maskx{1}';masky{1}'],[maskx{2}';masky{2}']},...
-%                     'trial_nums',trialNums,'include_files',includef,...
-%                     'barRadius',15.3,'faceSideInImage', 'bottom', 'framePeriodInSec',0.003225806451613,...
-%                     'imagePixelDimsXY',[width height],'pxPerMm',ppm,'mouseName',mouseName,'sessionName',sessionName,'protractionDirection','rightward');
-                Whisker.makeAllDirectory_WhiskerSignalTrial_2pad(whisker_d,'include_files',includef,'polyRoiInPix',[ppm 6*ppm]);
-%                 Whisker.makeAllDirectory_WhiskerTrialLite_2pad(whisker_d,'include_files',includef,'r_in_mm',3,'calc_forces',false,'behavior',b_session);
+                
+                buildWTandWST(mouseName, sessionName, whisker_d, b_session, ppm)
             end
         end
+        
+        
     end
 else
     for mi = 1 : size(mice,2) % mouse index                 
         mouseName = mice{mi};
         if ~isempty(sessions{mi})
             for j = 1 : length(sessions{mi})
-                %%
                 sessionName = sprintf('S%02d',sessions{mi}(j));
-% videoloc = 'Y:\Whiskernas\JK_temp\whisker\tracked\';
-% if strcmp(videoloc(end),filesep)
-%     d = ([videoloc filesep]);
-% else
-%     d = videoloc;
-% end
-% 
-% ppm = 17.81002608;
-%             % 'pxPerMm': 17.81002608 for telecentric lens
-% ppm = ppm / 2; % for binning 2
-% sessionName = 'S01';
-% mouseName = 'JK025';
-% behavior_base_dir = 'Y:\Whiskernas\JK_temp\SoloData\';
-
-                %%
                 behavior_d = [behavior_base_dir mouseName '\'];
-                whisker_d = [d, mouseName, sessionName, filesep];
-                load([whisker_d, mouseName, sessionName, '_post.mat'])
 
                 if exist('b','var')
                     if strcmp(b{1}.mouseName, mouseName)
                         disp('using the same behavior file')
                     else
                         disp('loading a new behavior file')
-                        load([behavior_d 'behavior.mat']) % loading b of the mouse (all the sessions)
+                        load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
                     end
                 else
-                    load([behavior_d 'behavior.mat']) % loading b of the mouse (all the sessions)
+                    load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
                 end
                 b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                 b_session = b{b_ind};
 
-%                 load_fn = [mouseName sessionName '_post.mat'];
-%                 load([whisker_d load_fn]); % loading errorlist
-%                   No need to load errorlist 2018/02/28 JK
+                buildWTandWST(mouseName, sessionName, whisker_d, b_session, ppm)                
+            end
+        end
+        
+        if ~isempty(sessions_pre{mi})
+            for j = 1 : length(sessions_pre{mi})
+                sessionName = sprintf('pre%d',sessions_pre{mi}(j));
+                behavior_d = [behavior_base_dir mouseName '\'];
 
-                if ~isempty(b_ind) % try only the ones with behavior session
-                    % %%
-                    filelist=dir([whisker_d '*.measurements']);
-
-                    dirTrialNums=zeros(1,size(filelist,1));
-                    % trialNums=[];  % enter which trial nums to process 
-
-                    % %%
-                    % Assign the trial numbers to existing .measurements files in the directory
-                    % NOTE : This assumes that the .measurements files have leading numbers
-                    % corresponding to trial number in string positions 1:end-13 of the file
-                    % name. These index numbers may need to be changed to match up to the
-                    % numerical code of the trial number.  (2016/09/05 JK)
-
-                    for i=1:length(filelist)
-                        dirTrialNums(i)=str2double(filelist(i).name(1:end-13)); % extract out the trial number from each measurements file present in directory
+                if exist('b','var')
+                    if strcmp(b{1}.mouseName, mouseName)
+                        disp('using the same behavior file')
+                    else
+                        disp('loading a new behavior file')
+                        load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
                     end
-%                     dirTrialNums = setdiff(dirTrialNums,errorlist); % need to keep it this way since non-tracked whisker is not recorded as NaN, just the frame with only that whisker is gone, making the numbers of front-view whisker and top-view whisker unmatched.
-                    % not only that... it's hard to match ws.time with tpm
-                    % time because it's hard to know which frame lost the
-                    % whisker. Think about this again when too many data
-                    % are lost. 2018/02/27 JK
-                    
-%                   There are too many trials with errors in tracking front
-%                   view, which is not that critical for touch analysis.
-%                   Need to find a way to include these. 2018/02/28 JK
-                    
-                    trialNums = sort(dirTrialNums);
-                    trialNums = trialNums(~isnan(trialNums));
-                    trialNums = intersect(trialNums,b{b_ind}.trialNums); % try only the ones with behavior trials
-
-                    includef=cell(size(trialNums,1),1);
-                    for i = 1: length(trialNums)
-                        includef{i} = num2str(trialNums(i));
-                    end
+                else
+                    load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
                 end
+                b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
+                b_session = b{b_ind};
 
-% %                 Whisker.makeAllDirectory_WhiskerTrial(whisker_d,[0 1],'mask', {[maskx{1}';masky{1}'],[maskx{2}';masky{2}']},...
-%                     'trial_nums',trialNums,'include_files',includef,...
-%                     'barRadius',15.3,'faceSideInImage', 'bottom', 'framePeriodInSec',0.003225806451613,...
-%                     'imagePixelDimsXY',[width height],'pxPerMm',ppm,'mouseName',mouseName,'sessionName',sessionName,'protractionDirection','rightward');                
-                Whisker.makeAllDirectory_WhiskerSignalTrial_2pad(whisker_d,'include_files',includef,'polyRoiInPix',[ppm 6*ppm]);
-%                 Whisker.makeAllDirectory_WhiskerTrialLite_2pad(whisker_d,'include_files',includef,'r_in_mm',3,'calc_forces',false,'behavior',b_session);
-                
+                buildWTandWST(mouseName, sessionName, whisker_d, b_session, ppm)                
             end
         end
     end

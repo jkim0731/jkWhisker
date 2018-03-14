@@ -76,20 +76,21 @@ end
 drawnow;
 
 %% Mask
-vavg = zeros(v.Height,v.Width);
+temp_vavg = zeros(v.Height,v.Width, number_of_random_trials);
 randlist = randi(length(flist), 1, number_of_random_trials);
-for i = 1 : number_of_random_trials
-    v = VideoReader(flist(randlist(i)).name);
-    temp_vavg = zeros(v.Height,v.Width);
+parfor i = 1 : number_of_random_trials
+    v = VideoReader(flist(randlist(i)).name);    
     nof = fix(v.FrameRate*v.Duration); % number of frames
     while hasFrame(v)
         vtemp = readFrame(v);    
         vtemp = double(vtemp(:,:,1));
-        temp_vavg = temp_vavg + vtemp/nof;
+        temp_vavg(:,:,i) = temp_vavg(:,:,i) + vtemp/nof;
     end
-    temp_vavg = imgaussfilt(temp_vavg,3);
-    vavg = vavg + temp_vavg/number_of_random_trials;
+    temp_vavg(:,:,i) = imgaussfilt(temp_vavg(:,:,i),3);    
+%     width = min(size(vavg,2),size(temp_vavg,2)); % for error in JK027 S17.
+%     vavg = vavg(:,1:width) + temp_vavg(:,1:width)/number_of_random_trials; % for error in JK027 S17.
 end
+vavg = mean(temp_vavg,3);
 vavg_filt = imgaussfilt(vavg,3);
 maskx = {[],[]};
 masky = {[],[]};
@@ -124,8 +125,6 @@ while (i < 3)
 
     obj_h = scatter(mask_j,mask_i,3,'bo');
     
-    maskx{i} = mask_j;
-    masky{i} = mask_i;
     qnum = length(mask_j);
 %             polyDegree = min([qnum-1,6]);
     polyDegree = 2;
@@ -133,10 +132,10 @@ while (i < 3)
     q = (0:(qnum-1))./(qnum-1);
     px = Whisker.polyfit(q,mask_j,polyDegree);
     py = Whisker.polyfit(q,mask_i,polyDegree);
-    q = linspace(0,1);
-    x = polyval(px,q);
-    y = polyval(py,q);
-    plot_h = plot(x,y,'g-','LineWidth',2);
+    q = linspace(-0.3,1.3);
+    maskx{i} = polyval(px,q);
+    masky{i} = polyval(py,q);
+    plot_h = plot(maskx{i},masky{i},'g-','LineWidth',2);
     
     drawnow;
     if i == 1

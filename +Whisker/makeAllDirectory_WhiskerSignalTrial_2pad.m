@@ -69,7 +69,7 @@ p.addParamValue('ignore_files', {}, @(x) all(cellfun(@ischar,x)));
 p.addParamValue('polyRoiInPix', [0 200], @(x) numel(x)==2 && x(1)>=0);
 p.addParamValue('barPosOffset', [0 0], @(x) numel(x)==2);
 p.addParamValue('follicleExtrapDistInPix', NaN, @isnumeric);
-p.addParamValue('polyFitsMask', [], @isnumeric );
+p.addParamValue('polyFitsMask', [], @isnumeric);
 
 p.parse(d,varargin{:});
 
@@ -116,7 +116,9 @@ if ~isempty(fnall)
             
             try
                 w = pctload([fn '_WT.mat']);
-
+                
+                puf_ind = find(puf_fn_list == str2double(fn));
+                
                 ws = Whisker.WhiskerSignalTrial_2pad(w,'polyRoiInPix',p.Results.polyRoiInPix);
                 if ~isempty(p.Results.polyFitsMask)
                     x = p.Results.polyFitsMask(1,:);
