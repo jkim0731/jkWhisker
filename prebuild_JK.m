@@ -15,9 +15,8 @@ ppm = 17.81002608;
 ppm = ppm / 2; % for binning 2
             % 'pxPerMm': 10.56526073 for microVideo -------------------------------------------------------------------------------------------------------------------------------------lens
 % comment out when doing for all of the sessions in the mouse directory
-% sessions = {[4:22],[1:22],[1:18,21],[1:10,12:24],[1:22,24:31],[1:28],[1:19,21:30]};  
-sessions = {[4]};
-% sessions_pre = {[1],[1,2],[1],[1,2],[1],[1],[1]};
+sessions = {[8:19,22],[1:22],[1:22],[1:18,21],[1:24],[1:22,24:31],[1:28],[1:19,21:30]};  
+sessions_pre = {[1],[1],[1,2],[1],[1,2],[1],[1],[1]};
 
 all_session = 0; % 1 if using all sessions, 0 if using selected sessions
 
