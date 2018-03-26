@@ -21,11 +21,48 @@ vavg = zeros(v.height,v.width);
 pole_img_ts = zeros(h,w,nof);
 for i = 1 : nof
     temp = readFrame(v);
+    if  length(size(temp)) > 2 % temporary solution for having RGB-like mp4 file 2018/03/16 JK
+        temp = temp(:,:,1);
+    end
     vavg = vavg + double(temp)/nof;    
     pole_img_ts(:,:,i) = adapthisteq(temp(1:h,1:w,1),'NumTiles',[5,20]);    
 end
 vavg = mat2gray(vavg);
+
+%% Calculating pole available time (based on image correlation)
+ref_img = mean(pole_img_ts(:,:,floor(nof/2 - nof/10):floor(nof/2+nof/10)),3);
+[pole_edge_ref, edge_thresh] = edge(imgaussfilt(ref_img,3),'Prewitt','nothinning');
+
+im_corr = zeros(nof,1);
+for i = 1 : nof
+    pole_edge_ts = edge(imgaussfilt(pole_img_ts(:,:,i),3),'Prewitt', 'nothinning', edge_thresh);
+    im_corr(i) = sum(sum(xcorr2(single(pole_edge_ts), single(pole_edge_ref))));
+end                
+corr_upper = im_corr(im_corr > (max(im_corr)+min(im_corr))/2);
+
+threshold = prctile(corr_upper(floor(length(corr_upper)/5) : length(corr_upper) - floor(length(corr_upper)/5)),20);
+
+pole_available_frames = find(im_corr >= threshold,1,'first') : find(im_corr >= threshold,1,'last');
+varargout{3} = pole_available_frames - 1; % frame number starts from 0. Convention of whisker tracker.
+
 %%    
+if isnumeric(video_fn)
+    v = VideoReader([num2str(video_fn),'.mp4']);
+else
+    v = VideoReader([video_fn,'.mp4']);
+end
+vavg = zeros(v.height,v.width);
+for i = 1 : nof
+    temp = readFrame(v);
+    if  length(size(temp)) > 2 % temporary solution for having RGB-like mp4 file 2018/03/16 JK
+        temp = temp(:,:,1);
+    end
+    if ~isempty(intersect(pole_available_frames, i))
+        vavg = vavg + double(temp)/length(pole_available_frames);    
+    end  
+end
+vavg = mat2gray(vavg);
+%%
 pole_edge_pic = edge(vavg,'Roberts');
 
 front_pole_edge = pole_edge_pic; front_pole_edge(floor(v.height*0.7):end,:) = 0; front_pole_edge(:, floor(v.width*0.5):end) = 0; front_pole_edge(:,1:10) = 0;    
@@ -116,19 +153,5 @@ pole_edge{1} = [result_i, result_j];
 varargout{1}{1} = [polyval(p,q); q];
 varargout{2} = vavg; 
 
-%% Calculating pole available time (based on image correlation)
-ref_img = mean(pole_img_ts(:,:,floor(nof/2 - nof/10):floor(nof/2+nof/10)),3);
-[pole_edge_ref, edge_thresh] = edge(imgaussfilt(ref_img,3),'Prewitt','nothinning');
 
-im_corr = zeros(nof,1);
-for i = 1 : nof
-    pole_edge_ts = edge(imgaussfilt(pole_img_ts(:,:,i),3),'Prewitt', 'nothinning', edge_thresh);
-    im_corr(i) = sum(sum(xcorr2(single(pole_edge_ts), single(pole_edge_ref))));
-end                
-corr_upper = im_corr(im_corr > (max(im_corr)+min(im_corr))/2);
-
-threshold = prctile(corr_upper(floor(length(corr_upper)/5) : length(corr_upper) - floor(length(corr_upper)/5)),20);
-
-pole_available_frames = find(im_corr >= threshold,1,'first') : find(im_corr >= threshold,1,'last');
-varargout{3} = pole_available_frames;
 end

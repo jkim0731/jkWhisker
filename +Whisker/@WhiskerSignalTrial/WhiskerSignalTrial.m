@@ -103,9 +103,7 @@ classdef WhiskerSignalTrial < handle
         % to handle case of tracked whiskers on both sides of head.
         protractionDirection = 'rightward';  % Inherited from WhiskerTrial, but give default value.
                                             % Can be: 'downward','upward','rightward','leftward'.
-        
-        pole_available_frames = [];
-        
+       
         useFlag = 1;
         
         stretched_mask = [];

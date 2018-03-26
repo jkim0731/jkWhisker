@@ -1,13 +1,50 @@
 function buildWTandWST(mouseName, sessionName, d, b_session, ppm)
-    whisker_d = [d, mouseName, sessionName, filesep];                                
+    curr_d = pwd;
+    whisker_d = [d, mouseName, sessionName, filesep];   
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    cd(whisker_d)
+    delete *_WT.mat
+    delete *_WST.mat
+    delete *_errorWST.mat
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     load([whisker_d, mouseName, sessionName, '_post.mat']) % for maskx and masky. Ignoring includef from this one. It will be re-defined.
-    load_fn = [mouseName sessionName '_post.mat'];
-    load([whisker_d load_fn]); % loading maskx and masky. Ignoring includef from this one. It will be re-defined.
     
     if ~isempty(b_session) % try only the ones with behavior session
-        % %%
-        filelist=dir([whisker_d '*.measurements']);
 
+        filelist=dir([whisker_d '*.measurements']);
         dirTrialNums=zeros(1,size(filelist,1));
 
         % %%
@@ -29,11 +66,22 @@ function buildWTandWST(mouseName, sessionName, d, b_session, ppm)
             includef{i} = num2str(trialNums(i));
         end
     end
-
+%%
+if size(maskx{1},1) > size(maskx{1},2)
     Whisker.makeAllDirectory_WhiskerTrial(whisker_d,[0 1],'mask', {[maskx{1}';masky{1}'],[maskx{2}';masky{2}']},...
         'trial_nums',trialNums,'include_files',includef,...
         'barRadius',6,'faceSideInImage', 'bottom', 'framePeriodInSec',0.003225806451613,...
         'imagePixelDimsXY',[width height],'pxPerMm',ppm,'mouseName',mouseName,'sessionName',sessionName,'protractionDirection','rightward');
-    Whisker.makeAllDirectory_WhiskerSignalTrial_2pad(whisker_d,'include_files',includef,'polyRoiInPix',[ppm 6*ppm]);
+else
+    Whisker.makeAllDirectory_WhiskerTrial(whisker_d,[0 1],'mask', {[maskx{1};masky{1}],[maskx{2};masky{2}]},...
+        'trial_nums',trialNums,'include_files',includef,...
+        'barRadius',6,'faceSideInImage', 'bottom', 'framePeriodInSec',0.003225806451613,...
+        'imagePixelDimsXY',[width height],'pxPerMm',ppm,'mouseName',mouseName,'sessionName',sessionName,'protractionDirection','rightward');
+end
+Whisker.makeAllDirectory_WhiskerSignalTrial_2pad(whisker_d,'include_files',includef,'polyRoiInPix',[ppm 6*ppm]);
+    
 %                 Whisker.makeAllDirectory_WhiskerTrialLite_2pad(whisker_d,'include_files',includef,'r_in_mm',3,'calc_forces',false,'behavior',b_session);
+
+cd(curr_d)
+
 end

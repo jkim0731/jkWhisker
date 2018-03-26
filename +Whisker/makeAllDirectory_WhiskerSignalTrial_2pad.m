@@ -111,13 +111,15 @@ nfiles = length(fnall);
 if ~isempty(fnall)
     if exist('parfor','builtin') % Parallel Computing Toolbox is installed.
         parfor k=1:nfiles
+%         for k=1:nfiles
             fn = fnall{k};
             disp(['Processing ''_WT.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
             
-            try
+%             try
                 w = pctload([fn '_WT.mat']);
                 
-                puf_ind = find(puf_fn_list == str2double(fn));
+%                 puf_ind = find(puf_fn_list == str2double(fn)); % ?? What
+%                 is this?? 2018/03/17 JK
                 
                 ws = Whisker.WhiskerSignalTrial_2pad(w,'polyRoiInPix',p.Results.polyRoiInPix);
                 if ~isempty(p.Results.polyFitsMask)
@@ -136,17 +138,17 @@ if ~isempty(fnall)
                 outfn = [fn '_WST.mat'];
 
                 pctsave(outfn,ws)
-            catch
-                outfn = [fn '_errorWST.mat'];
-                pctsave(outfn,k)
-            end
+%             catch
+%                 outfn = [fn '_errorWST.mat'];
+%                 pctsave(outfn,k)
+%             end
         end
     else
         for k=1:nfiles
             fn = fnall{k};
             disp(['Processing ''_WT.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
             
-            try
+%             try
                 load([fn '_WT.mat'],'w');
                 ws = Whisker.WhiskerSignalTrial_2pad(w,'polyRoiInPix',p.Results.polyRoiInPix);
                 if ~isempty(p.Results.polyFitsMask)
@@ -165,10 +167,10 @@ if ~isempty(fnall)
                 outfn = [fn '_WST.mat'];
 
                 save(outfn,'ws');
-            catch
-                outfn = [fn '_errorWST.mat'];
-                save(outfn,'k')
-            end
+%             catch
+%                 outfn = [fn '_errorWST.mat'];
+%                 save(outfn,'k')
+%             end
 
         end
     end

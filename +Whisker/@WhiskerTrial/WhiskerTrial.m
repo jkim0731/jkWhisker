@@ -15,6 +15,7 @@ classdef WhiskerTrial < handle
         whiskerNames = {};
         trajectoryIDs = []; % changed from {}, to reduce any confusion. 2017/09/16 JK (it's going to be numeric anyway, when called by trajectory_nums{1}
         trackerData = {};
+        trackerFrames = {}; % contains information about which frames are at which index of trackerData (becaue quite many times tracker fails) 2018/03/22 JK
         barPos = []; % [frameNum XPosition YPosition]
         barRadius = 17; % In pixels. Must be radius of bar tracked by the bar tracker.
         barPosOffset = [0 0]; % In pixels. Displacement from the center of the large pole to the 'contact point'
@@ -263,9 +264,11 @@ classdef WhiskerTrial < handle
             
             % Package by trajectory:
             obj.trackerData = cell(1,length(obj.trajectoryIDs));
+            obj.trackerFrames = cell(1,length(obj.trajectoryIDs));
             for k=1:length(obj.trajectoryIDs)
                 obj.trackerData{k} = D(tr==obj.trajectoryIDs(k));
-            end
+                obj.trackerFrames{k} = cellfun(@(x) x{2}, obj.trackerData{k});
+            end            
         end
         
         function r = saveobj(obj)
@@ -277,6 +280,7 @@ classdef WhiskerTrial < handle
             r.whiskerNames = obj.whiskerNames;
             r.trajectoryIDs = obj.trajectoryIDs;
             r.trackerData = obj.trackerData;
+            r.trackerFrames = obj.trackerFrames;
             r.polyFits = obj.polyFits;
             r.polyFitsROI = obj.polyFitsROI;
             r.maskTreatment = obj.maskTreatment;
@@ -295,6 +299,9 @@ classdef WhiskerTrial < handle
             r.barRadius = obj.barRadius;
             r.barPosOffset = obj.barPosOffset;
             r.polyFitsMask = obj.polyFitsMask;
+            r.stretched_mask = obj.stretched_mask;
+            r.stretched_whisker = obj.stretched_whisker; 
+
         end
         
         function tid = name2tid(obj, whisker_name)
@@ -1175,6 +1182,7 @@ classdef WhiskerTrial < handle
                         whisker0Format = false;
                     end
                     parfor k=1:nframes
+%                     for k=1:nframes
                         f = trajectoryData{k};
                         if numel(f{4}) > 1 % Tracker can sometimes (rarely) leave frame entries for a trajectory in whiskers file that have no pixels.
                             %                             [xp(k,:), yp(k,:), qp(k,:)] = doFits(f,R0(k));
@@ -1287,13 +1295,13 @@ classdef WhiskerTrial < handle
                                             yy = nan(size(yy));
                                             end % else x = x, yy = yy (no change)
                                         else
-                                            coeffX = Whisker.polyfit(linspace(0,1,length(x), x, polyDegree));
-                                            coeffY = Whisker.polyfit(linspace(0,1,length(yy), yy, polyDegree));
+                                            coeffX = Whisker.polyfit(linspace(0,1,length(x)), x, polyDegree);
+                                            coeffY = Whisker.polyfit(linspace(0,1,length(yy)), yy, polyDegree);
                                             % stretch whisker 30% to wpo.
                                             x = polyval(coeffX,linspace(-0.3,1,100));
                                             yy = polyval(coeffY,linspace(-0.3,1,100));
                                             C1 = [x;yy];
-                                            P = Whisker.InterX(C1,C2);
+                                                P = Whisker.InterX(C1,C2);
                                             if size(P,2) > 1   % Don't need for faster version, which handles this.
                                                 disp('Found more than 1 intersection of whisker and mask curves; using only first.')
                                                 P = P(:,1);
@@ -1301,7 +1309,7 @@ classdef WhiskerTrial < handle
                                             if isempty(P)
                                                 if strcmp(mask_treatment,'maskNaN')
                                                     fprintf('No intersection with the mask, returning NaNs in frame #%d.\n', k)
-                                                    frpintf('No intersection after stretching mask and whisker, returning NaNs in frame #%d.\n', k)
+                                                    fprintf('No intersection after stretching mask and whisker, returning NaNs in frame #%d.\n', k)
                                                     x = nan(size(x));
                                                     yy = nan(size(yy));
                                                 end
@@ -2074,13 +2082,16 @@ classdef WhiskerTrial < handle
             obj.whiskerNames = r.whiskerNames;
             obj.trajectoryIDs = r.trajectoryIDs;
             obj.trackerData = r.trackerData;
+            obj.trackerFrames = r.trackerFrames;
             obj.faceData = r.faceData;
             obj.framePeriodInSec = r.framePeriodInSec;
             obj.mouseName = r.mouseName;
             obj.sessionName = r.sessionName;
             obj.trackerFileName = r.trackerFileName;
             obj.useFlag = r.useFlag;
-            
+            obj.stretched_mask = r.stretched_mask;
+            obj.stretched_whisker = r.stretched_whisker; 
+
             % For properties below, need to check if properties exist,
             % for backwards compatability, since in early (~2008) versions
             % files may have been saved before these properties existed.

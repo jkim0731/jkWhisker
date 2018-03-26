@@ -1,20 +1,23 @@
 
 %% basic information
-mice = {'JK037','JK038','JK039','JK041'};
+mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
+% mice = {'JK027'};
 videoloc = 'Y:\Whiskernas\JK_temp\whisker\tracked\';
 if strcmp(videoloc(end),filesep)
     whisker_d = ([videoloc filesep]);
 else
     whisker_d = videoloc;
 end
+behavior_base_dir = 'Y:\Whiskernas\JK_temp\SoloData\';
 
 ppm = 17.81002608;
             % 'pxPerMm': 17.81002608 for telecentric lens
 ppm = ppm / 2; % for binning 2
-            % 'pxPerMm': 10.56526073 for microVideo lens
+            % 'pxPerMm': 10.56526073 for microVideo -------------------------------------------------------------------------------------------------------------------------------------lens
 % comment out when doing for all of the sessions in the mouse directory
-sessions = {[14:24],[1:31],[1:28],[1:30]};  
-sessions_pre = {[1:2],[1],[1],[1]};
+% sessions = {[4:22],[1:22],[1:18,21],[1:10,12:24],[1:22,24:31],[1:28],[1:19,21:30]};  
+sessions = {[4]};
+% sessions_pre = {[1],[1,2],[1],[1,2],[1],[1],[1]};
 
 all_session = 0; % 1 if using all sessions, 0 if using selected sessions
 
@@ -135,11 +138,10 @@ all_session = 0; % 1 if using all sessions, 0 if using selected sessions
 
 %% build WT_2pad, WST_2pad, and WL_2pad
 % build WL_2pad after touch plane
-behavior_base_dir = 'Y:\Whiskernas\JK_temp\SoloData\';
 cd(videoloc)
 if all_session == 1
     for mi = 1 : size(mice,2) % mouse index
-        sn = dir([mice{mi},'S*']);
+        sn = dir([whisker_d, mice{mi},'S*']);
         for si = 1 : length(sn)
             if sn(si).isdir
                 [mouseName, sessionName] = strtok(sn(si).name,'S');
@@ -188,10 +190,10 @@ if all_session == 1
         
     end
 else
-    for mi = 1 : size(mice,2) % mouse index                 
+    for mi = 1 : size(mice,2) % mouse index            
         mouseName = mice{mi};
         if ~isempty(sessions{mi})
-            for j = 1 : length(sessions{mi})
+            for j = 1 : length(sessions{mi})                
                 sessionName = sprintf('S%02d',sessions{mi}(j));
                 behavior_d = [behavior_base_dir mouseName '\'];
 
@@ -207,7 +209,6 @@ else
                 end
                 b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                 b_session = b{b_ind};
-
                 buildWTandWST(mouseName, sessionName, whisker_d, b_session, ppm)                
             end
         end

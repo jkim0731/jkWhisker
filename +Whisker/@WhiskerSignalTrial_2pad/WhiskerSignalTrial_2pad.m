@@ -12,9 +12,8 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
     % Added automatic detection of pole_available_frames 2018/03/06 JK
     
     properties
-        contact_ind = {};
-        contact_time = {};        
         trackerData = {};
+        trackerFrames = {};
         whisker_pole_intersection = {}; 
         whisker_edge_coord = [];
         imagePixelDimsXY = []; % [NumberOfXPixels NumberOfYPixels]
@@ -37,14 +36,12 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
 
             obj = obj@Whisker.WhiskerSignalTrial(w,varargin{:});
             
-            ntraj = length(obj.trajectoryIDs);
-            nframes = size(obj.polyFits{1}{1},1);
-            obj.contact_ind = cell(nframes,ntraj);
-            obj.contact_time = cell(nframes,ntraj);
+            ntraj = length(obj.trajectoryIDs);            
             obj.trackerData = w.trackerData;
-            obj.whisker_pole_intersection = cell(nframes,ntraj);
-            obj.whisker_edge_coord = zeros(nframes,ntraj);
+            obj.whisker_pole_intersection = cell(obj.videoFrames,ntraj);
+            obj.whisker_edge_coord = zeros(obj.videoFrames,ntraj);
             obj.imagePixelDimsXY = w.imagePixelDimsXY;
+            obj.trackerFrames = w.trackerFrames;
             [obj.pole_edge, obj.pole_axes, obj.vavg, obj.pole_available_frames] = Whisker.pole_edge_detection(obj.trackerFileName);
             obj.find_whisker_pole_intersection;            
         end
@@ -79,43 +76,49 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
             end
             
             for i = 1 : 2
-                for k = obj.pole_available_frames
-                    tx = obj.trackerData{i}{k}{4};
-                    ty = obj.trackerData{i}{k}{5};
-                    C = [ty'+1;tx'+1]; % converting whisker tracker points into normal MATLAB coordinates
-                    temp = Whisker.InterX(obj.pole_axes{i},C); % Whisker.InterX only gets inputs as column pairs of points (x = C(1,:), y = C(2,:))                        
-                    if ~isempty(temp)
-                        temp = temp'; % row vector
-                        if size(temp,1) > 1
-                            temp = sortrows(temp,-1); % sort temp descending order of the first column, which is 1st dim (or ty)
-                            temp = temp(1,:); % select the largest value (lowest in the video)
-                        end
-                        obj.whisker_pole_intersection{k,i} = temp; 
-                        obj.whisker_edge_coord(k,i) = sqrt(sum((temp'-obj.pole_axes{i}(:,1)).^2)); % the distances from each axis origin
-                    else  % extrapolate the whisker and find the intersection with pole edge
-                        % polyfit from the last 4 points, linear fitting, and then drawing from the 5th last point
-                        % Extend for 20 pixels y direction (negative 1st dim in MATLAB convention). Should be enough. If that's not enough, it means extrapolation itself cannot be correct anyway.
-                        if ty(1) < ty(end) % follicle at the beginning of the vector (column)
-                            ty = flip(ty);
-                            tx = flip(tx);
-                        end
-                        p = polyfix(ty(end-3:end-1),tx(end-3:end-1),1,ty(end-3),tx(end-3)); % I need p(1) only.
-                        tip = [ty(end-3)+1, tx(end-3)+1];
-                        ext_tip = [tip(1)-20, tip(2)-p(1)*20];
-                        L = [tip', ext_tip'];
-                        temp = Whisker.InterX(obj.pole_axes{i},L);                            
+                for k = 1 : obj.videoFrames
+                    if ~isempty(find(obj.trackerFrames{i} == k-1,1))
+                        frame_ind = find(obj.trackerFrames{i} == k-1,1);
+                        tx = obj.trackerData{i}{frame_ind}{4};
+                        ty = obj.trackerData{i}{frame_ind}{5};
+                        C = [ty'+1;tx'+1]; % converting whisker tracker points into normal MATLAB coordinates
+                        temp = Whisker.InterX(obj.pole_axes{i},C); % Whisker.InterX only gets inputs as column pairs of points (x = C(1,:), y = C(2,:))                        
                         if ~isempty(temp)
                             temp = temp'; % row vector
                             if size(temp,1) > 1
                                 temp = sortrows(temp,-1); % sort temp descending order of the first column, which is 1st dim (or ty)
                                 temp = temp(1,:); % select the largest value (lowest in the video)
-                            end                            
+                            end
                             obj.whisker_pole_intersection{k,i} = temp; 
                             obj.whisker_edge_coord(k,i) = sqrt(sum((temp'-obj.pole_axes{i}(:,1)).^2)); % the distances from each axis origin
-                        else
-                            obj.whisker_pole_intersection{k,i} = [];
-                            obj.whisker_edge_coord(k,i) = NaN;
+                        else  % extrapolate the whisker and find the intersection with pole edge
+                            % polyfit from the last 4 points, linear fitting, and then drawing from the 5th last point
+                            % Extend for 20 pixels y direction (negative 1st dim in MATLAB convention). Should be enough. If that's not enough, it means extrapolation itself cannot be correct anyway.
+                            if ty(1) < ty(end) % follicle at the beginning of the vector (column)
+                                ty = flip(ty);
+                                tx = flip(tx);
+                            end
+                            p = polyfix(ty(end-3:end-1),tx(end-3:end-1),1,ty(end-3),tx(end-3)); % I need p(1) only.
+                            tip = [ty(end-3)+1, tx(end-3)+1];
+                            ext_tip = [tip(1)-20, tip(2)-p(1)*20];
+                            L = [tip', ext_tip'];
+                            temp = Whisker.InterX(obj.pole_axes{i},L);                            
+                            if ~isempty(temp)
+                                temp = temp'; % row vector
+                                if size(temp,1) > 1
+                                    temp = sortrows(temp,-1); % sort temp descending order of the first column, which is 1st dim (or ty)
+                                    temp = temp(1,:); % select the largest value (lowest in the video)
+                                end                            
+                                obj.whisker_pole_intersection{k,i} = temp; 
+                                obj.whisker_edge_coord(k,i) = sqrt(sum((temp'-obj.pole_axes{i}(:,1)).^2)); % the distances from each axis origin
+                            else
+                                obj.whisker_pole_intersection{k,i} = [];
+                                obj.whisker_edge_coord(k,i) = NaN;
+                            end
                         end
+                    else
+                        obj.whisker_pole_intersection{k,i} = [];
+                        obj.whisker_edge_coord(k,i) = NaN;
                     end
                 end
             end

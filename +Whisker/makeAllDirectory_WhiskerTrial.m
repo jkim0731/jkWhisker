@@ -149,9 +149,10 @@ end
 if ~isempty(fnall)
     if exist('parfor','builtin') % Parallel Computing Toolbox is installed.
         parfor k=1:nfiles
+%         for k=1:nfiles
             fn = fnall{k};
             disp(['Processing .whiskers file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
-            try % An error found during building .whiskers file. Whisker tracker error, so having a way out of using that trial
+%             try % An error found during building .whiskers file. Whisker tracker error, so having a way out of using that trial
                 w = Whisker.WhiskerTrial(fn, trial_nums(k), p.Results.trajectory_nums, p.Results.mouseName, p.Results.sessionName);
 
                 w.barRadius = p.Results.barRadius;
@@ -175,17 +176,17 @@ if ~isempty(fnall)
 
                 outfn = [fn '_WT.mat'];
                 pctsave(outfn,w)
-            catch
-                disp(['Error on .whiskers file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
-                outfn = [fn '_errorWT.mat'];
-                pctsave(outfn,k)
-            end
+%             catch
+%                 disp(['Error on .whiskers file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
+%                 outfn = [fn '_errorWT.mat'];
+%                 pctsave(outfn,k)
+%             end
         end
     else
         for k=1:nfiles
             fn = fnall{k};
             disp(['Processing .whiskers file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
-            try
+%             try
                 w = Whisker.WhiskerTrial(fn, trial_nums(k), p.Results.trajectory_nums, p.Results.mouseName, p.Results.sessionName);
 
                 w.barRadius = p.Results.barRadius;
@@ -207,11 +208,11 @@ if ~isempty(fnall)
 
                 outfn = [fn '_WT.mat'];
                 save(outfn,'w');
-            catch
-                disp(['Error on .whiskers file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
-                outfn = [fn '_errorWT.mat'];
-                save(outfn,'k')
-            end
+%             catch
+%                 disp(['Error on .whiskers file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
+%                 outfn = [fn '_errorWT.mat'];
+%                 save(outfn,'k')
+%             end
         end
     end
 end
