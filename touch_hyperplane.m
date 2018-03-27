@@ -5,7 +5,7 @@ behavior_base_dir = 'Y:\Whiskernas\JK_temp\SoloData\';
 whisker_base_dir = 'Y:\Whiskernas\JK_temp\whisker\tracked\';
 mice = {'JK025','JK027','JK030'};
 %%%%%%%%%%%%%%%%%%%%%% manual selection
-steps = {[10:70],[20:80],[140:200],[140:200]};
+% steps = {[10:70],[20:80],[140:200],[140:200]};
 %%%%%%%%%%%%%%%%%%%%%% try as short as possible to reduce time next step
 mouseName = mice{1};
 presession = 1:2;
@@ -89,6 +89,7 @@ for sessionInd = 1 : length(sessionNum)
     end
     
     % Initialize
+    steps = cell(length(servo_values),length(distance_values));
     steps_hp = cell(length(servo_values),length(distance_values));
     num_points_in_hp = cell(length(servo_values),length(distance_values));
     psi1 = zeros(length(servo_values),length(distance_values));
@@ -115,7 +116,7 @@ for sessionInd = 1 : length(sessionNum)
                         b_ind = find(cellfun(@(x) (x.trialNum == ws.trials{tnum}.trialNum), b_session.trials));
                         top_ind = find(~isnan(ws.trials{tnum}.whisker_edge_coord(:,1)));
                         front_ind = find(~isnan(ws.trials{tnum}.whisker_edge_coord(:,2)));
-                        intersect_ind = intersect(ws.trials{tnum}.pole_available_timepoints,intersect(top_ind,front_ind));
+                        intersect_ind = intersect(ws.trials{tnum}.pole_available_frames,intersect(top_ind,front_ind));
                         intersect_3d_total = [intersect_3d_total; ws.trials{tnum}.whisker_edge_coord(intersect_ind,1), ws.trials{tnum}.whisker_edge_coord(intersect_ind,2), ones(length(intersect_ind),1)*b_session.trials{b_ind}.motorApPosition];
                     catch
                         fprintf('Skipping trial #%d because of index problems \n',tnum);        
@@ -365,7 +366,10 @@ for sessionInd = 1 : length(sessionNum)
                 hp_decision = 'No';
                 while(strcmp(hp_decision,'No'))
                     intersect_pix = round(intersect_3d_total);
-
+                    
+                    if isempty(steps{iservo, idist})
+                        steps{iservo, idist} = 50 : 150;
+                    end
                     num_points = zeros(length(steps{iservo, idist}),1);
                     parfor i = 1:length(steps{iservo, idist}) % this is time consuming...
                         hp = round(xyz_psi2);
@@ -466,6 +470,6 @@ for sessionInd = 1 : length(sessionNum)
         end
     end
     %%
-    save([whisker_d mouseName sessionName '_touch_hp.mat'],'touch_hp','num_points_in_hp','steps_hp','hp_peaks','trial_types', 'psi1', 'psi2', 'servo_distance_pair')
+    save([whisker_d mouseName sessionName '_touch_hp.mat'],'touch_hp','num_points_in_hp','steps_hp','hp_peaks', 'psi1', 'psi2', 'servo_distance_pair')
     fprintf('%s %s hp_peaks saved\n', mouseName, sessionName)
 end
