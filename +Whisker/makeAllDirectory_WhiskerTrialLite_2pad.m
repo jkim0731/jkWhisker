@@ -83,7 +83,7 @@ p.addParameter('proximity_threshold', -1, @isnumeric);
 p.addParameter('behavior',[], @(x) isa(x,'Solo.BehavTrial2padArray')); % adding behavior 2017/04/12 JK
 p.addParameter('hp_peaks',{}, @iscell);
 p.addParameter('touch_hp',{}, @iscell);
-p.addParameter('touch_boundary_thickness',2, @(x) isnumeric(x) && numel(x)==1);
+p.addParameter('touch_boundary_thickness', 1, @(x) isnumeric(x) && numel(x)==1);
 p.addParameter('trial_types',{}, @iscell); % Cautious. trial_types VS trial_type
 
 p.parse(d,varargin{:});

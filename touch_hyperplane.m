@@ -3,23 +3,28 @@
 %% Setup whisker array builder 
 behavior_base_dir = 'Y:\Whiskernas\JK_temp\SoloData\';
 whisker_base_dir = 'Y:\Whiskernas\JK_temp\whisker\tracked\';
-mice = {'JK025','JK027','JK030'};
+mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
 %%%%%%%%%%%%%%%%%%%%%% manual selection
 % steps = {[10:70],[20:80],[140:200],[140:200]};
 %%%%%%%%%%%%%%%%%%%%%% try as short as possible to reduce time next step
-mouseName = mice{1};
+
 presession = 1:2;
-sessionNum = 4:35;
+sessionNum = 1:35;
 
 useGPU = 0;
 options.WindowStyle = 'normal';
 %%
-for sessionInd = 1 : length(sessionNum)
-    sessionName = sprintf('S%02d',sessionNum(sessionInd));
-
+% for sessionInd = 1 : length(sessionNum)
+%     sessionName = sprintf('S%02d',sessionNum(sessionInd));
+for mi = 2 : length(mice)
+    mouseName = mice{mi};
+for sessionInd = 1 : length(presession)
+    sessionName = sprintf('pre%d',presession(sessionInd));
+    
     behavior_d = [behavior_base_dir mouseName '\'];
     try
         whisker_d = [whisker_base_dir mouseName sessionName '\'];
+        cd(whisker_d)
     catch
         continue
     end    
@@ -148,12 +153,12 @@ for sessionInd = 1 : length(sessionNum)
                         plot([pre_poly(end,1);pre_poly(1,1)], [pre_poly(end,2);pre_poly(1,2)], 'b-')
 %                         questTitle='Polygon pre-selection'; 
 %                         start(timer('StartDelay',1,'TimerFcn',@(o,e)set(findall(0,'Tag',questTitle),'WindowStyle','normal')));         
-                        psi1_polygon_answer = MFquestdlg([0.5,0.5], 'Is the polygon right?', 'Polygon pre-selection', 'Yes', 'No', 'Yes');
+                        psi1_polygon_answer = MFquestdlg([0.5,0.3], 'Is the polygon right?', 'Polygon pre-selection', 'Yes', 'No', 'Yes');
                         switch psi1_polygon_answer
                             case 'Yes'
                                 close all
                                 in = inpolygon(intersect_3d_total(:,1), intersect_3d_total(:,2), pre_poly(:,1), pre_poly(:,2));
-                                 intersect_3d_crop = intersect_3d_total(in,:);
+                                intersect_3d_crop = intersect_3d_total(in,:);
                             case 'No'
                                 close(h2)
                                 h2 = figure('units','normalized','outerposition',[0 0 1 1]); plot(intersect_3d_total(:,1), intersect_3d_total(:,2), 'k.', 'MarkerSize', 0.1), hold on
@@ -168,13 +173,14 @@ for sessionInd = 1 : length(sessionNum)
                     h1 = figure; plot3(intersect_3d(:,1), intersect_3d(:,2), intersect_3d(:,3), 'k.', 'MarkerSize', 0.1)
                     title(['Angle = ', num2str(servo_values(iservo)), ', Distance = ', num2str(distance_values(idist))]), xlabel('Top-view intersection coord'), ylabel('Front-view intersection coord'), zlabel('Pole position')
 
-                    %% when interested in certain points in the figure
-                    % ttype = 4;
-                    % zvalue = 90050;
-                    % tnum = find(cellfun(@(x) abs(x.pole_pos - zvalue) < 10, wl_array{ttype}.trials))
-                    % wl_array{ttype}.trials{tnum(1)}.trackerFileName
-                    % figure, plot3(wl_array{ttype}.trials{tnum(1)}.intersect_coord(:,1), wl_array{ttype}.trials{tnum(1)}.intersect_coord(:,2), 1:length(wl_array{ttype}.trials{tnum(1)}.intersect_coord(:,1)))
-                    % xlabel('Top-view intersection coord'), ylabel('Front-view intersection coord'), zlabel('Frame #')
+                    %% when interested in certain points in the figure                    
+%                     % 244 - 72580;
+%                     zvalue = 72210;
+%                     tnum = intersect(tt_ind, find(cellfun(@(x) abs(x.motorApPosition - zvalue) < 10, b_session.trials)))
+%                     tnum_ws = find(cellfun(@(x) x.trialNum == tnum(1), ws.trials))
+%                     ws.trials{tnum_ws}.trackerFileName
+%                     figure, plot3(ws.trials{tnum_ws}.whisker_edge_coord(:,1), ws.trials{tnum_ws}.whisker_edge_coord(:,2), 1:length(ws.trials{tnum_ws}.whisker_edge_coord(:,1)))
+%                     xlabel('Top-view intersection coord'), ylabel('Front-view intersection coord'), zlabel('Frame #'), title(num2str(tnum))
                     %% Calculate psi1 % takes ~ 15 sec
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Manual selection
                     ind_opt = 1; % optimal peak index. Starting from 1
@@ -242,7 +248,7 @@ for sessionInd = 1 : length(sessionNum)
                         h3 = figure('WindowStyle','normal'); plot(x2d(1,:), x2d(2,:),'k.', 'MarkerSize',3)
 %                         questTitle='whisker-pole intersection coordinate scatter'; 
 %                         start(timer('StartDelay',1,'TimerFcn',@(o,e)set(findall(0,'Tag',questTitle),'WindowStyle','normal')));         
-                        answer = MFquestdlg([0.5, 0.5], 'Is psi1 correct?', 'whisker-pole intersection coordinate scatter', 'Yes', 'No', 'Yes');
+                        answer = MFquestdlg([0.5, 0.3], 'Is psi1 correct?', 'whisker-pole intersection coordinate scatter', 'Yes', 'No', 'Yes');
                         switch answer
                             case 'Yes'
                                 close all
@@ -255,7 +261,7 @@ for sessionInd = 1 : length(sessionNum)
                                 else
 %                                     questTitle = 'psi1 polygon'; 
 %                                     start(timer('StartDelay',1,'TimerFcn',@(o,e)set(findall(0,'Tag',questTitle),'WindowStyle','normal')));         
-                                    psi1_answer = MFquestdlg([0.5, 0.5],'Do you want to change your polygon drawing?', 'psi1 polygon', 'Yes', 'No', 'Yes');
+                                    psi1_answer = MFquestdlg([0.5, 0.3],'Do you want to change your polygon drawing?', 'psi1 polygon', 'Yes', 'No', 'Yes');
                                     if strcmp(psi1_answer,'Yes')
                                         answer = 'Yes'; % to get out of innner while loop 
                                         psi1_polygon_answer = 'No';
@@ -294,9 +300,7 @@ for sessionInd = 1 : length(sessionNum)
                             temp_point = ginput(1);
                         end
                         plot([psi2_poly(end,1);psi2_poly(1,1)], [psi2_poly(end,2);psi2_poly(1,2)], 'y-')
-%                         questTitle = 'Polygon pre-selection'; 
-%                         start(timer('StartDelay',1,'TimerFcn',@(o,e)set(findall(0,'Tag',questTitle),'WindowStyle','normal')));         
-                        answer2 = MFquestdlg([0.5, 0.5], 'Is the polygon right?', 'Polygon pre-selection', 'Yes', 'No', 'Yes');
+                        answer2 = MFquestdlg([0.5, 0.3], 'Is the polygon right?', 'Polygon pre-selection', 'Yes', 'No', 'Yes');
                         switch answer2
                             case 'Yes'
                                 close all
@@ -329,29 +333,62 @@ for sessionInd = 1 : length(sessionNum)
                     liney = [1 size(x2d_flip,1);1 size(x2d_flip,1);1 size(x2d_flip,1)];
                     figure('units','normalized','outerposition',[0 0 1 1]), 
                     subplot(121), imagesc(R), xlabel('Angle = 0:0.01:180'), ylabel('Projected values'), axis square
-                    subplot(122), imagesc(x2d_flip, [0 1000]), axis square, hold on, 
+                    subplot(122); imagesc(x2d_flip, [0 1000]), axis square, hold on, 
                     for i = 1 : 3
                         line(linex(i,:),liney(i,:), 'LineWidth', 3, 'Color', [1 1 1])
                     end
 
 %                     questTitle='whisker-pole intersection coordinate side-view'; start(timer('StartDelay',1,'TimerFcn',@(o,e)set(findall(0,'Tag',questTitle),'WindowStyle','normal')));         
-                    answer1 = MFquestdlg([0.5, 0.5], 'Is psi2 correct?', 'whisker-pole intersection coordinate side-view', 'Yes', 'No', 'Yes');
+                    answer1 = MFquestdlg([0.5, 0.3], 'Is psi2 correct?', 'whisker-pole intersection coordinate side-view', 'Yes', 'No', 'Yes');
                     switch answer1
                         case 'Yes'
                             close all
                         case 'No'                 
-%                             questTitle = 'Re-selecting the polygon'; 
-%                             start(timer('StartDelay',1,'TimerFcn',@(o,e)set(findall(0,'Tag',questTitle),'WindowStyle','normal')));
-                            answer3 = MFquestdlg([0.5, 0.5], 'Do you want to select the polygon again?', 'Re-selecting the polygon', 'Yes', 'No', 'Yes');
+                            answer3 = MFquestdlg([0.5, 0.3], 'Do you want to select the polygon again?', 'Re-selecting the polygon', 'Yes', 'No', 'Yes');
                             close all
                             switch answer3
                                 case 'Yes'
                                     answer2 = 'No';
-                                case 'No' 
-                                    error(['No optimal psi2 found in ' sessionName ' of ' mouseName])
+                                case 'No'                                     
+                                    answer4 = MFquestdlg([0.5, 0.3], 'Do you want to manually draw psi2?', 'Manual psi2', 'Yes', 'No', 'Yes');
+                                    if strcmp(answer4, 'Yes')                                        
+                                        while (true)                                            
+                                            figure('units','normalized','outerposition',[0 0 1 1])
+                                            imagesc(x2d_flip, [0 1000]), axis square, hold on,
+                                            [x,y] = ginput(2);                                            
+                                            plot(x, y, 'wo-', 'MarkerSize', 5, 'LineWidth', 5)                                            
+                                            answer5 = MFquestdlg([0.5, 0.3], 'Is this correct?', 'Manual psi2', 'Yes', 'No', 'Yes');
+                                            if strcmp(answer5, 'Yes')
+                                                angle = atand(diff(x)/diff(y)); % the image is 90 degrees rotated.
+                                                psi2(iservo, idist) = atand(tand(angle)/100);
+                                                answer1 = 'Yes';
+                                                break
+                                            else
+                                                answer6 = MFquestdlg([0.5, 0.3], 'Do you want to specify the angle?', 'psi2', 'Yes', 'No', 'Yes');
+                                                if strcmp(answer6, 'Yes')
+                                                    psi2(iservo, idist) = str2double(inputdlg('psi2 angle', 'psi2', 1, {''}, options));
+                                                    answer1 = 'Yes';
+                                                    break
+                                                else
+                                                    error(['No optimal psi2 found in ' sessionName ' of ' mouseName])
+                                                end
+                                            end
+                                        end
+                                                
+                                    else
+                                        answer6 = MFquestdlg([0.5, 0.3], 'Do you want to specify the angle?', 'psi2', 'Yes', 'No', 'Yes');
+                                        if strcmp(answer6, 'Yes')
+                                            psi2(iservo,idist) = str2double(inputdlg('psi2 angle', 'psi2', 1, {''}, options));
+                                            answer1 = 'Yes';
+                                            break
+                                        else
+                                            error(['No optimal psi2 found in ' sessionName ' of ' mouseName])
+                                        end
+                                    end
                             end
                     end
                 end
+                close all
                 %% Calculate touch hyperplanes
                 disp('Sweeping the hyperplane')
                 maxdist = ceil(sqrt(max(intersect_3d_total(:,1).^2) + max(intersect_3d_total(:,2).^2)));
@@ -371,11 +408,12 @@ for sessionInd = 1 : length(sessionNum)
                     x0 = [0 0 zcenter];
                     u = [1 tand(psi1(iservo,idist)) 0];
                     [xyz_psi2, ~, ~] = AxelRot(xyz_psi1, psi2(iservo,idist), u, x0); 
-                    xyz_psi2(:,xyz_psi2(3,:) < zmin_data) = [];
-                    xyz_psi2(:,xyz_psi2(3,:) > zmax_data) = [];
-                    xyz_psi2(:,xyz_psi2(2,:) < ymin_data) = [];
-                    xyz_psi2(:,xyz_psi2(2,:) > ymax_data) = [];
-
+                    if xyz_psi1 ~= xyz_psi2 % happens when psi2 = 0
+                        xyz_psi2(:,xyz_psi2(3,:) < zmin_data) = [];
+                        xyz_psi2(:,xyz_psi2(3,:) > zmax_data) = [];
+                        xyz_psi2(:,xyz_psi2(2,:) < ymin_data) = [];
+                        xyz_psi2(:,xyz_psi2(2,:) > ymax_data) = [];
+                    end
                     figure, plot3(intersect_3d_total(:,1),intersect_3d_total(:,2), intersect_3d_total(:,3),'k.', 'MarkerSize',3), xlabel('top'), ylabel('front'), zlabel('pos'), hold on
                     plot3(xyz_psi2(1,:), xyz_psi2(2,:), xyz_psi2(3,:), 'r.', 'MarkerSize',3)
 
@@ -395,7 +433,7 @@ for sessionInd = 1 : length(sessionNum)
                     h1 = figure('WindowStyle','normal'); plot(steps{iservo, idist},num_points(:), 'k-', 'LineWidth', 3), xlabel('translocation (pix)'), ylabel('# intersection')
 
 %                     questTitle='Touch hyperplane peaks'; start(timer('StartDelay',1,'TimerFcn',@(o,e)set(findall(0,'Tag',questTitle),'WindowStyle','normal')));         
-                    answer = MFquestdlg([0.5, 0.5], 'Does the result look correct?', 'Touch hyperplane peaks', 'Yes', 'No', 'Yes');            
+                    answer = MFquestdlg([0.5, 0.3], 'Does the result look correct?', 'Touch hyperplane peaks', 'Yes', 'No', 'Yes');            
                     peak_answer = 'Yes';
                     while(strcmp(peak_answer,'Yes'))
                         if strcmp(answer,'Yes')
@@ -410,6 +448,7 @@ for sessionInd = 1 : length(sessionNum)
 
                             % Final confirmation
                             % project the peak hyperplanes and all coordinates onto psi1 psi2 view
+                            %%
                             h2 = figure('units','normalized','outerposition',[0 0 1 1]);                     
                             A = viewmtx(psi1(iservo,idist),90-psi2(iservo,idist));
                             intersect_4d = [intersect_3d_total, ones(size(intersect_3d_total,1),1)]';
@@ -422,9 +461,9 @@ for sessionInd = 1 : length(sessionNum)
                             th_2d2 = A*th_4d2;
                             th_2d2 = unique(th_2d2(1:2,:)','rows');
                             scatter(intersect_2d(:,1),intersect_2d(:,2),'k.'), hold on, scatter(th_2d1(:,1), th_2d1(:,2),'r.'), scatter(th_2d2(:,1), th_2d2(:,2),'r.')
-                            
+                            %%
 %                             questTitle='Final Confirmation'; start(timer('StartDelay',1,'TimerFcn',@(o,e)set(findall(0,'Tag',questTitle),'WindowStyle','normal')));         
-                            answer2 = MFquestdlg([0.5, 0.5], 'Is the result REALLY correct?', 'Final Confirmation', 'Yes', 'No', 'Yes');
+                            answer2 = MFquestdlg([0.5, 0.3], 'Is the result REALLY correct?', 'Final Confirmation', 'Yes', 'No', 'Yes');
                             switch answer2
                                 case 'Yes'
                                     close(h2);
@@ -432,7 +471,7 @@ for sessionInd = 1 : length(sessionNum)
                                     hp_decision = 'Yes';
                                     done_flag = 0; % the whole precedure is finally done. get out of while(done_flag) loop.
                                 case 'No'
-                                    answer3 = MFquestdlg([0.5, 0.5], 'Do you want to change the steps?', 'Touch hyperplane sweep steps', 'Yes', 'No', 'Yes');
+                                    answer3 = MFquestdlg([0.5, 0.3], 'Do you want to change the steps?', 'Touch hyperplane sweep steps', 'Yes', 'No', 'Yes');
                                     switch answer3
                                         case 'Yes'                                    
                                             step_boundary_cell = inputdlg({'First step','Last step'},'What are the sweep boundaries?',1,{'',''},options);
@@ -440,11 +479,11 @@ for sessionInd = 1 : length(sessionNum)
                                             peak_answer = 'No'; % get out of peak while
                                             close all
                                         case 'No'
-                                            peak_answer = MFquestdlg([0.5, 0.5], 'Do you want to change the peak points?', 'Touch hyperplane peaks', 'Yes', 'No', 'Yes');
+                                            peak_answer = MFquestdlg([0.5, 0.3], 'Do you want to change the peak points?', 'Touch hyperplane peaks', 'Yes', 'No', 'Yes');
                                             if strcmp(peak_answer,'Yes')                                        
                                                 close(h2);
                                             else
-                                                psi1_return_answer = MFquestdlg([0.5, 0.5], 'Do you want to select polygon for psi1?', 'Return to psi1 polygon', 'Yes', 'No', 'Yes');
+                                                psi1_return_answer = MFquestdlg([0.5, 0.3], 'Do you want to select polygon for psi1?', 'Return to psi1 polygon', 'Yes', 'No', 'Yes');
                                                 if strcmp(psi1_return_answer, 'Yes')
                                                     close all
                                                     psi1_polygon_answer = 'No';
@@ -462,7 +501,7 @@ for sessionInd = 1 : length(sessionNum)
                                     end
                             end                    
                         else % answer = 'No' to question 'Does the result look correct?'
-                            answer3 = MFquestdlg([0.5, 0.5], 'Do you want to change the steps?', 'Touch hyperplane sweep steps', 'Yes', 'No', 'Yes');
+                            answer3 = MFquestdlg([0.5, 0.3], 'Do you want to change the steps?', 'Touch hyperplane sweep steps', 'Yes', 'No', 'Yes');
                             switch answer3
                                 case 'Yes'                            
                                     step_boundary_cell = inputdlg({'First step','Last step'},'What are the sweep boundaries?',1,{'',''},options);
@@ -472,7 +511,7 @@ for sessionInd = 1 : length(sessionNum)
                                 case 'No'
 %                                     questTitle = 'Return to psi1 polygon'; 
 %                                     start(timer('StartDelay',1,'TimerFcn',@(o,e)set(findall(0,'Tag',questTitle),'WindowStyle','normal')));
-                                    psi1_return_answer = MFquestdlg([0.5, 0.5], 'Do you want to select polygon for psi1?', 'Return to psi1 polygon', 'Yes', 'No', 'Yes');
+                                    psi1_return_answer = MFquestdlg([0.5, 0.3], 'Do you want to select polygon for psi1?', 'Return to psi1 polygon', 'Yes', 'No', 'Yes');
                                     if strcmp(psi1_return_answer, 'Yes')
                                         close all
                                         psi1_polygon_answer = 'No';
@@ -496,10 +535,11 @@ for sessionInd = 1 : length(sessionNum)
             steps_hp{iservo, idist} = steps;
             num_points_in_hp{iservo, idist} = num_points;
             touch_hp{iservo, idist} = xyz_psi2; % Don't round them! (at least at this saving process)
-            fprintf('%s %s trial type #%d/%d processed\n',mouseName, sessionName, (iservo-1)*idist + iservo, length(servo_values) * length(distance_values))        
+            fprintf('%s %s trial type #%d/%d processed\n',mouseName, sessionName, (iservo-1)*(idist-1) + iservo, length(servo_values) * length(distance_values))        
         end
     end
     %%
     save([whisker_d mouseName sessionName '_touch_hp.mat'],'touch_hp','num_points_in_hp','steps_hp','hp_peaks', 'psi1', 'psi2', 'servo_distance_pair')
     fprintf('%s %s hp_peaks saved\n', mouseName, sessionName)
+end
 end

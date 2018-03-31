@@ -2,7 +2,7 @@
 % WL is quired to calculate touch hyperplane.
 % WL_2pad builds WL again using the information from touch_hyperplane.
 tic
-touch_boundary_thickness = 2; % include # of pixels outer space from the hp_peak boundary. Default = 2.
+touch_boundary_thickness = 1; % include # of pixels outer space from the hp_peak boundary. Default = 2.
 
 behavior_base_dir = 'Y:\JK_temp\SoloData\';
 whisker_base_dir = 'Y:\JK_temp\whisker\tracked\';

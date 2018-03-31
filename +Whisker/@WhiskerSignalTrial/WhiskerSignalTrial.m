@@ -14,7 +14,7 @@ classdef WhiskerSignalTrial < handle
         trialType = NaN;
         whiskerNames = {};  % whiskerNames and trajectoryIDs must be of same length
         trajectoryIDs = []; % with matching elements. 
-        framePeriodInSec = 0.003225806451613; % 310 Hz
+        framePeriodInSec = 1/310; % 310 Hz
         mouseName = '';
         sessionName = '';
         trackerFileName = '';
