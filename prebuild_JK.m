@@ -1,6 +1,6 @@
 
 %% basic information
-mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
+mice = {'JK039','JK041'};
 % mice = {'JK027'};
 videoloc = 'Y:\Whiskernas\JK_temp\whisker\tracked\';
 if strcmp(videoloc(end),filesep)
@@ -15,10 +15,12 @@ ppm = 17.81002608;
 ppm = ppm / 2; % for binning 2
             % 'pxPerMm': 10.56526073 for microVideo -------------------------------------------------------------------------------------------------------------------------------------lens
 % comment out when doing for all of the sessions in the mouse directory
-sessions = {[8:19,22],[1:22],[1:22],[1:18,21],[1:24],[1:22,24:31],[1:28],[1:19,21:30]};  
-sessions_pre = {[1],[1],[1,2],[1],[1,2],[1],[1],[1]};
+sessions = {[28],[1:19,21:30]};  
+sessions_pre = {[1],[1]};
 
 all_session = 0; % 1 if using all sessions, 0 if using selected sessions
+
+network_failure = [];
 
 %% Define follicle points and masks
 % saves follicle_n_mask.mat file consists of variables 'maskx','masky','width', 'height', and 'follicle_first'
@@ -158,8 +160,17 @@ if all_session == 1
                     end
                     b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                     b_session = b{b_ind};
-
-                    buildWTandWST(mouseName, sessionName, whisker_d, b_session, ppm)
+                    
+                    while 1
+                        try
+                            buildWTandWST(mouseName, sessionName, whisker_d, b_session, ppm)
+                            break
+                        catch
+                            network_failure = [network_failure; clock];
+                            disp('It''s in pause because of network failure')
+                            pause(300)
+                        end
+                    end
                 end
             end
         end
@@ -182,7 +193,16 @@ if all_session == 1
                 b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                 b_session = b{b_ind};
                 
-                buildWTandWST(mouseName, sessionName, whisker_d, b_session, ppm)
+                while 1
+                    try
+                        buildWTandWST(mouseName, sessionName, whisker_d, b_session, ppm)
+                        break
+                    catch
+                        network_failure = [network_failure; clock];
+                        disp('It''s in pause because of network failure')
+                        pause(300)
+                    end
+                end
             end
         end
         
@@ -191,46 +211,68 @@ if all_session == 1
 else
     for mi = 1 : size(mice,2) % mouse index            
         mouseName = mice{mi};
-        if ~isempty(sessions{mi})
+        if ~isempty(sessions{mi}) 
             for j = 1 : length(sessions{mi})                
                 sessionName = sprintf('S%02d',sessions{mi}(j));
-                behavior_d = [behavior_base_dir mouseName '\'];
+                if exist([mouseName, sessionName],'dir')
+                    behavior_d = [behavior_base_dir mouseName '\'];
 
-                if exist('b','var')
-                    if strcmp(b{1}.mouseName, mouseName)
-                        disp('using the same behavior file')
+                    if exist('b','var')
+                        if strcmp(b{1}.mouseName, mouseName)
+                            disp('using the same behavior file')
+                        else
+                            disp('loading a new behavior file')
+                            load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+                        end
                     else
-                        disp('loading a new behavior file')
                         load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
                     end
-                else
-                    load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+                    b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
+                    b_session = b{b_ind};
+                    while 1
+                        try
+                            buildWTandWST(mouseName, sessionName, whisker_d, b_session, ppm)
+                            break
+                        catch
+                            disp('It''s in pause because of network failure')
+                            network_failure = [network_failure; clock];
+                            pause(300)
+                        end
+                    end               
                 end
-                b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
-                b_session = b{b_ind};
-                buildWTandWST(mouseName, sessionName, whisker_d, b_session, ppm)                
             end
         end
         
         if ~isempty(sessions_pre{mi})
             for j = 1 : length(sessions_pre{mi})
                 sessionName = sprintf('pre%d',sessions_pre{mi}(j));
-                behavior_d = [behavior_base_dir mouseName '\'];
+                if exist([mouseName, sessionName],'dir')
+                    behavior_d = [behavior_base_dir mouseName '\'];
 
-                if exist('b','var')
-                    if strcmp(b{1}.mouseName, mouseName)
-                        disp('using the same behavior file')
+                    if exist('b','var')
+                        if strcmp(b{1}.mouseName, mouseName)
+                            disp('using the same behavior file')
+                        else
+                            disp('loading a new behavior file')
+                            load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+                        end
                     else
-                        disp('loading a new behavior file')
                         load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
                     end
-                else
-                    load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
-                end
-                b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
-                b_session = b{b_ind};
+                    b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
+                    b_session = b{b_ind};
 
-                buildWTandWST(mouseName, sessionName, whisker_d, b_session, ppm)                
+                    while 1
+                        try
+                            buildWTandWST(mouseName, sessionName, whisker_d, b_session, ppm)
+                            break
+                        catch
+                            network_failure = [network_failure; clock];
+                            disp('It''s in pause because of network failure')
+                            pause(300)
+                        end
+                    end            
+                end
             end
         end
     end
