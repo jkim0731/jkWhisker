@@ -1,4 +1,5 @@
-function buildWTandWST(mouseName, sessionName, d, b_session, ppm)
+function nft = buildWTandWST(mouseName, sessionName, d, b_session, ppm)
+    nft = []; % network fail time
     curr_d = pwd;
     whisker_d = [d, mouseName, sessionName, filesep];   
     
@@ -67,20 +68,35 @@ function buildWTandWST(mouseName, sessionName, d, b_session, ppm)
         end
     end
 %%
-if size(maskx{1},1) > size(maskx{1},2)
-    Whisker.makeAllDirectory_WhiskerTrial(whisker_d,[0 1],'mask', {[maskx{1}';masky{1}'],[maskx{2}';masky{2}']},...
-        'trial_nums',trialNums,'include_files',includef,...
-        'barRadius',6,'faceSideInImage', 'bottom', 'framePeriodInSec',0.003225806451613,...
-        'imagePixelDimsXY',[width height],'pxPerMm',ppm,'mouseName',mouseName,'sessionName',sessionName,'protractionDirection','rightward');
-else
-    Whisker.makeAllDirectory_WhiskerTrial(whisker_d,[0 1],'mask', {[maskx{1};masky{1}],[maskx{2};masky{2}]},...
-        'trial_nums',trialNums,'include_files',includef,...
-        'barRadius',6,'faceSideInImage', 'bottom', 'framePeriodInSec',0.003225806451613,...
-        'imagePixelDimsXY',[width height],'pxPerMm',ppm,'mouseName',mouseName,'sessionName',sessionName,'protractionDirection','rightward');
+while true
+    try
+        if size(maskx{1},1) > size(maskx{1},2)
+            Whisker.makeAllDirectory_WhiskerTrial(whisker_d,[0 1],'mask', {[maskx{1}';masky{1}'],[maskx{2}';masky{2}']},...
+                'trial_nums',trialNums,'include_files',includef,...
+                'barRadius',6,'faceSideInImage', 'bottom', 'framePeriodInSec',0.003225806451613,...
+                'imagePixelDimsXY',[width height],'pxPerMm',ppm,'mouseName',mouseName,'sessionName',sessionName,'protractionDirection','rightward');
+        else
+            Whisker.makeAllDirectory_WhiskerTrial(whisker_d,[0 1],'mask', {[maskx{1};masky{1}],[maskx{2};masky{2}]},...
+                'trial_nums',trialNums,'include_files',includef,...
+                'barRadius',6,'faceSideInImage', 'bottom', 'framePeriodInSec',0.003225806451613,...
+                'imagePixelDimsXY',[width height],'pxPerMm',ppm,'mouseName',mouseName,'sessionName',sessionName,'protractionDirection','rightward');
+        end
+        break
+    catch
+        disp('It''s in pause because of network failure')
+        nft = [nft; clock]; 
+    end
 end
-Whisker.makeAllDirectory_WhiskerSignalTrial_2pad(whisker_d,'include_files',includef,'polyRoiInPix',[ppm 6*ppm]);
-    
-%                 Whisker.makeAllDirectory_WhiskerTrialLite_2pad(whisker_d,'include_files',includef,'r_in_mm',3,'calc_forces',false,'behavior',b_session);
+
+while true
+    try
+        Whisker.makeAllDirectory_WhiskerSignalTrial_2pad(whisker_d,'include_files',includef,'polyRoiInPix',[ppm 6*ppm]);
+        break
+    catch
+        disp('It''s in pause because of network failure')
+        nft = [nft; clock]; 
+    end 
+end
 
 cd(curr_d)
 
