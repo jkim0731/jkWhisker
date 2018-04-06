@@ -13,13 +13,14 @@ sessionNum = 1:35;
 
 useGPU = 0;
 options.WindowStyle = 'normal';
-%%
-% for sessionInd = 1 : length(sessionNum)
-%     sessionName = sprintf('S%02d',sessionNum(sessionInd));
 for mi = 2 : length(mice)
     mouseName = mice{mi};
-for sessionInd = 1 : length(presession)
-    sessionName = sprintf('pre%d',presession(sessionInd));
+%%
+for sessionInd = 1 : length(sessionNum)
+    sessionName = sprintf('S%02d',sessionNum(sessionInd));
+
+% for sessionInd = 1 : length(presession)
+%     sessionName = sprintf('pre%d',presession(sessionInd));
     
     behavior_d = [behavior_base_dir mouseName '\'];
     try
@@ -408,9 +409,13 @@ for sessionInd = 1 : length(presession)
                     x0 = [0 0 zcenter];
                     u = [1 tand(psi1(iservo,idist)) 0];
                     [xyz_psi2, ~, ~] = AxelRot(xyz_psi1, psi2(iservo,idist), u, x0); 
-                    if xyz_psi1 ~= xyz_psi2 % happens when psi2 = 0
-                        xyz_psi2(:,xyz_psi2(3,:) < zmin_data) = [];
-                        xyz_psi2(:,xyz_psi2(3,:) > zmax_data) = [];
+                    
+                    xyz_psi2(:,xyz_psi2(3,:) < zmin_data) = [];
+                    xyz_psi2(:,xyz_psi2(3,:) > zmax_data) = [];
+                    xyz_psi2(:,xyz_psi2(2,:) < ymin_data) = [];
+                    xyz_psi2(:,xyz_psi2(2,:) > ymax_data) = [];
+                    if isempty(xyz_psi2) 
+                        [xyz_psi2, ~, ~] = AxelRot(xyz_psi1, psi2(iservo,idist), u, x0); 
                         xyz_psi2(:,xyz_psi2(2,:) < ymin_data) = [];
                         xyz_psi2(:,xyz_psi2(2,:) > ymax_data) = [];
                     end
