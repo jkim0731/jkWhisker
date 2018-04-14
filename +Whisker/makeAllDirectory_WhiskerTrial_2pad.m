@@ -1,4 +1,4 @@
-function makeAllDirectory_WhiskerTrial(d,trajectory_nums,varargin)
+function makeAllDirectory_WhiskerTrial_2pad(d,trajectory_nums,varargin)
 %
 %   makeAllDirectory_WhiskerTrial(d,trajectory_nums,varargin)
 %
@@ -80,24 +80,31 @@ function makeAllDirectory_WhiskerTrial(d,trajectory_nums,varargin)
 % (fname_errorWT.mat file with trial_num in it)
 % 2017/05/15 JK
 
+% Some updates for 2pad (also in WhiskerTrial_2pad):
+% realtime pole axis detection including during pole moving frames
+% automatic bar position for 90 degrees poles
+% distance-to-pole calculation
+% input parser for parameters
+% 2018/04/13 JK
+
 p = inputParser;
 
 p.addRequired('d', @ischar);
 p.addRequired('trajectory_nums', @isnumeric);
-p.addParamValue('include_files', {}, @(x) all(cellfun(@ischar,x)));
-p.addParamValue('ignore_files', {}, @(x) all(cellfun(@ischar,x)));
-p.addParamValue('trial_nums', NaN, @isnumeric);
-p.addParamValue('barRadius', 17, @(x) x>0);
-p.addParamValue('barPosOffset', [0 0], @(x) isnumeric(x) && numel(x)==2);
-p.addParamValue('faceSideInImage', 'top', @(x) any(strcmpi(x,{'right','left','top','bottom'})));
-p.addParamValue('protractionDirection', 'rightward', @(x) any(strcmpi(x,{'downward','upward','leftward','rightward'})));
-p.addParamValue('imagePixelDimsXY', [150 200], @(x) isnumeric(x) && numel(x)==2 );
-p.addParamValue('pxPerMm', 22.68, @(x) x>0);
-p.addParamValue('framePeriodInSec',0.002,@isnumeric);
-p.addParamValue('mask',[],@(x) isnumeric(x) | iscell(x));
-p.addParamValue('mouseName', '', @ischar);
-p.addParamValue('sessionName', '', @ischar);
-p.addParamValue('behavior', '', @
+p.addParameter('include_files', {}, @(x) all(cellfun(@ischar,x)));
+p.addParameter('ignore_files', {}, @(x) all(cellfun(@ischar,x)));
+p.addParameter('trial_nums', NaN, @isnumeric);
+p.addParameter('barRadius', 3, @(x) x>0);
+p.addParameter('barPosOffset', [0 0], @(x) isnumeric(x) && numel(x)==2);
+p.addParameter('faceSideInImage', 'bottom', @(x) any(strcmpi(x,{'right','left','top','bottom'})));
+p.addParameter('protractionDirection', 'rightward', @(x) any(strcmpi(x,{'downward','upward','leftward','rightward'})));
+p.addParameter('imagePixelDimsXY', [150 200], @(x) isnumeric(x) && numel(x)==2 );
+p.addParameter('pxPerMm', 17.81/2, @(x) x>0);
+p.addParameter('framePeriodInSec',1/310,@isnumeric);
+p.addParameter('mask',[],@(x) isnumeric(x) | iscell(x));
+p.addParameter('mouseName', '', @ischar);
+p.addParameter('sessionName', '', @ischar);
+p.addParameter('behavior', [], @(x) isa(x,'Solo.BehavTrial2padArray'));
 
 p.parse(d,trajectory_nums,varargin{:});
 
@@ -149,12 +156,14 @@ end
 
 if ~isempty(fnall)
     if exist('parfor','builtin') % Parallel Computing Toolbox is installed.
-        parfor k=1:nfiles
-%         for k=1:nfiles
+%         parfor k=1:nfiles
+        for k=1:nfiles
             fn = fnall{k};
             disp(['Processing .whiskers file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
 %             try % An error found during building .whiskers file. Whisker tracker error, so having a way out of using that trial
-                w = Whisker.WhiskerTrial(fn, trial_nums(k), p.Results.trajectory_nums, p.Results.mouseName, p.Results.sessionName);
+                bInd = cellfun(@(x) x.trialNum == str2double(fn),p.Results.behavior.trials);
+                w = Whisker.WhiskerTrial_2pad(fn, trial_nums(k), p.Results.trajectory_nums, 'mouseName', p.Results.mouseName, 'sessionName',...
+                    p.Results.sessionName, 'trialType', p.Results.behavior.trials{bInd}.trialType, 'angle', p.Results.behavior.trials{bInd}.servoAngle);
 
                 w.barRadius = p.Results.barRadius;
                 w.barPosOffset = p.Results.barPosOffset;
@@ -188,7 +197,8 @@ if ~isempty(fnall)
             fn = fnall{k};
             disp(['Processing .whiskers file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
 %             try
-                w = Whisker.WhiskerTrial(fn, trial_nums(k), p.Results.trajectory_nums, p.Results.mouseName, p.Results.sessionName);
+                w = Whisker.WhiskerTrial_2pad(fn, trial_nums(k), p.Results.trajectory_nums, 'mouseName', p.Results.mouseName, 'sessionName',...
+                    p.Results.sessionName, 'trialType', p.Results.behavior.trials{bInd}.trialType, 'angle', p.Results.behavior.trials{bInd}.servoAngle);
 
                 w.barRadius = p.Results.barRadius;
                 w.barPosOffset = p.Results.barPosOffset;

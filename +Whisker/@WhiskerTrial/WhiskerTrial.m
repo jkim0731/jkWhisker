@@ -11,15 +11,18 @@ classdef WhiskerTrial < handle
     
     properties
         trialNum = [];
-        trialType = NaN;
+        trialType = ''; % l, r, or n (no-go; for catch trials)
         whiskerNames = {};
         trajectoryIDs = []; % changed from {}, to reduce any confusion. 2017/09/16 JK (it's going to be numeric anyway, when called by trajectory_nums{1}
         trackerData = {};
         trackerFrames = {}; % contains information about which frames are at which index of trackerData (becaue quite many times tracker fails) 2018/03/22 JK
         barPos = []; % [frameNum XPosition YPosition]
-        barRadius = 17; % In pixels. Must be radius of bar tracked by the bar tracker.
+        barRadius = 3; % In pixels. Must be radius of bar tracked by the bar tracker. 
+        % 3 on 4/11/2018 (JK025~)
         barPosOffset = [0 0]; % In pixels. Displacement from the center of the large pole to the 'contact point'
         % (either on the edge of the large pole or small pole).
+        
+        
         
         % polyFits: Time-consuming to compute; not computed upon object construction;
         % need to resave object after computing.
@@ -43,9 +46,9 @@ classdef WhiskerTrial < handle
         
         faceSideInImage = 'bottom'; % 'top', 'bottom', 'left','right'
         protractionDirection = 'rightward'; % 'downward', 'upward', 'rightward','leftward'
-        imagePixelDimsXY = [624 300]; % [NumberOfXPixels NumberOfYPixels]
+        imagePixelDimsXY = [320 150]; % [NumberOfXPixels NumberOfYPixels]
         
-        pxPerMm = 17.81002608;
+        pxPerMm = 17.81/2;
         
         % polyFitsMask:
         % Cell array of length length(trajectoryIDs), of format:
@@ -141,83 +144,65 @@ classdef WhiskerTrial < handle
             %
             %
             %
-            if nargin==0
-                return
-            end
-            if ~ischar(tracker_file_name)
-                error('First argument must be valid file name given as a string.')
-            end
-            if ~isnumeric(trial_num)
-                error('Second argument must be an integer trial number or NaN placeholder.')
-            elseif isnan(trial_num)
-                % do nothing
-            elseif mod(trial_num,1) ~= 0
-                error('Second argument must be an integer trial number or NaN placeholder.')
-            end
-            if nargin > 3
-                if ~ischar(varargin{1})
-                    error('Second argument must be a string.')
-                end
-                if nargin==4
-                    error('If second argument (mouse_name) is given, so must third argument (session_name).')
-                end
-                if nargin > 4 && ~ischar(varargin{2})
-                    error('Third argument must be a string.')
-                end
-                
-                obj.mouseName = varargin{1};
-                obj.sessionName = varargin{2};
-            end
             
-            if nargin > 5
-                obj.trialType = varargin{3};
-                if ~isnumeric(obj.trialType)
-                    error('Trial type argument (varargin{3}) must be an integer.')
-                end
-            end
+            p = inputParser;
+
+            p.addRequired('tracker_file_name', @ischar);
+            p.addRequired('trial_num', @isnumeric);
+            p.addRequired('trajectory_nums', @isnumeric);
+            p.addParameter('mouseName', '', @ischar);
+            p.addParameter('sessionName', '', @ischar);
+            p.addParameter('trialType', '', @ischar);
+            p.addParameter('behavior', [], @(x) isa(x,'Solo.BehavTrial2padArray'));
+
+            p.parse(tracker_file_name, trial_num, trajectory_nums, varargin{:});
             
-            if iscell(trajectory_nums)
-                obj.trajectoryIDs = trajectory_nums{1};
-                obj.whiskerNames = trajectory_nums{2};
+            obj.trackerFileName = p.Results.tracker_file_name;
+            obj.trialNum = p.Results.trial_num;
+            obj.mouseName = p.Results.mouseName;
+            obj.sessionName = p.Results.sessionName;
+            obj.trialType = p.Results.trialType;
+            
+            if iscell(p.Results.trajectory_nums)
+                obj.trajectoryIDs = p.Results.trajectory_nums{1};
+                obj.whiskerNames = p.Results.trajectory_nums{2};
                 if numel(obj.trajectoryIDs) ~= numel(obj.whiskerNames)
                     error('Unequal number of whisker names and trajectory IDs in argument trajectory_nums')
                 end
-            elseif isnumeric(trajectory_nums)
-                obj.trajectoryIDs = trajectory_nums;
+            elseif isnumeric(p.Results.trajectory_nums)
+                obj.trajectoryIDs = p.Results.trajectory_nums;
             else
                 error('Argument trajectory_nums is an invalid type.')
             end
             
-            obj.trackerFileName = tracker_file_name;
-            obj.trialNum = trial_num;
             
             try
                 %                 [r, obj.trackerFileFormat] = Whisker.load_segments([tracker_file_name '.whiskers']);
-                [r, obj.trackerFileFormat] = Whisker.load_whiskers_file([tracker_file_name '.whiskers']);
+                [r, obj.trackerFileFormat] = Whisker.load_whiskers_file([p.Results.tracker_file_name '.whiskers']);
                 
                 % .measurements file is newer replacement for .trajectories.  If there's a .measurements
                 % file, choose that.  If not, choose the .trajectories.  Give a message to alert user
                 % if both are found.
-                if exist([tracker_file_name '.measurements'],'file')
-                    M = Whisker.read_whisker_measurements_v3([tracker_file_name '.measurements']);
+                if exist([p.Results.tracker_file_name '.measurements'],'file')
+                    M = Whisker.read_whisker_measurements_v3([p.Results.tracker_file_name '.measurements']);
                     trajectory_ids = M(:,1);
                     frame_nums = M(:,2);
                     segment_nums = M(:,3);
-                    if exist([tracker_file_name '.trajectories'],'file')
-                        disp(['For ' tracker_file_name 'found both .measurements and .trajectories files---using .measurements.'])
+                    if exist([p.Results.tracker_file_name '.trajectories'],'file')
+                        disp(['For ' p.Results.tracker_file_name 'found both .measurements and .trajectories files---using .measurements.'])
                     end
                 else
                     % .measurements file not found; choose .trajectories file.
-                    [trajectory_ids, frame_nums, segment_nums] = Whisker.load_trajectories([tracker_file_name '.trajectories']);
+                    [trajectory_ids, frame_nums, segment_nums] = Whisker.load_trajectories([p.Results.tracker_file_name '.trajectories']);
                 end
                 
-                if exist([tracker_file_name '.bar'],'file')
-                    [bar_f, bar_x, bar_y] = Whisker.load_bar([tracker_file_name '.bar']);
+                if exist([p.Results.tracker_file_name '.bar'],'file')
+                    [bar_f, bar_x, bar_y] = Whisker.load_bar([p.Results.tracker_file_name '.bar']);
                     obj.barPos = [bar_f, bar_x, bar_y];
                 end
             catch ME
                 disp(ME)
-                error(['Cannot load tracker files for: ' tracker_file_name])
+                error(['Cannot load tracker files for: ' p.Results.tracker_file_name])
             end
             
             sFrameNums = cellfun(@(x) x{1},r);
@@ -271,38 +256,38 @@ classdef WhiskerTrial < handle
             end            
         end
         
-        function r = saveobj(obj)
-            %
-            %   r = saveobj(obj)
-            %
-            r.trialNum = obj.trialNum;
-            r.trialType = obj.trialType;
-            r.whiskerNames = obj.whiskerNames;
-            r.trajectoryIDs = obj.trajectoryIDs;
-            r.trackerData = obj.trackerData;
-            r.trackerFrames = obj.trackerFrames;
-            r.polyFits = obj.polyFits;
-            r.polyFitsROI = obj.polyFitsROI;
-            r.maskTreatment = obj.maskTreatment;
-            r.faceData = obj.faceData;
-            r.framePeriodInSec = obj.framePeriodInSec;
-            r.mouseName = obj.mouseName;
-            r.sessionName = obj.sessionName;
-            r.trackerFileName = obj.trackerFileName;
-            r.trackerFileFormat = obj.trackerFileFormat;
-            r.useFlag = obj.useFlag;
-            r.faceSideInImage = obj.faceSideInImage;
-            r.protractionDirection = obj.protractionDirection;
-            r.imagePixelDimsXY = obj.imagePixelDimsXY;
-            r.pxPerMm = obj.pxPerMm;
-            r.barPos = obj.barPos;
-            r.barRadius = obj.barRadius;
-            r.barPosOffset = obj.barPosOffset;
-            r.polyFitsMask = obj.polyFitsMask;
-            r.stretched_mask = obj.stretched_mask;
-            r.stretched_whisker = obj.stretched_whisker; 
-
-        end
+%         function r = saveobj(obj)
+%             %
+%             %   r = saveobj(obj)
+%             %
+%             r.trialNum = obj.trialNum;
+%             r.trialType = obj.trialType;
+%             r.whiskerNames = obj.whiskerNames;
+%             r.trajectoryIDs = obj.trajectoryIDs;
+%             r.trackerData = obj.trackerData;
+%             r.trackerFrames = obj.trackerFrames;
+%             r.polyFits = obj.polyFits;
+%             r.polyFitsROI = obj.polyFitsROI;
+%             r.maskTreatment = obj.maskTreatment;
+%             r.faceData = obj.faceData;
+%             r.framePeriodInSec = obj.framePeriodInSec;
+%             r.mouseName = obj.mouseName;
+%             r.sessionName = obj.sessionName;
+%             r.trackerFileName = obj.trackerFileName;
+%             r.trackerFileFormat = obj.trackerFileFormat;
+%             r.useFlag = obj.useFlag;
+%             r.faceSideInImage = obj.faceSideInImage;
+%             r.protractionDirection = obj.protractionDirection;
+%             r.imagePixelDimsXY = obj.imagePixelDimsXY;
+%             r.pxPerMm = obj.pxPerMm;
+%             r.barPos = obj.barPos;
+%             r.barRadius = obj.barRadius;
+%             r.barPosOffset = obj.barPosOffset;
+%             r.polyFitsMask = obj.polyFitsMask;
+%             r.stretched_mask = obj.stretched_mask;
+%             r.stretched_whisker = obj.stretched_whisker; 
+% 
+%         end
         
         function tid = name2tid(obj, whisker_name)
             if ~ischar(whisker_name)
@@ -483,13 +468,12 @@ classdef WhiskerTrial < handle
             %   
             try
                 fn = [obj.trackerFileName, '.mp4'];
-                v = VideoReader(fn);
-                f = v.NumberOfFrames;            
+                v = VideoReader(fn);                
             catch
                 fn = [obj.trackerFileName, '.avi'];
-                v = VideoReader(fn);
-                f = v.NumberOfFrames;            
+                v = VideoReader(fn);                    
             end
+            f = fix(v.Duration*v.FrameRate);
         end
         
         function set_face_coords_all(obj, x, y)
@@ -2071,93 +2055,97 @@ classdef WhiskerTrial < handle
     end
     
     methods (Static = true)
-        function obj = loadobj(r)
-            %
-            %   obj = loadobj(r)
-            %
-            %
-            obj = Whisker.WhiskerTrial;
-            obj.trialNum = r.trialNum;
-            obj.trialType = r.trialType;
-            obj.whiskerNames = r.whiskerNames;
-            obj.trajectoryIDs = r.trajectoryIDs;
-            obj.trackerData = r.trackerData;
-            obj.trackerFrames = r.trackerFrames;
-            obj.faceData = r.faceData;
-            obj.framePeriodInSec = r.framePeriodInSec;
-            obj.mouseName = r.mouseName;
-            obj.sessionName = r.sessionName;
-            obj.trackerFileName = r.trackerFileName;
-            obj.useFlag = r.useFlag;
-            obj.stretched_mask = r.stretched_mask;
-            obj.stretched_whisker = r.stretched_whisker; 
-
-            % For properties below, need to check if properties exist,
-            % for backwards compatability, since in early (~2008) versions
-            % files may have been saved before these properties existed.
-            % At some point can delete these if-else statements as older
-            % objects become unused.
-            if isfield(r,'pxPerMm')
-                obj.pxPerMm = r.pxPerMm;
-            else
-                obj.pxPerMm = 22.68;
-            end
-            if isfield(r,'imagePixelDimsXY')
-                obj.imagePixelDimsXY = r.imagePixelDimsXY;
-            else
-                obj.imagePixelDimsXY = [150 200];
-            end
-            if isfield(r,'polyFits')
-                obj.polyFits = r.polyFits;
-            else
-                obj.polyFits = {};
-            end
-            if isfield(r,'polyFitsMask')
-                obj.polyFitsMask = r.polyFitsMask;
-            else
-                obj.polyFitsMask = {};
-            end
-            if isfield(r,'polyFitsROI')
-                obj.polyFitsROI = r.polyFitsROI;
-            else
-                obj.polyFitsROI = {};
-            end
-            if isfield(r,'maskTreatment')
-                obj.maskTreatment = r.maskTreatment;
-            else
-                obj.maskTreatment = 'maskNaN';
-            end
-            if isfield(r,'trackerFileFormat')
-                obj.trackerFileFormat = r.trackerFileFormat;
-            else
-                obj.trackerFileFormat = 'whisker0';
-            end
-            if isfield(r,'faceSideInImage')
-                obj.faceSideInImage = r.faceSideInImage;
-            else
-                obj.faceSideInImage = 'top';
-            end
-            if isfield(r,'protractionDirection')
-                obj.protractionDirection = r.protractionDirection;
-            else
-                obj.protractionDirection = 'rightward';
-            end
-            if isfield(r,'barPos')
-                obj.barPos = r.barPos;
-            else
-                obj.barPos = [];
-            end
-            if isfield(r,'barRadius')
-                obj.barRadius = r.barRadius;
-            else
-                obj.barRadius = 17;
-            end
-            if isfield(r,'barPosOffset')
-                obj.barPosOffset = r.barPosOffset;
-            else
-                obj.barPosOffset = [0 0];
-            end
-        end
+%         function obj = loadobj(r)
+%             %
+%             %   obj = loadobj(r)
+%             %
+%             %
+%             try
+%                 obj = Whisker.WhiskerTrial;
+%             catch
+%                 obj = Whisker.WhiskerTrial_2pad;
+%             end
+%             obj.trialNum = r.trialNum;
+%             obj.trialType = r.trialType;
+%             obj.whiskerNames = r.whiskerNames;
+%             obj.trajectoryIDs = r.trajectoryIDs;
+%             obj.trackerData = r.trackerData;
+%             obj.trackerFrames = r.trackerFrames;
+%             obj.faceData = r.faceData;
+%             obj.framePeriodInSec = r.framePeriodInSec;
+%             obj.mouseName = r.mouseName;
+%             obj.sessionName = r.sessionName;
+%             obj.trackerFileName = r.trackerFileName;
+%             obj.useFlag = r.useFlag;
+%             obj.stretched_mask = r.stretched_mask;
+%             obj.stretched_whisker = r.stretched_whisker; 
+% 
+%             % For properties below, need to check if properties exist,
+%             % for backwards compatability, since in early (~2008) versions
+%             % files may have been saved before these properties existed.
+%             % At some point can delete these if-else statements as older
+%             % objects become unused.
+%             if isfield(r,'pxPerMm')
+%                 obj.pxPerMm = r.pxPerMm;
+%             else
+%                 obj.pxPerMm = 22.68;
+%             end
+%             if isfield(r,'imagePixelDimsXY')
+%                 obj.imagePixelDimsXY = r.imagePixelDimsXY;
+%             else
+%                 obj.imagePixelDimsXY = [150 200];
+%             end
+%             if isfield(r,'polyFits')
+%                 obj.polyFits = r.polyFits;
+%             else
+%                 obj.polyFits = {};
+%             end
+%             if isfield(r,'polyFitsMask')
+%                 obj.polyFitsMask = r.polyFitsMask;
+%             else
+%                 obj.polyFitsMask = {};
+%             end
+%             if isfield(r,'polyFitsROI')
+%                 obj.polyFitsROI = r.polyFitsROI;
+%             else
+%                 obj.polyFitsROI = {};
+%             end
+%             if isfield(r,'maskTreatment')
+%                 obj.maskTreatment = r.maskTreatment;
+%             else
+%                 obj.maskTreatment = 'maskNaN';
+%             end
+%             if isfield(r,'trackerFileFormat')
+%                 obj.trackerFileFormat = r.trackerFileFormat;
+%             else
+%                 obj.trackerFileFormat = 'whisker0';
+%             end
+%             if isfield(r,'faceSideInImage')
+%                 obj.faceSideInImage = r.faceSideInImage;
+%             else
+%                 obj.faceSideInImage = 'top';
+%             end
+%             if isfield(r,'protractionDirection')
+%                 obj.protractionDirection = r.protractionDirection;
+%             else
+%                 obj.protractionDirection = 'rightward';
+%             end
+%             if isfield(r,'barPos')
+%                 obj.barPos = r.barPos;
+%             else
+%                 obj.barPos = [];
+%             end
+%             if isfield(r,'barRadius')
+%                 obj.barRadius = r.barRadius;
+%             else
+%                 obj.barRadius = 17;
+%             end
+%             if isfield(r,'barPosOffset')
+%                 obj.barPosOffset = r.barPosOffset;
+%             else
+%                 obj.barPosOffset = [0 0];
+%             end
+%         end
     end
     
 end

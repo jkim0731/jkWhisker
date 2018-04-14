@@ -71,7 +71,7 @@ p = inputParser;
 p.addRequired('d', @ischar);
 p.addParameter('include_files', {}, @(x) all(cellfun(@ischar,x)));
 p.addParameter('ignore_files', {}, @(x) all(cellfun(@ischar,x)));
-p.addParameter('r_in_mm', 1, @(x) isnumeric(x) && numel(x)==1);
+p.addParameter('r_in_mm', 3, @(x) isnumeric(x) && numel(x)==1);
 p.addParameter('calc_forces', false, @islogical);
 
 p.addParameter('whisker_radius_at_base', 33.5, @isnumeric);
@@ -84,7 +84,8 @@ p.addParameter('behavior',[], @(x) isa(x,'Solo.BehavTrial2padArray')); % adding 
 p.addParameter('hp_peaks',{}, @iscell);
 p.addParameter('touch_hp',{}, @iscell);
 p.addParameter('touch_boundary_thickness', 1, @(x) isnumeric(x) && numel(x)==1);
-p.addParameter('trial_types',{}, @iscell); % Cautious. trial_types VS trial_type
+p.addParameter('servo_distance_pair',{}, @iscell); % Cautious. trial_types VS trial_type
+p.addParameter('mirrorAngle', [], @isnumeric); % angle of the mirror tilted compared to the mouse body axis
 
 p.parse(d,varargin{:});
 
@@ -124,49 +125,46 @@ end
 nfiles = length(fnall);
 
 if ~isempty(fnall)
-%     if exist('parfor','builtin') % Parallel Computing Toolbox is installed.
-%         parfor k=1:nfiles
-%             try
-%                 fn = fnall{k};
-%                 disp(['Processing ''_WST.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
-% 
-%                 ws = pctload([fn '_WST.mat']);
-%                 
-%                 b_ind = find(cellfun(@(x) x.trialNum,p.Results.behavior.trials)==str2double(fn));
-%                 pole_pos = p.Results.behavior.trials{b_ind}.motorApPosition;
-%                 trial_type = p.Results.behavior.trials{b_ind}.trialType;
-%                 
-%                 if isempty(p.Results.touch_hp) || isempty(p.Results.hp_peaks)                
-%                     wl = Whisker.WhiskerTrialLite_2pad(ws,'r_in_mm',p.Results.r_in_mm,'calc_forces',p.Results.calc_forces,...
-%                         'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
-%                         'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
-%                         'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
-%                         'proximity_threshold',p.Results.proximity_threshold,'pole_pos',pole_pos,'trial_type',trial_type);
-%                 else
-%                     th_ind = find(cellfun(@(x) strcmp(x,trial_type),p.Results.trial_types));
-%                     touch_plane_ind = find(abs(p.Results.touch_hp{th_ind}(3,:) - pole_pos) < 0.5);
-%                     touch_plane = p.Results.touch_hp{th_ind}(1:2,touch_plane_ind);
-%                     touch_polygon = [touch_plane(1,:) + p.Results.hp_peaks{th_ind}(1) - p.Results.touch_boundary_thickness, ...
-%                         touch_plane(1,:) + p.Results.hp_peaks{th_ind}(2) + p.Results.touch_boundary_thickness; ...
-%                         touch_plane(2,:), touch_plane(2,:)];
-%                     wl = Whisker.WhiskerTrialLite_2pad(ws,'r_in_mm',p.Results.r_in_mm,'calc_forces',p.Results.calc_forces,...
-%                         'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
-%                         'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
-%                         'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
-%                         'proximity_threshold',p.Results.proximity_threshold,'pole_pos',pole_pos,'trial_type',trial_type,'th_polygon',touch_polygon');
-%                 end
-%                 outfn = [fn '_WL_2pad.mat'];
-% 
-%                 pctsave(outfn,wl);
-%             catch
-%                 disp(['Error on whisker tracker file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
-%                 outfn = [fn '_errorWL_2pad.mat'];
-%                 pctsave(outfn,k)
-%             end
-%         end
-%     else
+    if exist('parfor','builtin') % Parallel Computing Toolbox is installed.
+%         for k=1:nfiles
+        parfor k=1:nfiles
+                fn = fnall{k};
+                disp(['Processing ''_WST.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
+
+                ws = pctload([fn '_WST.mat']);
+                
+                b_ind = find(cellfun(@(x) x.trialNum,p.Results.behavior.trials)==str2double(fn));
+                pole_pos = p.Results.behavior.trials{b_ind}.motorApPosition;
+                
+                if isempty(p.Results.touch_hp) || isempty(p.Results.hp_peaks)                
+                    wl = Whisker.WhiskerTrialLite_2pad(ws,'r_in_mm',p.Results.r_in_mm,'calc_forces',p.Results.calc_forces,...
+                        'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
+                        'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
+                        'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
+                        'proximity_threshold',p.Results.proximity_threshold,'pole_pos',pole_pos, 'mirrorAngle', p.Results.mirrorAngle);
+                else
+                    angle = p.Results.behavior.trials{b_ind}.servoAngle;
+                    distance = p.Results.behavior.trials{b_ind}.motorDistance;
+
+                    th_ind = find(cellfun(@(x) isequal(x, [angle, distance]), p.Results.servo_distance_pair));
+                    
+                    touch_plane_ind = find(abs(p.Results.touch_hp{th_ind}(3,:) - pole_pos) < 0.5);
+                    touch_plane = p.Results.touch_hp{th_ind}(1:2,touch_plane_ind);
+                    touch_polygon = [touch_plane(1,:) + p.Results.hp_peaks{th_ind}(1) - p.Results.touch_boundary_thickness, ...
+                        touch_plane(1,:) + p.Results.hp_peaks{th_ind}(2) + p.Results.touch_boundary_thickness; ...
+                        touch_plane(2,:), touch_plane(2,:)];
+                    wl = Whisker.WhiskerTrialLite_2pad(ws,'r_in_mm',p.Results.r_in_mm,'calc_forces',p.Results.calc_forces,...
+                        'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
+                        'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
+                        'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
+                        'proximity_threshold',p.Results.proximity_threshold,'pole_pos',pole_pos,'thPolygon',touch_polygon', 'mirrorAngle', p.Results.mirrorAngle);
+                end
+                outfn = [fn '_WL_2pad.mat'];
+
+                pctsave(outfn,wl);
+        end
+    else
         for k=1:nfiles
-%             try
                 fn = fnall{k};
                 disp(['Processing ''_WST.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
 
@@ -180,7 +178,7 @@ if ~isempty(fnall)
                         'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
                         'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
                         'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
-                        'proximity_threshold',p.Results.proximity_threshold,'pole_pos',pole_pos,'trial_type',trial_type);
+                        'proximity_threshold',p.Results.proximity_threshold,'pole_pos',pole_pos, 'mirrorAngle', p.Results.mirrorAngle);
                 else
                     th_ind = find(cellfun(@(x) strcmp(x,trial_type),p.Results.trial_types));
                     touch_plane_ind = find(abs(p.Results.touch_hp{th_ind}(3,:) - pole_pos) < 0.5);
@@ -192,18 +190,13 @@ if ~isempty(fnall)
                         'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
                         'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
                         'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
-                        'proximity_threshold',p.Results.proximity_threshold,'pole_pos',pole_pos,'trial_type',trial_type,'th_polygon',touch_polygon');
+                        'proximity_threshold',p.Results.proximity_threshold,'pole_pos',pole_pos,'thPolygon',touch_polygon', 'mirrorAngle', p.Results.mirrorAngle);
                 end
                 outfn = [fn '_WL_2pad.mat'];
 
                 save(outfn,'wl');
-%             catch
-%                 disp(['Error on whisker tracker file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
-%                 outfn = [fn '_errorWL_2pad.mat'];
-%                 save(outfn,'k')
-%             end            
         end
-%     end
+    end
 end
 
 cd(currentDir)

@@ -4,23 +4,31 @@
 cd('C:\Users\shires\Documents\MATLAB')
 base_angle = 21;
 
-behavior_base_dir = 'Z:\Data\2p\soloData\';
-whisker_base_dir = 'Z:\Data\Video\JK\';
+behavior_base_dir = 'Y:\Whiskernas\JK_temp\SoloData\';
+whisker_base_dir = 'Y:\Whiskernas\JK_temp\whisker\tracked\';
 
-mice = {'AH0648','AH0650','AH0651','AH0652','AH0653'};
+mice = {'JK025'};
 
-mouseName = 'AH0648';
+mouseName = mice{1};
 sessionName = 'S01';
-trial_types = {'rc', 'rf', 'lc', 'lf'};
-% trial_types = {'rn', 'ln'};
+
 behavior_d = [behavior_base_dir mouseName '\'];
 whisker_d = [whisker_base_dir mouseName sessionName '\'];
 
-if exist([whisker_d, 'touch_hp.mat'],'file')
+if exist([whisker_d, mouseName, sessionName, '_touch_hp.mat'],'file')
     error('touch_hp.mat exists.')    
 end
 
-load([behavior_d 'behavior.mat']) % loading b of the mouse (all the sessions)
+if exist('b','var')
+    if strcmp(b{1}.mouseName, mouseName)
+        disp('using the same behavior file')
+    else
+        disp('loading a new behavior file')
+        load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+    end
+else
+    load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+end
 
 b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
 b_session = b{b_ind};
@@ -84,16 +92,16 @@ for trial_type_num = 1 : length(trial_types)
 end
 
 %%
-temp_trial = 1;
-figure,
-subplot(311), plot(1:length(wl.trials{temp_trial}.intersect_coord),smooth(wl.trials{temp_trial}.intersect_coord(:,1)),'k.'), hold on,
-plot(1:length(wl.trials{temp_trial}.intersect_coord),smooth(wl.trials{temp_trial}.intersect_coord(:,2)),'b.'),
-% plot(touch_points{1}{temp_trial}+1,wl.trials{temp_trial}.intersect_coord(touch_points{1}{temp_trial}+1,1),'r.')
-% plot(touch_points{1}{temp_trial}+1,wl.trials{temp_trial}.intersect_coord(touch_points{1}{temp_trial}+1,2),'r.')
-subplot(312), plot(1:length(wl.trials{temp_trial}.intersect_coord),smooth(wl.trials{temp_trial}.deltaKappa{1}),'k.'), hold on,
-plot(1:length(wl.trials{temp_trial}.intersect_coord),smooth(wl.trials{temp_trial}.deltaKappa{2}),'b.')
-subplot(313), plot(1:length(wl.trials{temp_trial}.intersect_coord),smooth(wl.trials{temp_trial}.thetaAtBase{1}),'k.'), hold on,
-plot(1:length(wl.trials{temp_trial}.intersect_coord),smooth(wl.trials{temp_trial}.thetaAtBase{2}),'b.')
+% temp_trial = 1;
+% figure,
+% subplot(311), plot(1:length(wl.trials{temp_trial}.intersect_coord),smooth(wl.trials{temp_trial}.intersect_coord(:,1)),'k.'), hold on,
+% plot(1:length(wl.trials{temp_trial}.intersect_coord),smooth(wl.trials{temp_trial}.intersect_coord(:,2)),'b.'),
+% % plot(touch_points{1}{temp_trial}+1,wl.trials{temp_trial}.intersect_coord(touch_points{1}{temp_trial}+1,1),'r.')
+% % plot(touch_points{1}{temp_trial}+1,wl.trials{temp_trial}.intersect_coord(touch_points{1}{temp_trial}+1,2),'r.')
+% subplot(312), plot(1:length(wl.trials{temp_trial}.intersect_coord),smooth(wl.trials{temp_trial}.deltaKappa{1}),'k.'), hold on,
+% plot(1:length(wl.trials{temp_trial}.intersect_coord),smooth(wl.trials{temp_trial}.deltaKappa{2}),'b.')
+% subplot(313), plot(1:length(wl.trials{temp_trial}.intersect_coord),smooth(wl.trials{temp_trial}.thetaAtBase{1}),'k.'), hold on,
+% plot(1:length(wl.trials{temp_trial}.intersect_coord),smooth(wl.trials{temp_trial}.thetaAtBase{2}),'b.')
 
 %%
 figure, hold all
@@ -114,15 +122,9 @@ end
 figure, plot(pole_pos,cellfun(@(x) x(2),edge_fit))
 
 %%
-Whisker.makeAllDirectory_WhiskerTrial(whisker_d,[0 1],'mask', {[maskx(1,:);masky(1,:)],[maskx(2,:);masky(2,:)]},...
-    'trial_nums',trialNums,'include_files',includef,...
-    'barRadius',15.3,'faceSideInImage', 'bottom', 'framePeriodInSec',.0032,...
-    'imagePixelDimsXY',[width height],'pxPerMm',26.23,'mouseName',mouseName,'sessionName',sessionName,'protractionDirection','rightward')
-
-Whisker.makeAllDirectory_WhiskerSignalTrial(whisker_d,'include_files',includef,'polyRoiInPix',[20 80]);
-Whisker.makeAllDirectory_WhiskerTrialLiteI(whisker_d,'include_files',includef,'r_in_mm',3,'calc_forces',true,'whisker_radius_at_base', 36.5,'whisker_length', 18,'baseline_time_or_kappa_value',0);
+Whisker.makeAllDirectory_WhiskerTrialLite_2pad(whisker_d,'include_files',includef,'r_in_mm',3,'calc_forces', false, 'whisker_radius_at_base', 36.5, 'whisker_length', 18, 'baseline_time_or_kappa_value',0);
 wl = Whisker.WhiskerTrialLiteArray(whisker_d);
-save([d mouseName sessionName '-WTLIA.mat'],'wl');
+save([d mouseName sessionName '-WTL2padA.mat'],'wl');
 
 %%
 tid = [0 1]; % Set trajectory ID to view

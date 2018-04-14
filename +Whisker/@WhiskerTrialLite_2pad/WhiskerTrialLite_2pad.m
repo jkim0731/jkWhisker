@@ -15,10 +15,10 @@ classdef WhiskerTrialLite_2pad < handle
     %
     properties
         trialNum = [];
-        trialType = NaN;
+        trialType = '';
         whiskerNames = {};  % whiskerNames and trajectoryIDs must be of same length
         trajectoryIDs = []; % with matching elements.
-        framePeriodInSec = 0.003225806451613; % 310 Hz
+        framePeriodInSec = 1/310; % 310 Hz
         pxPerMm = []; %  Inherited from WhiskerSignalTrial.
         mouseName = '';
         sessionName = '';
@@ -50,16 +50,18 @@ classdef WhiskerTrialLite_2pad < handle
         contactInds = {};
 
         pole_pos = []; % from BehaviorArray
-        trial_type = ''; % from BehaviorArray
         pole_axes = {}; % Inherited from WhiskerSignalTrial.
         intersect_coord = []; % Inherited from WhiskerSignalTrial.
         
         videoFrames = []; % Inherited from WhiskerSignalTrial.
-        pole_available_timepoints = []; % Inherited from WhiskerSignalTrial. first timepoint is 1, not 0. [frames from the beginning, frames from the end]. 2017/04/13 JK
-        th_polygon = []; % convex hull of the touch hyperplane at this specific pole position
-        th_touch_frames = []; % touch frames derived from the touch hyperplane.
-        kappa_touch_threshold = []; % the threshold for determining touch based on kappa, on top of th_touch_frames
-        touch_frames = []; % touch frames deteremined by both the touch hyperplane and kappa threshold.
+        pole_available_frames = []; % Inherited from WhiskerSignalTrial. first timepoint is 1, not 0. 2017/04/13 JK
+        thPolygon = []; % convex hull of the touch hyperplane at this specific pole position
+        thTouchFrames = []; % touch frames derived from the touch hyperplane.
+        thTouchChunks = {}; % divide thTouchFrames into chunks based on the continuity
+        
+        kappaTouchThreshold = []; % the threshold for determining touch based on kappa, on top of thTouchFrames
+        durationThreshold = []; % the threshold for determining touch based on touch duration, on top of thTouchFrames
+        touchFrames = []; % touch frames deteremined by touch hyperplane, kappa threshold, and duration threshold.
     end
     
     properties (Dependent = true)
@@ -139,8 +141,10 @@ classdef WhiskerTrialLite_2pad < handle
             
             p.addParameter('pole_pos',[], @isnumeric);
             p.addParameter('trial_type',{}, @ischar);
-            p.addParameter('th_polygon',[], @isnumeric);
-            p.addParameter('kappa_touch_threshold',[],@(x) isnumeric(x) && numel(x)==2); % 2 values for top-view and front-view kappa            
+            p.addParameter('thPolygon',[], @isnumeric);
+            p.addParameter('kappaTouchThreshold',[],@(x) isnumeric(x) && numel(x)==2); % 2 values for top-view and front-view kappa
+            p.addParameter('durationThreshold',[], @isnumeric);
+            p.addParameter('mirrorAngle', [], @isnumeric);
             
             p.parse(w,varargin{:});
             
@@ -179,14 +183,14 @@ classdef WhiskerTrialLite_2pad < handle
                 b_ind = find(cellfun(@(x) x.trialNum,p.Results.behavior.trials)==obj.trialNum);
                 if ~isempty(b_ind)
                     obj.pole_pos = p.Results.behavior.trials{b_ind}.motorApPosition;
-                    obj.trial_type = p.Results.behavior.trials{b_ind}.trialType;
+                    obj.trialType = p.Results.behavior.trials{b_ind}.trialType;
                 end
             end
-            obj.th_polygon = p.Results.th_polygon;
+            obj.thPolygon = p.Results.thPolygon;
                     
             obj.pole_axes = w.pole_axes;
             obj.intersect_coord = w.whisker_edge_coord;
-            obj.pole_available_timepoints = w.pole_available_timepoints;
+            obj.pole_available_frames = w.pole_available_frames;
             
             obj.videoFrames = w.videoFrames;
             
@@ -217,24 +221,48 @@ classdef WhiskerTrialLite_2pad < handle
                        p.Results.youngs_modulus,p.Results.baseline_time_or_kappa_value,p.Results.proximity_threshold);                    
                 else
                     % Should consolidate into single function to optimize the following: 
-%                     [~,obj.deltaKappa{k},~,~,~] = w.get_theta_kappa_at_roi_point(tid,p.Results.r_in_mm);       
                     [obj.deltaKappa{k},~,~,~] = w.get_kappa_at_roi_point(tid,p.Results.r_in_mm);
-%                     [obj.thetaAtBase{k},kappa0,t] = w.get_theta_kappa_at_base(tid);
-                    [obj.thetaAtBase{k},~] = w.get_theta_at_base(tid);                    
+                    [obj.thetaAtBase{k},~] = w.get_theta_at_base(tid);
+                    obj.thetaAtBase{k} = obj.thetaAtBase{k} + p.Results.mirrorAngle;
                 end
             end
             %% Temporary remedy 2017/05/30
-%             thp1 = obj.th_polygon(1:end/2,:);
+%             thp1 = obj.thPolygon(1:end/2,:);
 %             thp1 = [2*thp1(1,:) - thp1(end,:); thp1; 2*thp1(end,:) - thp1(1,:)];
-%             thp2 = obj.th_polygon(end/2+1:end,:);
+%             thp2 = obj.thPolygon(end/2+1:end,:);
 %             thp2 = [2*thp2(1,:) - thp2(end,:); thp2; 2*thp2(end,:) - thp2(1,:)];
-%             obj.th_polygon = [thp1; thp2];            
+%             obj.thPolygon = [thp1; thp2];            
             %%
-            obj.th_touch_frames = find(inpolygon(obj.intersect_coord(:,1),obj.intersect_coord(:,2), ...
-                obj.th_polygon(:,1), obj.th_polygon(:,2)));
-            if ~isempty(obj.pole_available_timepoints)
-                obj.th_touch_frames = intersect(obj.pole_available_timepoints,obj.th_touch_frames);
-            end                    
+            obj.thTouchFrames = find(inpolygon(obj.intersect_coord(:,1),obj.intersect_coord(:,2), ...
+                obj.thPolygon(:,1), obj.thPolygon(:,2)));
+            if ~isempty(obj.pole_available_frames)
+                obj.thTouchFrames = intersect(obj.pole_available_frames,obj.thTouchFrames);
+            end   
+                        
+            if isempty(obj.thTouchFrames)
+                obj.thTouchChunks = {};
+            else
+                chunkPoints = [1; find(diff(obj.thTouchFrames)>1) + 1; length(obj.thTouchFrames)+1]; % +1 because of diff. first 1 for the first chunk. last one for the end of the last chunk
+                obj.thTouchChunks = cell(1,length(chunkPoints)-1); 
+                for i = 1 : length(obj.thTouchChunks)
+                    obj.thTouchChunks{i} = obj.thTouchFrames(chunkPoints(i) : chunkPoints(i+1)-1);
+                end
+            end
+            %% Applying threshold (But... how to determine the threshold?)
+            
+            
+        end
+        
+        function chunks = get_chunks(frames)
+            if isempty(frames)
+                chunks = {};
+            else
+                chunkPoints = [1, find(diff(frames)>1) + 1]; % +1 because of diff. first 1 for the first chunk. So this is actually start points of each chunk.
+                chunks = cell(1,length(chunkPoints) + 1); % +1 for the last chunk
+                for i = 1 : length(chunks)
+                    chunks{i} = frames(chunkPoints(i) : chunkPoints(i+1)-1);
+                end
+            end
         end
         
         function tid = name2tid(obj, whisker_name)

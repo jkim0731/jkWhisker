@@ -9,7 +9,7 @@ else
 end
 behavior_base_dir = 'C:\JK\';
 
-ppm = 17.81002608;
+ppm = 17.81/2;
             % 'pxPerMm': 17.81002608 for telecentric lens
 ppm = ppm / 2; % for binning 2
             % 'pxPerMm': 10.56526073 for microVideo -------------------------------------------------------------------------------------------------------------------------------------lens

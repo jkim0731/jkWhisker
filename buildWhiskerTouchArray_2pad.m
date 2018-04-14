@@ -3,16 +3,16 @@
 % WL_2pad builds WL again using the information from touch_hyperplane.
 tic
 touch_boundary_thickness = 1; % include # of pixels outer space from the hp_peak boundary. Default = 2.
-
-behavior_base_dir = 'Y:\JK_temp\SoloData\';
-whisker_base_dir = 'Y:\JK_temp\whisker\tracked\';
-mice = {'JK017','JK018','JK020'};
-sessionNum = [1:10];
+mirrorAngle = 21;
+behavior_base_dir = 'Y:\Whiskernas\JK_temp\SoloData\';
+whisker_base_dir = 'Y:\Whiskernas\JK_temp\whisker\tracked\';
+mice = {'JK025'};
+sessionNum = 2:22;
 for mi = 1 : size(mice,2)
     mouseName = mice{mi};
     behavior_d = [behavior_base_dir mouseName '\'];
     try
-        load([behavior_d 'behavior.mat']) % loading b of the mouse (all the sessions)
+        load([behavior_d, 'behavior_', mouseName, '.mat']) % loading b of the mouse (all the sessions)
     catch
         error(['No behavior.mat file in ' mouseName])
     end
@@ -62,7 +62,7 @@ for mi = 1 : size(mice,2)
                 includef{i} = num2str(trialNums(i));
             end
 
-            Whisker.makeAllDirectory_WhiskerTrialLite_2pad(whisker_d,'include_files',includef,'r_in_mm',3,'calc_forces',false,'behavior',b_session,'touch_hp',touch_hp,'hp_peaks',hp_peaks,'touch_boundary_thickness',touch_boundary_thickness,'trial_types',trial_types);
+            Whisker.makeAllDirectory_WhiskerTrialLite_2pad(whisker_d,'include_files',includef,'r_in_mm',3,'calc_forces',false,'behavior',b_session,'touch_hp',touch_hp,'hp_peaks',hp_peaks,'touch_boundary_thickness',touch_boundary_thickness,'servo_distance_pair', servo_distance_pair, 'mirrorAngle', mirrorAngle);
         end
     end
 end

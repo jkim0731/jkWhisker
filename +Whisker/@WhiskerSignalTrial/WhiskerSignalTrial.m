@@ -95,7 +95,7 @@ classdef WhiskerSignalTrial < handle
         barPosOffset = []; % [x y], either 1X2 or nframesX2
         barRadius = []; % Inherited from WhiskerTrial.  In pixels. Must be radius of bar tracked by the bar tracker.
         time = {};
-        videoFrames = []; % number of frames of the video. Need for comparison with time, so that to see if there was any error during tracking. 2017/04/03 JK
+        nof = []; % number of frames of the video. Need for comparison with time, so that to see if there was any error during tracking. 2017/04/03 JK
         pxPerMm = 22.68; %  Inherited from WhiskerTrial, but give default value.
         faceSideInImage = 'bottom'; % Inherited from WhiskerTrial, but give default value.
         % Can be: 'top', 'bottom', 'left','right'.
@@ -147,7 +147,7 @@ classdef WhiskerSignalTrial < handle
             %
             %
             p = inputParser;
-            p.addOptional('w', @(x) isa(x,'Whisker.WhiskerTrial'));                      
+            p.addOptional('w', @(x) isa(x,'Whisker.WhiskerTrial') || isa(x,'Whisker.WhiskerTrial_2pad'));
             p.addParamValue('polyRoiInPix', NaN);            
             p.parse(varargin{:});
             
@@ -220,7 +220,7 @@ classdef WhiskerSignalTrial < handle
                                         % before calling w.mean_theta_and_kappa, it will now be transferred
                                         % to WhiskerSignalTrial.
             obj.polyFitsROI = w.polyFitsROI;
-            obj.videoFrames = w.get_videoFrames; % 2017/04/03 JK
+            obj.nof = w.get_videoFrames; % 2017/04/03 JK
           
             obj.stretched_mask = w.stretched_mask;
             obj.stretched_whisker = w.stretched_whisker;
@@ -2291,7 +2291,7 @@ classdef WhiskerSignalTrial < handle
             nframes = length(f);
             
             % Add any offset to the tracked bar position:
-            if isempty(obj.barPosOffset);
+            if isempty(obj.barPosOffset)
                 bp = obj.barPosClean;
             else
                 bp = obj.barPosClean;
@@ -3212,7 +3212,7 @@ classdef WhiskerSignalTrial < handle
             end
             
             % Add any offset to the tracked bar position:
-            if isempty(obj.barPosOffset);
+            if isempty(obj.barPosOffset)
                 bp = obj.barPosClean;
             else
                 bp = obj.barPosClean;
@@ -3282,7 +3282,8 @@ classdef WhiskerSignalTrial < handle
                         a = [tand(thetaW) -1]; % Vector extending from last point on whisker along angle of whisker.
                     elseif strcmp(obj.faceSideInImage,'left')
                         a = [1 tand(thetaW)]; % Vector extending from last point on whisker along angle of whisker.
-                    else strcmp(obj.faceSideInImage,'right') % DHO, 12oct11: Don't have test data for these conditions, remains untested
+                    else
+                        strcmp(obj.faceSideInImage,'right') % DHO, 12oct11: Don't have test data for these conditions, remains untested
                         a = [-1 tand(thetaW)]; % Vector extending from last point on whisker along angle of whisker.
                     end
                     

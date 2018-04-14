@@ -1,157 +1,261 @@
-function [pole_edge, varargout] = pole_edge_detection(video_fn)
+function [nof, poleUpFrames, poleMovingFrames, poleAxesUp, poleAxesMoving, topPix, barPos] = pole_edge_detection(videoFn, angle, radius)
 
 % Automatic detection of pole_edge from video. Both front and top view.
 % Currently only for 2pad 2017 JK
 
-% Added automatic pole_available_frames 2018/03/06 JK
+% Outputs:
+% (1) total number of frames
+% (2) pole up frames
+% (3) pole moving frames
+% (4) poleAxis when up
+% (5) poleAxis durin moving
+% (6) pixel value (bottom right) of the front pole where it has fully risen
+% (to calculate fitting for ap position estimation later)
 
-%% Manually set factors. Should be changed individually for different settings
-width_factor = 1;
-height_factor = 0.7;
-%%
-if isnumeric(video_fn)
-    v = VideoReader([num2str(video_fn),'.mp4']);
+% Updates:
+% 2018/03/06 Added automatic pole_available_frames 
+% 2018/04/11 Using imbinarize, calculating bottom-left tip pixel point for
+% pole_position estimation and calculating pole available timepoints
+%% Fixed parameters
+% targeting right top 1/4 of the whole FOV for top-view pole tracking
+wFactorTop = 0.5;
+hFactorTop = 0.5;
+% targeting left top ~1/5.6 of the whole FOV for front-view pole tracking
+wFactorFront = 0.3;
+hFactorFront = 0.6;
+
+%% Initialization
+if isnumeric(videoFn)
+    v = VideoReader([num2str(videoFn),'.mp4']);
 else
-    v = VideoReader([video_fn,'.mp4']);
+    if length(videoFn) > 4 && strcmp(videoFn(end-3:end),'.mp4')
+        v = VideoReader(videoFn);
+    else
+        v = VideoReader([videoFn,'.mp4']);
+    end
 end
+targetWidth = round(v.Width*wFactorTop):v.Width;
+targetHeight = 1:round(v.Height*hFactorTop);
+rowSub = ones(length(targetWidth),1)*targetHeight;
+rowSub = rowSub(:);
+colSub = repmat(targetWidth,[1,length(targetHeight)]);
+topTargetInd = sub2ind([v.Height, v.Width], rowSub, colSub');
+
+targetWidth = 1:round(v.Width*wFactorFront);
+targetHeight = 1:round(v.Height*hFactorFront);
+rowSub = ones(length(targetWidth),1)*targetHeight;
+rowSub = rowSub(:);
+colSub = repmat(targetWidth,[1,length(targetHeight)]);
+frontTargetInd = sub2ind([v.Height, v.Width], rowSub, colSub');
+
 nof = fix(v.FrameRate*v.Duration);
-h = floor(v.height*height_factor);
-w =  floor(v.width*width_factor);
-vavg = zeros(v.height,v.width);
-pole_img_ts = zeros(h,w,nof);
+
+topPix = NaN(nof,2); % bottom-right of top-view pole
+topPixforcheck = NaN(nof,2); % right-bottom of top-view pole to check if the pole was in the FOV
+frontPix = NaN(nof,2); % left-bottom of front-view pole
+
+%% Gathering frame-by-frame information
 for i = 1 : nof
     temp = readFrame(v);
     if  length(size(temp)) > 2 % temporary solution for having RGB-like mp4 file 2018/03/16 JK
         temp = temp(:,:,1);
     end
-    vavg = vavg + double(temp)/nof;    
-    pole_img_ts(:,:,i) = adapthisteq(temp(1:h,1:w,1),'NumTiles',[5,20]);    
+    btemp = 1 - imbinarize(uint8(temp), 'adaptive','ForegroundPolarity','dark','Sensitivity',0.1);
+    bcc = bwconncomp(btemp);
+    candid = find(cellfun(@(x) length(intersect(x,topTargetInd)), bcc.PixelIdxList));
+    if ~isempty(candid) 
+        btempTop = zeros(size(btemp),'logical');
+        for j = 1 : length(candid)
+            btempTop(bcc.PixelIdxList{candid(j)}) = 1;
+        end
+        bccTop = bwconncomp(btempTop);
+
+        if bccTop.NumObjects > 1
+            [~,bccind] = max(cellfun(@(x) length(x), bccTop.PixelIdxList));
+        else
+            bccind = 1;
+        end
+        btempTop = zeros(size(btempTop),'logical');
+        btempTop(bccTop.PixelIdxList{bccind}) = 1;
+        bccTop = bwconncomp(btempTop);                    
+        s = regionprops(bccTop,'Extrema');        
+        topPix(i,:) = floor(s.Extrema(5,:));
+        topPixforcheck(i,:) = floor(s.Extrema(4,:));
+    end    
+    
+    candid = find(cellfun(@(x) length(intersect(x,frontTargetInd)), bcc.PixelIdxList));
+    if ~isempty(candid) 
+        btempFront = zeros(size(btemp),'logical');
+        for j = 1 : length(candid)
+            btempFront(bcc.PixelIdxList{candid(j)}) = 1;
+        end
+        bccFront = bwconncomp(btempFront);
+
+        if bccFront.NumObjects > 1
+            [~,bccind] = max(cellfun(@(x) length(x), bccFront.PixelIdxList));
+        else
+            bccind = 1;
+        end
+        btempFront = zeros(size(btempFront),'logical');
+        btempFront(bccFront.PixelIdxList{bccind}) = 1;
+        bccFront = bwconncomp(btempFront);                    
+        s = regionprops(bccFront,'Extrema');
+        frontPix(i,:) = floor(s.Extrema(7,:));
+    end        
 end
-vavg = mat2gray(vavg);
 
-%% Calculating pole available time (based on image correlation)
-ref_img = mean(pole_img_ts(:,:,floor(nof/2 - nof/10):floor(nof/2+nof/10)),3);
-[pole_edge_ref, edge_thresh] = edge(imgaussfilt(ref_img,3),'Prewitt','nothinning');
-
-im_corr = zeros(nof,1);
-for i = 1 : nof
-    pole_edge_ts = edge(imgaussfilt(pole_img_ts(:,:,i),3),'Prewitt', 'nothinning', edge_thresh);
-    im_corr(i) = sum(sum(xcorr2(single(pole_edge_ts), single(pole_edge_ref))));
-end                
-corr_upper = im_corr(im_corr > (max(im_corr)+min(im_corr))/2);
-
-threshold = prctile(corr_upper(floor(length(corr_upper)/5) : length(corr_upper) - floor(length(corr_upper)/5)),20);
-
-pole_available_frames = find(im_corr >= threshold,1,'first') : find(im_corr >= threshold,1,'last');
-varargout{3} = pole_available_frames - 1; % frame number starts from 0. Convention of whisker tracker.
-
-%%    
-if isnumeric(video_fn)
-    v = VideoReader([num2str(video_fn),'.mp4']);
-else
-    v = VideoReader([video_fn,'.mp4']);
-end
+poleUpPix = mode(topPix(:,1));
+poleUpFrames = find(topPix(:,1) <= poleUpPix + 1, 1, 'first') : find(topPix(:,1) <= poleUpPix + 1, 1, 'last'); % for just in case where pixel values are noisy
+poleMovingFrames = setdiff(     find(topPix(:,1)),    union(poleUpFrames,  union( find(isnan(topPix(:,1))), find(isnan(frontPix(:,1))) )  )     );
+poleAxesMoving = cell(length(poleMovingFrames),2);
+%% Binarized image from averaged pole up images (~ 10 frames, evenly distributed across pole up frames)
+% And calculate pole edge slopes
+frames = poleUpFrames(5): round((poleUpFrames(end-5) - poleUpFrames(5))/10) : poleUpFrames(end-5);
 vavg = zeros(v.height,v.width);
-for i = 1 : nof
+for i = 1 : length(frames)
+    v.CurrentTime = frames(i)/v.FrameRate;
     temp = readFrame(v);
     if  length(size(temp)) > 2 % temporary solution for having RGB-like mp4 file 2018/03/16 JK
         temp = temp(:,:,1);
     end
-    if ~isempty(intersect(pole_available_frames, i))
-        vavg = vavg + double(temp)/length(pole_available_frames);    
-    end  
+    vavg = vavg + double(temp)/length(frames);    
 end
-vavg = mat2gray(vavg);
-%%
-pole_edge_pic = edge(vavg,'Roberts');
+btemp = 1 - imbinarize(uint8(vavg), 'adaptive','ForegroundPolarity','dark','Sensitivity',0.1);
+bcc = bwconncomp(btemp);
 
-front_pole_edge = pole_edge_pic; front_pole_edge(floor(v.height*0.7):end,:) = 0; front_pole_edge(:, floor(v.width*0.5):end) = 0; front_pole_edge(:,1:10) = 0;    
-[edge_i,edge_j] = find(front_pole_edge == 1);  
-result_i = zeros(max(edge_j)-min(edge_j)+1,1);
-result_j = zeros(size(result_i));
-for i = min(edge_j):max(edge_j) % just take the edge detected at the lower part, i.e., closer to the face
-    temp_samej_ind = find(edge_j == i);
-    if ~isempty(temp_samej_ind)
-        inner_edge_ind = find(edge_i(temp_samej_ind) == max(edge_i(temp_samej_ind)));        
-        result_i(i-min(edge_j)+1) = edge_i(inner_edge_ind + min(temp_samej_ind)-1);
-        result_j(i-min(edge_j)+1) = edge_j(inner_edge_ind + min(temp_samej_ind)-1);
+candid = find(cellfun(@(x) length(intersect(x,topTargetInd)), bcc.PixelIdxList));
+if ~isempty(candid) 
+    topPole = zeros(size(btemp),'logical');
+    for j = 1 : length(candid)
+        topPole(bcc.PixelIdxList{candid(j)}) = 1;
+    end
+    bccTop = bwconncomp(topPole);
+
+    if bccTop.NumObjects > 1
+        [~,bccind] = max(cellfun(@(x) length(x), bccTop.PixelIdxList));
+    else
+        bccind = 1;
+    end
+    topPole = zeros(size(topPole),'logical');
+    topPole(bccTop.PixelIdxList{bccind}) = 1;
+    bccTop = bwconncomp(topPole);
+    s = regionprops(bccTop,'Extrema');
+    if angle~=90 % if it's NOT 90 degrees
+        topPole(:,floor(s.Extrema(4,1))-7:end) = 0; % So, remove right-most 8 columns of the image from the pole. To remove tip (or kink) noise.
+        bccTop = bwconncomp(topPole);
+        if bccTop.NumObjects > 1
+            maxYval = zeros(bccTop.NumObjects,1);
+            for i = 1 : bccTop.NumObjects
+                [yval, ~] = ind2sub([v.height, v.width],bccTop.PixelIdxList{i});
+                maxYval = max(yval);
+            end
+            [~, maxInd] = max(maxYval);
+            bccind = maxInd;
+        else
+            bccind = 1;
+        end
+        topPole = zeros(size(topPole),'logical');
+        topPole(bccTop.PixelIdxList{bccind}) = 1;
+        bccTop = bwconncomp(topPole);
+        s = regionprops(bccTop,'Extrema');        
+        topSlope = (s.Extrema(4,2) - s.Extrema(5,2))/(s.Extrema(4,1) - s.Extrema(5,1));
+    else % if it's 90 degrees, calculate slope based on the pole movement
+        % 5 frames before and after pole up
+        frames = [poleUpFrames(1)-5:poleUpFrames(3),poleUpFrames(end-2):poleUpFrames(end)+5];
+        p = polyfit(topPix(frames,1),topPix(frames,2),1); % linear fitting. p(1) is going to be the slope
+        topSlope = p(1);
+    end
+    
+end
+
+candid = find(cellfun(@(x) length(intersect(x,frontTargetInd)), bcc.PixelIdxList));
+if ~isempty(candid) 
+    frontPole = zeros(size(btemp),'logical');
+    for j = 1 : length(candid)
+        frontPole(bcc.PixelIdxList{candid(j)}) = 1;
+    end
+    bccFront = bwconncomp(frontPole);
+
+    if bccFront.NumObjects > 1
+        [~,bccind] = max(cellfun(@(x) length(x), bccFront.PixelIdxList));
+    else
+        bccind = 1;
+    end
+    frontPole = zeros(size(frontPole),'logical');
+    frontPole(bccFront.PixelIdxList{bccind}) = 1;
+    bccFront = bwconncomp(frontPole);
+    s = regionprops(bccFront,'Extrema');
+    frontPole(:,floor(s.Extrema(4,1))-2:end) = 0; % Remove right-most 3 columns of the image from the pole. 
+    bccFront = bwconncomp(frontPole);
+    s = regionprops(bccFront,'Extrema');
+    frontSlope = (s.Extrema(4,2) - s.Extrema(7,2))/(s.Extrema(4,1) - s.Extrema(7,1));    
+end
+
+%% Calculte pole Up axes and adjust topPix, frontPix, and moving frames
+% Based on pixel values (left-bottom for front-view and bottom-right for top-view) and the slopes calculated above
+
+% for front
+q = linspace(1,v.width*0.4);
+middleUpFrame = poleUpFrames(round(length(poleUpFrames)/2));
+poleAxesUp{2} = [frontPix(middleUpFrame,2) + q * frontSlope; q];
+ind = find(frontPix(:,1)>0);
+if ~isempty(ind)
+    for i = 1 : length(ind)
+        frontPix(ind(i),:) = [NaN, NaN];
     end
 end
-noedge_ind = find(result_i == 0);
-if ~isempty(noedge_ind) % connect them if there is a nick
-    edge_ind = setdiff(1:length(result_i),noedge_ind);
-    itp_result_i = interp1(edge_ind, result_i(edge_ind),1:length(result_i));
-    itp_result_j = interp1(edge_ind, result_j(edge_ind),1:length(result_j));
-    result_i = round(itp_result_i);
-    result_j = round(itp_result_j);
-end
 
-front_pole_edge = zeros(size(front_pole_edge));
-front_pole_edge(sub2ind(size(front_pole_edge),result_i,result_j)) = 1;
-
-CC = bwconncomp(front_pole_edge); % take the longest (or largest) connected component
-ccc = cellfun(@(x) length(x), CC.PixelIdxList);
-ci = find(ccc == max(ccc));
-C = CC.PixelIdxList{ci};
-[result_i, result_j] = ind2sub(size(front_pole_edge),C);
-
-[result_j, i_sort] = sort(result_j);
-result_i = result_i(i_sort);
-
-if length(result_j) > v.width*0.2 % linear fit of the front pole
-    p = polyfit(result_j(1:floor(v.width*0.2)),result_i(1:floor(v.width*0.2)),1);
-else
-    p = polyfit(result_j,result_i,1);
-end
-
-q = linspace(1,v.width*0.5);
-pole_edge{2} = [result_i, result_j];
-varargout{1}{2} = [polyval(p,q); q];
+% for top
+q = linspace(v.width,v.width*0.4);
+originY = topPix(middleUpFrame,2) + (v.width - topPix(middleUpFrame,1)) * topSlope; % originX is at v.width
+% if angle ~= 90
+%     ind = find(topPixforcheck(:,2) < originY);
+% else
+    ind = find(topPix(:,2) < floor(originY));
+% end
 
 %%
-top_pole_edge = pole_edge_pic; top_pole_edge(floor(v.height*0.7):end,:) = 0; top_pole_edge(:, 1:floor(v.width*0.5)) = 0;
-[edge_i,edge_j] = find(top_pole_edge == 1);   
-result_i = zeros(max(edge_j)-min(edge_j)+1,1);
-result_j = zeros(size(result_i));
-for i = min(edge_j):max(edge_j)
-    temp_samej_ind = find(edge_j == i);
-    if ~isempty(temp_samej_ind)
-        inner_edge_ind = find(edge_i(temp_samej_ind) == max(edge_i(temp_samej_ind)));        
-        result_i(i-min(edge_j)+1) = edge_i(inner_edge_ind + min(temp_samej_ind)-1);
-        result_j(i-min(edge_j)+1) = edge_j(inner_edge_ind + min(temp_samej_ind)-1);
+% figure, imshow(topPole), hold on, plot(v.width,originY,'r.', 'MarkerSize', 20)
+
+
+%%
+
+if ~isempty(ind)
+    for i = 1 : length(ind)
+        topPix(ind(i), :) = [NaN, NaN];
     end
 end
-noedge_ind = find(result_i == 0);
-if ~isempty(noedge_ind)
-    edge_ind = setdiff(1:length(result_i),noedge_ind);
-    itp_result_i = interp1(edge_ind, result_i(edge_ind),1:length(result_i));
-    itp_result_j = interp1(edge_ind, result_j(edge_ind),1:length(result_j));
-    result_i = round(itp_result_i);
-    result_j = round(itp_result_j);
-end
 
-top_pole_edge = zeros(size(top_pole_edge));
-top_pole_edge(sub2ind(size(top_pole_edge),result_i,result_j)) = 1;    
+poleAxesUp{1} = [originY + (q-q(1)) * topSlope; q];
 
-CC = bwconncomp(top_pole_edge);
-ccc = cellfun(@(x) length(x), CC.PixelIdxList);
-ci = find(ccc == max(ccc));
-C = CC.PixelIdxList{ci};
-[result_i, result_j] = ind2sub(size(front_pole_edge),C);
+% adjust pole moving frames
+poleMovingFrames = setdiff(   poleMovingFrames,    union( find(isnan(topPix(:,1))), find(isnan(frontPix(:,1))) )   );
 
-[result_j, i_sort] = sort(result_j, 'descend');
-result_i = result_i(i_sort);
-
-if length(result_j) > v.width*0.2 % linear fit of the front pole
-    p = polyfit(result_j(1:floor(v.width*0.2)),result_i(1:floor(v.width*0.2)),1);
+%% calculate bar position when the angle is 90 degrees
+if angle == 90
+    polePresentFrames = union(poleMovingFrames, poleUpFrames); % union is sorted in default
+    barPos = zeros(length(polePresentFrames),3);
+    for i = 1 : size(barPos,1)
+        barPos(i,1) = polePresentFrames(i);
+        barPos(i,2) = topPix(polePresentFrames(i),1);
+        barPos(i,3) = topPix(polePresentFrames(i),2) - radius;
+    end
 else
-    p = polyfit(result_j,result_i,1);
+    barPos = [];
 end
 
-q = linspace(v.width,v.width*0.5);
-pole_edge{1} = [result_i, result_j];
-varargout{1}{1} = [polyval(p,q); q];
-varargout{2} = vavg; 
+%% Calculte axes during pole movement
+% for front
+q = linspace(1,v.width*0.4);
+for i = 1 : length(poleMovingFrames)
+    poleAxesMoving{i,2} = [frontPix(poleMovingFrames(i),2)+ q * frontSlope; q];
+end
 
+% for top
+q = linspace(v.width,v.width*0.4);
+for i = 1 : length(poleMovingFrames)
+    originY = topPix(poleMovingFrames(i),2) + (v.width - topPix(poleMovingFrames(i),1)) * topSlope;
+    poleAxesMoving{i,1} = [originY + (q-q(1)) * topSlope; q];
+end
 
 end
