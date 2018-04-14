@@ -46,7 +46,7 @@ for sessionInd = 1 : length(sessionNum)
         load([behavior_d, 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
     end
     b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
-    b_session = b{b_ind};
+    bSession = b{b_ind};
 
     if ~isempty(b_ind) % try only the ones with behavior session
         % %%
@@ -85,9 +85,9 @@ for sessionInd = 1 : length(sessionNum)
     % 2018/02/26 JK
     
     % Determining the type of task and number of trial types within this session
-    servo_values = cellfun(@(x) x.servoAngle, b_session.trials);
+    servo_values = cellfun(@(x) x.servoAngle, bSession.trials);
     servo_values = unique(servo_values(2:end)); % excluding trial #1, which is a dummy trial
-    distance_values = cellfun(@(x) x.motorDistance, b_session.trials);
+    distance_values = cellfun(@(x) x.motorDistance, bSession.trials);
     distance_values = unique(distance_values(2:end)); % excluding trial #1, which is a dummy trial   
     distance_values((distance_values == 0)) = []; % excluding catch trials
     servo_distance_pair = cell(length(servo_values),length(distance_values));
@@ -109,15 +109,27 @@ for sessionInd = 1 : length(sessionNum)
     touch_hp = cell(length(servo_values),length(distance_values)); % touch hyperplanes
     hp_peaks = cell(length(servo_values),length(distance_values)); % touch hyperplane peak points. 2 points for each hyperplane
     trial_nums = cell(length(servo_values),length(distance_values));
+    apPositionPolyfits = cell(length(servo_values),length(distance_values)); % linear fitting parameters for anterior-posterior motor position in each types
     for iservo = 1 : length(servo_values)
         for idist = 1 : length(distance_values)
-            tt_ind = intersect(find(cellfun(@(x) (x.servoAngle == servo_values(iservo)),b_session.trials)), find(cellfun(@(x) (x.motorDistance == distance_values(idist)),b_session.trials)));
+            tt_ind = intersect(find(cellfun(@(x) (x.servoAngle == servo_values(iservo)),bSession.trials)), find(cellfun(@(x) (x.motorDistance == distance_values(idist)),bSession.trials)));
             temp_files = cell(length(tt_ind),1);
             trial_nums{iservo,idist} = zeros(length(tt_ind),1);
+            poleTipCoords = zeros(length(tt_ind),2); % [x coordinates, y coordinates] of poleUpFrames (average them)
+            apPosition = zeros(length(tt_ind),1); % ap motor position from the behavior file
             for j = 1 : length(tt_ind)
-                temp_files{j} = num2str(b_session.trials{tt_ind(j)}.trialNum);
-                trial_nums{iservo,idist}(j) = b_session.trials{tt_ind(j)}.trialNum;
+                temp_files{j} = num2str(bSession.trials{tt_ind(j)}.trialNum);
+                trial_nums{iservo,idist}(j) = bSession.trials{tt_ind(j)}.trialNum;
+                
+                load([temp_files{j},'_WST.mat']) % loading ws
+                poleTipCoords(:,j) = mean(ws.topPoleBottomRight(ws.poleUpFrames,:));
+                apPosition(j) = bSession.trials{tt_ind(j)}.motorApPosition;
             end
+            
+            % AP motor position estimating and saving that to WST file
+            
+            
+            
             ws = Whisker.WhiskerSignalTrialArray_2pad(whisker_d,'include_files',temp_files);            
             done_flag = 1; 
             psi1_polygon_answer = 'Yes'; % for re-drawing of polygon for psi1
@@ -125,11 +137,11 @@ for sessionInd = 1 : length(sessionNum)
                 intersect_3d_total = [];
                 for tnum = 1 : length(ws.trials)
                     try        
-                        b_ind = find(cellfun(@(x) (x.trialNum == ws.trials{tnum}.trialNum), b_session.trials));
+                        b_ind = find(cellfun(@(x) (x.trialNum == ws.trials{tnum}.trialNum), bSession.trials));
                         top_ind = find(~isnan(ws.trials{tnum}.whisker_edge_coord(:,1)));
                         front_ind = find(~isnan(ws.trials{tnum}.whisker_edge_coord(:,2)));
                         intersect_ind = intersect(ws.trials{tnum}.pole_available_frames,intersect(top_ind,front_ind));
-                        intersect_3d_total = [intersect_3d_total; ws.trials{tnum}.whisker_edge_coord(intersect_ind,1), ws.trials{tnum}.whisker_edge_coord(intersect_ind,2), ones(length(intersect_ind),1)*b_session.trials{b_ind}.motorApPosition];
+                        intersect_3d_total = [intersect_3d_total; ws.trials{tnum}.whisker_edge_coord(intersect_ind,1), ws.trials{tnum}.whisker_edge_coord(intersect_ind,2), ones(length(intersect_ind),1)*bSession.trials{b_ind}.motorApPosition];
                     catch
                         fprintf('Skipping trial #%d because of index problems \n',tnum);        
                     end
@@ -177,7 +189,7 @@ for sessionInd = 1 : length(sessionNum)
                     %% when interested in certain points in the figure                    
 %                     % 244 - 72580;
 %                     zvalue = 72210;
-%                     tnum = intersect(tt_ind, find(cellfun(@(x) abs(x.motorApPosition - zvalue) < 10, b_session.trials)))
+%                     tnum = intersect(tt_ind, find(cellfun(@(x) abs(x.motorApPosition - zvalue) < 10, bSession.trials)))
 %                     tnum_ws = find(cellfun(@(x) x.trialNum == tnum(1), ws.trials))
 %                     ws.trials{tnum_ws}.trackerFileName
 %                     figure, plot3(ws.trials{tnum_ws}.whisker_edge_coord(:,1), ws.trials{tnum_ws}.whisker_edge_coord(:,2), 1:length(ws.trials{tnum_ws}.whisker_edge_coord(:,1)))

@@ -93,10 +93,10 @@ classdef WhiskerSignalTrial < handle
         follicleCoordsY = {};
         barPos = []; %  Inherited from WhiskerTrial. [frameNum XPosition YPosition]
         barPosOffset = []; % [x y], either 1X2 or nframesX2
-        barRadius = []; % Inherited from WhiskerTrial.  In pixels. Must be radius of bar tracked by the bar tracker.
+        barRadius = 3; % Inherited from WhiskerTrial.  In pixels. Must be radius of bar tracked by the bar tracker.
         time = {};
         nof = []; % number of frames of the video. Need for comparison with time, so that to see if there was any error during tracking. 2017/04/03 JK
-        pxPerMm = 22.68; %  Inherited from WhiskerTrial, but give default value.
+        pxPerMm = 17.81/2;; %  Inherited from WhiskerTrial, but give default value.
         faceSideInImage = 'bottom'; % Inherited from WhiskerTrial, but give default value.
         % Can be: 'top', 'bottom', 'left','right'.
         % May need to make this a cell array of strings, one per trajectory ID
@@ -148,7 +148,7 @@ classdef WhiskerSignalTrial < handle
             %
             p = inputParser;
             p.addOptional('w', @(x) isa(x,'Whisker.WhiskerTrial') || isa(x,'Whisker.WhiskerTrial_2pad'));
-            p.addParamValue('polyRoiInPix', NaN);            
+            p.addParameter('polyRoiInPix', NaN);            
             p.parse(varargin{:});
             
             if nargin==0
@@ -220,7 +220,11 @@ classdef WhiskerSignalTrial < handle
                                         % before calling w.mean_theta_and_kappa, it will now be transferred
                                         % to WhiskerSignalTrial.
             obj.polyFitsROI = w.polyFitsROI;
-            obj.nof = w.get_videoFrames; % 2017/04/03 JK
+            if isempty(w.nof)
+                obj.nof = w.get_videoFrames; % 2017/04/03 JK
+            else
+                obj.nof = w.nof;
+            end
           
             obj.stretched_mask = w.stretched_mask;
             obj.stretched_whisker = w.stretched_whisker;

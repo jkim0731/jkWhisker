@@ -79,7 +79,7 @@ for i = 1 : nof
         btempTop(bccTop.PixelIdxList{bccind}) = 1;
         bccTop = bwconncomp(btempTop);                    
         s = regionprops(bccTop,'Extrema');        
-        topPix(i,:) = floor(s.Extrema(5,:));
+        topPix(i,:) = (floor(s.Extrema(5,:)) + floor(s.Extrema(6,:)))/2;
         topPixforcheck(i,:) = floor(s.Extrema(4,:));
     end    
     

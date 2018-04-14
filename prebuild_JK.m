@@ -185,7 +185,6 @@ if all_session == 1
                 b_session = b{b_ind};
                 
                 buildWTandWST(mouseName, sessionName, whisker_d, b_session, ppm)
-
             end
         end
         
@@ -214,7 +213,6 @@ else
                     b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                     b_session = b{b_ind};
                     buildWTandWST(mouseName, sessionName, whisker_d, b_session, ppm)
-                    
                 end
             end
         end
@@ -240,9 +238,20 @@ else
                     b_session = b{b_ind};
 
                     buildWTandWST(mouseName, sessionName, whisker_d, b_session, ppm)
-                               
                 end
             end
         end
     end
 end        
+
+%% Perfrom touch_hyperplane 
+% it includes frame-by-frame estimation of corresponding motor position, based on _WST files
+% touch_hyperplane
+
+%% Build WL (Finally)
+% it includes touch frame calculation
+
+
+
+
+
