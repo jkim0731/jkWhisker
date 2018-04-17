@@ -27,6 +27,7 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
         dist2pole = [];
         topPoleBottomRight = []; % frame-by-frame bottom-right pixel value in width (x-axis of the video) of the top-view pole. NaN if the pole is out of sight. 
         apPosition = []; % given anterior-posterior motor position during pole up frames, and estimated positions during pole moving frames.
+        apUpPosition = []; % ap position during pole up
         % to be calculated after WST is made once, collecting all data from all the trials of the same angle in the session
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -59,6 +60,7 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
             obj.angle = w.angle;
             obj.dist2pole = w.dist2pole;
             obj.topPoleBottomRight = w.topPoleBottomRight;
+            obj.apUpPosition = w.apUpPosition;
             
             obj.find_whisker_pole_intersection;
         end

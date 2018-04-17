@@ -163,7 +163,7 @@ if ~isempty(fnall)
 %             try % An error found during building .whiskers file. Whisker tracker error, so having a way out of using that trial
                 bInd = cellfun(@(x) x.trialNum == str2double(fn),p.Results.behavior.trials);
                 w = Whisker.WhiskerTrial_2pad(fn, trial_nums(k), p.Results.trajectory_nums, 'mouseName', p.Results.mouseName, 'sessionName',...
-                    p.Results.sessionName, 'trialType', p.Results.behavior.trials{bInd}.trialType, 'angle', p.Results.behavior.trials{bInd}.servoAngle);
+                    p.Results.sessionName, 'trialType', p.Results.behavior.trials{bInd}.trialType, 'angle', p.Results.behavior.trials{bInd}.servoAngle, 'apUpPosition', p.Results.behavior.trials{bInd}.motorApPosition);
 
                 w.barRadius = p.Results.barRadius;
                 w.barPosOffset = p.Results.barPosOffset;
@@ -198,7 +198,7 @@ if ~isempty(fnall)
             disp(['Processing .whiskers file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
 %             try
                 w = Whisker.WhiskerTrial_2pad(fn, trial_nums(k), p.Results.trajectory_nums, 'mouseName', p.Results.mouseName, 'sessionName',...
-                    p.Results.sessionName, 'trialType', p.Results.behavior.trials{bInd}.trialType, 'angle', p.Results.behavior.trials{bInd}.servoAngle);
+                    p.Results.sessionName, 'trialType', p.Results.behavior.trials{bInd}.trialType, 'angle', p.Results.behavior.trials{bInd}.servoAngle, 'apUpPosition', p.Results.behavior.trials{bInd}.motorApPosition);
 
                 w.barRadius = p.Results.barRadius;
                 w.barPosOffset = p.Results.barPosOffset;

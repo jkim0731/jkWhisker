@@ -138,8 +138,8 @@ for sessionInd = 1 : length(sessionNum)
                 for tnum = 1 : length(ws.trials)
                     try        
                         b_ind = find(cellfun(@(x) (x.trialNum == ws.trials{tnum}.trialNum), bSession.trials));
-                        top_ind = find(~isnan(ws.trials{tnum}.whisker_edge_coord(:,1)));
-                        front_ind = find(~isnan(ws.trials{tnum}.whisker_edge_coord(:,2)));
+                        top_ind = find(~isnan(ws.trials{tnum}.whiskerEdgeCoord(:,1)));
+                        front_ind = find(~isnan(ws.trials{tnum}.whiskerEdgeCoord(:,2)));
                         intersect_ind = intersect(ws.trials{tnum}.pole_available_frames,intersect(top_ind,front_ind));
                         intersect_3d_total = [intersect_3d_total; ws.trials{tnum}.whisker_edge_coord(intersect_ind,1), ws.trials{tnum}.whisker_edge_coord(intersect_ind,2), ones(length(intersect_ind),1)*bSession.trials{b_ind}.motorApPosition];
                     catch
@@ -201,7 +201,7 @@ for sessionInd = 1 : length(sessionNum)
                     disp('Calculating psi1')
 
                     max_zeros = 0;
-                    angle_steps_pre = -5:185; % added 5 angles before and after 180 degrees view for peaks at 0 (or 180) degree.
+                    angle_steps_pre = servo_values(iservo)+80 : servo_values(iservo)+95; % 180414 JK. contraint for initial guess to reduce computation time. From previous results of JK025 and JK027 with -5:185.
                     stds_pre = zeros(length(angle_steps_pre),1);
                     for i = 1 : length(angle_steps_pre)
                         A = viewmtx(angle_steps_pre(i),0);
@@ -226,7 +226,7 @@ for sessionInd = 1 : length(sessionNum)
                         h2 = figure; subplot(1,2,1), plot(1:length(stds_pre), smooth(smooth(stds_pre,5))), hold on, plot(I(ind_opt),stds_pre(I(ind_opt)),'ro')
                         subplot(1,2,2), plot(1:length(stds_pre), stds_pre)
                         max_std = 0;
-                        angle_steps = max_psi1_pre-4.99:0.01:max_psi1_pre+4.99;
+                        angle_steps = max_psi1_pre-0.9:0.1:max_psi1_pre+0.9; % resolution reduced to 0.1 from 0.01, flanking boundaries to 1 from 5 degrees for the sake of computation time 180414 JK
                         stds = zeros(length(angle_steps),1);
                         x2d_final = zeros(size(x2d_proj));
                         for i = 1:length(angle_steps)
@@ -432,7 +432,14 @@ for sessionInd = 1 : length(sessionNum)
                         xyz_psi2(:,xyz_psi2(2,:) > ymax_data) = [];
                     end
                     figure, plot3(intersect_3d_total(:,1),intersect_3d_total(:,2), intersect_3d_total(:,3),'k.', 'MarkerSize',3), xlabel('top'), ylabel('front'), zlabel('pos'), hold on
-                    plot3(xyz_psi2(1,:), xyz_psi2(2,:), xyz_psi2(3,:), 'r.', 'MarkerSize',3)
+                    zmaxind = find(xyz_psi2(3,:) == max(xyz_psi2(3,:)));
+                    for zi = 1 : length(zmaxind)
+                        xind = find(xyz_psi2(1,:) == xyz_psi2(1,zmaxind(zi)));                        
+                        [~, minzind] = min(xyz_psi2(3,xind));                        
+                        plot3(xyz_psi2(1,[zmaxind(zi), xind(minzind)]), xyz_psi2(2,[zmaxind(zi), xind(minzind)]),xyz_psi2(2,[zmaxind(zi), xind(minzind)]), 'r-')
+                    end
+                    
+%                     plot3(xyz_psi2(1,:), xyz_psi2(2,:), xyz_psi2(3,:), 'r-')
 
                     %% ~ 0.5 min (depending on the length of "steps" and the size of xyz_psi2)
                     intersect_pix = round(intersect_3d_total);

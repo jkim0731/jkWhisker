@@ -49,12 +49,15 @@ classdef WhiskerTrialLite_2pad < handle
         M0I = {};
         contactInds = {};
 
-        pole_pos = []; % from BehaviorArray
-        pole_axes = {}; % Inherited from WhiskerSignalTrial.
-        intersect_coord = []; % Inherited from WhiskerSignalTrial.
+        apPosition = []; % Inherited from WhiskerSignalTrial.
+        poleAxesUp = {}; % Inherited from WhiskerSignalTrial.
+        poleAxesMoving = cell(1,2); % Inherited from WhiskerSignalTrial.
+        whiskerPoleIntersection = {}; % Inherited from WhiskerSignalTrial.
+        whiskerEdgeCoord = []; % Inherited from WhiskerSignalTrial.        
+        nof = []; % Number of Frames. Inherited from WhiskerSignalTrial.
+        poleUpFrames = []; % Inherited from WhiskerSignalTrial. first timepoint is 1, not 0. 2017/04/13 JK
+        poleMovingFrames = [];
         
-        videoFrames = []; % Inherited from WhiskerSignalTrial.
-        pole_available_frames = []; % Inherited from WhiskerSignalTrial. first timepoint is 1, not 0. 2017/04/13 JK
         thPolygon = []; % convex hull of the touch hyperplane at this specific pole position
         thTouchFrames = []; % touch frames derived from the touch hyperplane.
         thTouchChunks = {}; % divide thTouchFrames into chunks based on the continuity
@@ -139,7 +142,7 @@ classdef WhiskerTrialLite_2pad < handle
             
             p.addParameter('behavior',[], @(x) isa(x,'Solo.BehavTrial2padArray'));
             
-            p.addParameter('pole_pos',[], @isnumeric);
+            p.addParameter('motorPos',[], @isnumeric);
             p.addParameter('trial_type',{}, @ischar);
             p.addParameter('thPolygon',[], @isnumeric);
             p.addParameter('kappaTouchThreshold',[],@(x) isnumeric(x) && numel(x)==2); % 2 values for top-view and front-view kappa
@@ -179,20 +182,19 @@ classdef WhiskerTrialLite_2pad < handle
             obj.barPosOffset = w.barPosOffset; % Inherited from WhiskerSignalTrial. [x y], either 1X2 or nframesX2
             obj.barRadius = w.barRadius; % Inherited from WhiskerSignalTrial.  In pixels. Must be radius of bar tracked by the bar tracker.
             
-            if ~isempty(p.Results.behavior)
-                b_ind = find(cellfun(@(x) x.trialNum,p.Results.behavior.trials)==obj.trialNum);
-                if ~isempty(b_ind)
-                    obj.pole_pos = p.Results.behavior.trials{b_ind}.motorApPosition;
-                    obj.trialType = p.Results.behavior.trials{b_ind}.trialType;
-                end
-            end
+            obj.apPosition = w.apPosition;
+            obj.trialType = w.trialType;
+
             obj.thPolygon = p.Results.thPolygon;
                     
-            obj.pole_axes = w.pole_axes;
-            obj.intersect_coord = w.whisker_edge_coord;
-            obj.pole_available_frames = w.pole_available_frames;
+            obj.poleAxesUp = w.poleAxesUp;
+            obj.poleAxesMoving = w.poleAxesMoving;
+            obj.whiskerPoleIntersection = w.whiskerPoleIntersection;
+            obj.whiskerEdgeCoord = w.whiskerEdgeCoord;
+            obj.poleUpFrames = w.poleUpFrames;
+            obj.poleMovingFrames = w.poleMovingFrames;          
             
-            obj.videoFrames = w.videoFrames;
+            obj.nof = w.nof;
             
             for k=1:ntraj
                 tid = obj.trajectoryIDs(k);

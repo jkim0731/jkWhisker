@@ -11,7 +11,7 @@ classdef WhiskerSignalTrial < handle
     %
     properties
         trialNum = [];
-        trialType = NaN;
+        trialType = '';
         whiskerNames = {};  % whiskerNames and trajectoryIDs must be of same length
         trajectoryIDs = []; % with matching elements. 
         framePeriodInSec = 1/310; % 310 Hz

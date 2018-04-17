@@ -1,21 +1,21 @@
 
 %% basic information
-mice = {'JK041'};
-videoloc = 'C:\JK\';
+mice = {'JK025'};
+videoloc = 'Y:\Whiskernas\JK_temp\whisker\tracked\';
 if strcmp(videoloc(end),filesep)
     whisker_d = videoloc;
 else
     whisker_d = ([videoloc filesep]);
 end
-behavior_base_dir = 'C:\JK\';
+behavior_base_dir = 'Y:\Whiskernas\JK_temp\SoloData\';
 
 ppm = 17.81/2;
             % 'pxPerMm': 17.81002608 for telecentric lens
 ppm = ppm / 2; % for binning 2
             % 'pxPerMm': 10.56526073 for microVideo -------------------------------------------------------------------------------------------------------------------------------------lens
 % comment out when doing for all of the sessions in the mouse directory
-sessions = {[4:19,21:30]};  
-sessions_pre = {[1]};
+sessions = {[4,19]};  
+sessions_pre = {[]};
 
 all_session = 0; % 1 if using all sessions, 0 if using selected sessions
 networkfailtime = [];
