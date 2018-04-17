@@ -1,19 +1,21 @@
 % For 2pad (2-port angle distance), WT, WST, and WL is generated during prebuild_JK.m
 
 %% Setup whisker array builder 
+% behavior_base_dir = 'F:\SoloData\';
 behavior_base_dir = 'Y:\Whiskernas\JK_temp\SoloData\';
+% whisker_base_dir = 'F:\tracked\';
 whisker_base_dir = 'Y:\Whiskernas\JK_temp\whisker\tracked\';
 mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
 %%%%%%%%%%%%%%%%%%%%%% manual selection
 % steps = {[10:70],[20:80],[140:200],[140:200]};
 %%%%%%%%%%%%%%%%%%%%%% try as short as possible to reduce time next step
 
-presession = 1:2;
-sessionNum = 1:35;
+presession = [];
+sessionNum = 19;
 
 useGPU = 0;
 options.WindowStyle = 'normal';
-for mi = 2 : length(mice)
+for mi = 1 : length(mice)
     mouseName = mice{mi};
 %%
 for sessionInd = 1 : length(sessionNum)
@@ -30,10 +32,10 @@ for sessionInd = 1 : length(sessionNum)
         continue
     end    
     
-    if ~isempty(dir([whisker_d, '*touch_hp.mat']))
-        disp('touch hyperplane already calculated.')    
-        continue
-    end
+%     if ~isempty(dir([whisker_d, '*touch_hp.mat']))
+%         disp('touch hyperplane already calculated.')    
+%         continue
+%     end
 
     if exist('b','var')
         if strcmp(b{1}.mouseName, mouseName)
@@ -122,13 +124,9 @@ for sessionInd = 1 : length(sessionNum)
                 trial_nums{iservo,idist}(j) = bSession.trials{tt_ind(j)}.trialNum;
                 
                 load([temp_files{j},'_WST.mat']) % loading ws
-                poleTipCoords(:,j) = mean(ws.topPoleBottomRight(ws.poleUpFrames,:));
+                poleTipCoords(j,:) = mean(ws.topPoleBottomRight(ws.poleUpFrames,:));
                 apPosition(j) = bSession.trials{tt_ind(j)}.motorApPosition;
             end
-            
-            % AP motor position estimating and saving that to WST file
-            
-            
             
             ws = Whisker.WhiskerSignalTrialArray_2pad(whisker_d,'include_files',temp_files);            
             done_flag = 1; 
@@ -136,15 +134,15 @@ for sessionInd = 1 : length(sessionNum)
             while (done_flag)
                 intersect_3d_total = [];
                 for tnum = 1 : length(ws.trials)
-                    try        
-                        b_ind = find(cellfun(@(x) (x.trialNum == ws.trials{tnum}.trialNum), bSession.trials));
-                        top_ind = find(~isnan(ws.trials{tnum}.whiskerEdgeCoord(:,1)));
-                        front_ind = find(~isnan(ws.trials{tnum}.whiskerEdgeCoord(:,2)));
-                        intersect_ind = intersect(ws.trials{tnum}.pole_available_frames,intersect(top_ind,front_ind));
-                        intersect_3d_total = [intersect_3d_total; ws.trials{tnum}.whisker_edge_coord(intersect_ind,1), ws.trials{tnum}.whisker_edge_coord(intersect_ind,2), ones(length(intersect_ind),1)*bSession.trials{b_ind}.motorApPosition];
-                    catch
-                        fprintf('Skipping trial #%d because of index problems \n',tnum);        
-                    end
+%                     try        
+                        topInd = find(~isnan(ws.trials{tnum}.whiskerEdgeCoord(:,1)));
+                        frontInd = find(~isnan(ws.trials{tnum}.whiskerEdgeCoord(:,2)));
+                        apPositionInd = find(~isnan(ws.trials{tnum}.apPosition));
+                        noNaNInd = intersect(intersect(topInd, frontInd), apPositionInd);
+                        intersect_3d_total = [intersect_3d_total; ws.trials{tnum}.whiskerEdgeCoord(noNaNInd,1), ws.trials{tnum}.whiskerEdgeCoord(noNaNInd,2), ws.trials{tnum}.apPosition(noNaNInd)];
+%                     catch
+%                         fprintf('Skipping trial #%d because of index problems \n',tnum);        
+%                     end
                 end
                 intersect_3d_total = unique(round(intersect_3d_total,2),'rows');
                 psi1_answer = 'Yes'; % for overall psi1 detection            
@@ -431,15 +429,14 @@ for sessionInd = 1 : length(sessionNum)
                         xyz_psi2(:,xyz_psi2(2,:) < ymin_data) = [];
                         xyz_psi2(:,xyz_psi2(2,:) > ymax_data) = [];
                     end
+                    %%
                     figure, plot3(intersect_3d_total(:,1),intersect_3d_total(:,2), intersect_3d_total(:,3),'k.', 'MarkerSize',3), xlabel('top'), ylabel('front'), zlabel('pos'), hold on
-                    zmaxind = find(xyz_psi2(3,:) == max(xyz_psi2(3,:)));
+                    zmaxind = find(xyz_psi2(3,:) == max(xyz_psi2(3,:))); zminind = find(xyz_psi2(3,:) == min(xyz_psi2(3,:)));
                     for zi = 1 : length(zmaxind)
-                        xind = find(xyz_psi2(1,:) == xyz_psi2(1,zmaxind(zi)));                        
+                        xind = find(abs(xyz_psi2(1,:) - xyz_psi2(1,zmaxind(zi))) < 1);
                         [~, minzind] = min(xyz_psi2(3,xind));                        
-                        plot3(xyz_psi2(1,[zmaxind(zi), xind(minzind)]), xyz_psi2(2,[zmaxind(zi), xind(minzind)]),xyz_psi2(2,[zmaxind(zi), xind(minzind)]), 'r-')
+                        plot3(xyz_psi2(1,[zmaxind(zi), xind(minzind)]), xyz_psi2(2,[zmaxind(zi), xind(minzind)]), xyz_psi2(3,[zmaxind(zi), xind(minzind)]), 'r-')
                     end
-                    
-%                     plot3(xyz_psi2(1,:), xyz_psi2(2,:), xyz_psi2(3,:), 'r-')
 
                     %% ~ 0.5 min (depending on the length of "steps" and the size of xyz_psi2)
                     intersect_pix = round(intersect_3d_total);

@@ -235,11 +235,21 @@ classdef WhiskerTrialLite_2pad < handle
 %             thp2 = [2*thp2(1,:) - thp2(end,:); thp2; 2*thp2(end,:) - thp2(1,:)];
 %             obj.thPolygon = [thp1; thp2];            
             %%
-            obj.thTouchFrames = find(inpolygon(obj.intersect_coord(:,1),obj.intersect_coord(:,2), ...
+            A = viewmtx(psi1(iservo,idist),90-psi2(iservo,idist));
+            intersect_4d = [intersect_3d_total, ones(size(intersect_3d_total,1),1)]';
+            intersect_2d = A*intersect_4d;
+            intersect_2d = unique(round(intersect_2d(1:2,:)',2),'rows');
+            th_4d1 = [xyz_psi2(1,:) + hp_peaks{iservo, idist}(1);xyz_psi2(2:3,:);ones(1,size(xyz_psi2,2))];
+            th_2d1 = A*th_4d1;
+            th_2d1 = unique(th_2d1(1:2,:)','rows');
+            th_4d2 = [xyz_psi2(1,:) + hp_peaks{iservo, idist}(2);xyz_psi2(2:3,:);ones(1,size(xyz_psi2,2))];
+            th_2d2 = A*th_4d2;
+            th_2d2 = unique(th_2d2(1:2,:)','rows');
+
+            
+            
+            obj.thTouchFrames = find(inpolygon(obj.whiskerEdgeCoord(:,1),obj.whiskerEdgeCoord(:,2), ...
                 obj.thPolygon(:,1), obj.thPolygon(:,2)));
-            if ~isempty(obj.pole_available_frames)
-                obj.thTouchFrames = intersect(obj.pole_available_frames,obj.thTouchFrames);
-            end   
                         
             if isempty(obj.thTouchFrames)
                 obj.thTouchChunks = {};

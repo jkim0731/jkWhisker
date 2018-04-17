@@ -145,6 +145,7 @@ for i = 1 : length(angles)
                 end
                 load([wsArray.trials{k}.trackerFileName, '_WST.mat']) % loading ws
                 ws.apPosition = apPosition;
+                ws.slope = slope;
                 save([wsArray.trials{k}.trackerFileName, '_WST.mat'], 'ws') % saving ws            
             end
         end
