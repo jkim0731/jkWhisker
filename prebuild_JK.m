@@ -250,7 +250,114 @@ end
 
 %% Build WL (Finally)
 % it includes touch frame calculation
+cd(whisker_d)
+if all_session == 1
+    for mi = 1 : size(mice,2) % mouse index
+        cd(whisker_d)
+        sn = dir([whisker_d, mice{mi},'S*']);
+        for si = 1 : length(sn)
+            if sn(si).isdir
+                [mouseName, sessionName] = strtok(sn(si).name,'S');
+                behavior_d = [behavior_base_dir mouseName '\'];
+                if ~isempty(sessionName)
+                    if exist('b','var')
+                        if strcmp(b{1}.mouseName, mouseName)
+                            disp('using the same behavior file')
+                        else
+                            disp('loading a new behavior file')
+                            load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+                        end
+                    else
+                        load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+                    end
+                    b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
+                    b_session = b{b_ind};
+                    
+                    buildWL(whisker_d, b_session)
+                end
+            end
+        end
+        
+        cd(whisker_d)
+        sn_pre = dir([mice{mi},'pre*']);
+        for si = 1 : length(sn_pre)
+            cd(whisker_d)
+            if sn_pre(si).isdir
+                [mouseName, sessionName] = strtok(sn_pre(si).name,'pre');
+                behavior_d = [behavior_base_dir mouseName '\'];
+                if exist('b','var')
+                    if strcmp(b{1}.mouseName, mouseName)
+                        disp('using the same behavior file')
+                    else
+                        disp('loading a new behavior file')
+                        load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+                    end
+                else
+                    load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+                end
+                b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
+                b_session = b{b_ind};
+                
+                buildWL(whisker_d, b_session)
+            end
+        end
+        
+        
+    end
+else
+    for mi = 1 : size(mice,2) % mouse index            
+        mouseName = mice{mi};
+        if ~isempty(sessions{mi}) 
+            for j = 1 : length(sessions{mi})  
+                cd(whisker_d)
+                sessionName = sprintf('S%02d',sessions{mi}(j));
+                if exist([mouseName, sessionName],'dir')
+                    behavior_d = [behavior_base_dir mouseName '\'];
 
+                    if exist('b','var')
+                        if strcmp(b{1}.mouseName, mouseName)
+                            disp('using the same behavior file')
+                        else
+                            disp('loading a new behavior file')
+                            load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+                        end
+                    else
+                        load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+                    end
+                    b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
+                    b_session = b{b_ind};
+
+                    buildWL(whisker_d, b_session)
+                end
+            end
+        end
+        
+        if ~isempty(sessions_pre{mi})
+            for j = 1 : length(sessions_pre{mi})
+                sessionName = sprintf('pre%d',sessions_pre{mi}(j));
+                cd(whisker_d)
+                if exist([mouseName, sessionName],'dir')
+                    behavior_d = [behavior_base_dir mouseName '\'];
+
+                    if exist('b','var')
+                        if strcmp(b{1}.mouseName, mouseName)
+                            disp('using the same behavior file')
+                        else
+                            disp('loading a new behavior file')
+                            load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+                        end
+                    else
+                        load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+                    end
+                    b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
+                    b_session = b{b_ind};
+
+                    buildWL(whisker_d, b_session)
+                end
+            end
+        end
+    end
+end
 
 
 

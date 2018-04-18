@@ -122,7 +122,7 @@ for i = 1 : length(angles)
                 trialFns{k} = num2str(trialNums(k));
             end
 
-            wsArray = Whisker.WhiskerSignalTrialArray_2pad(wdir,'include_files',trialFns);
+            wsArray = Whisker.WhiskerSignalTrialArray_2pad(whisker_d,'include_files',trialFns);
     
             apPositions = zeros(length(wsArray),1);
             polePixVals = zeros(length(wsArray),2);
@@ -130,7 +130,7 @@ for i = 1 : length(angles)
                 apPositions(k) = wsArray.trials{k}.apUpPosition;
                 polePixVals(k,:) = wsArray.trials{k}.topPoleBottomRight(wsArray.trials{k}.poleUpFrames(round(length(wsArray.trials{k}.poleUpFrames)/2))); % value at the center of poleUpFrames
             end    
-            Calculate linear fit between euclidean distance between pixel values and differences in pole position values
+%             Calculate linear fit between euclidean distance between pixel values and differences in pole position values
             [~, baseInd] = max(apPositions);
             pixelDistances = sum((polePixVals - polePixVals(baseInd)).^2,2).^0.5;
             positionDiff = apPositions - apPositions(baseInd);

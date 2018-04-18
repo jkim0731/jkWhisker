@@ -40,6 +40,8 @@ classdef WhiskerTrial < handle
         % values in units of pixels.  We store both for speed later. If a mask will be specified to define
         % the arc-length origin it must be applied prior to populating polyFitsROI.
         % Populated by method fit_polys_roi().
+        % {x}{3} contains q(1) q(end) s(1) s(end). s contains pixel arc
+        % lengths and q are corresponding values in [0 1] for polyval.
         %
         
         faceData = {}; % {[frameNumbers],{[x1, y1],[x2,y2], etc, one per frame}}
@@ -101,7 +103,7 @@ classdef WhiskerTrial < handle
         %                      values in R to NaN.
         maskTreatment = 'maskNaN'; % default defined in loadobj() also.
         
-        framePeriodInSec = 0.003225806451613;
+        framePeriodInSec = 1/310;
         mouseName = '';
         sessionName = '';
         trackerFileName = '';
@@ -1568,7 +1570,9 @@ classdef WhiskerTrial < handle
             % then save the new WhiskerTrial.
             %
             %
-            polyDegree = 2;
+%             polyDegree = 2;
+            polyDegree = 5; % changed to fully capture whisker bending in different pole angles 2018/04/17 JK
+            
             
             numCoeff = polyDegree+1;
             numTid = length(obj.trajectoryIDs);

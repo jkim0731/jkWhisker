@@ -26,6 +26,7 @@ classdef WhiskerTrialLite_2pad < handle
         useFlag = 1;
         
         rInMm = [];
+        frontRInMm = [];
         
         time = {};
         deltaKappa = {};  
@@ -75,7 +76,7 @@ classdef WhiskerTrialLite_2pad < handle
     
         
     methods (Access = public)
-        function obj = WhiskerTrialLite_2pad(w,varargin)
+        function obj = WhiskerTrialLite_2pad(ws,varargin)
             %
             %
             %
@@ -130,8 +131,8 @@ classdef WhiskerTrialLite_2pad < handle
             end
             
             p = inputParser;
-            p.addRequired('w', @(x) isa(x,'Whisker.WhiskerSignalTrial_2pad'));                      
-            p.addParameter('r_in_mm', 1, @(x) isnumeric(x) && numel(x)==1);
+            p.addRequired('ws', @(x) isa(x,'Whisker.WhiskerSignalTrial_2pad'));                      
+            p.addParameter('r_in_mm', 3, @(x) isnumeric(x) && numel(x)==1);
             p.addParameter('calc_forces', false, @islogical);
        
             p.addParameter('whisker_radius_at_base', 33.5, @isnumeric);
@@ -148,21 +149,22 @@ classdef WhiskerTrialLite_2pad < handle
             p.addParameter('kappaTouchThreshold',[],@(x) isnumeric(x) && numel(x)==2); % 2 values for top-view and front-view kappa
             p.addParameter('durationThreshold',[], @isnumeric);
             p.addParameter('mirrorAngle', [], @isnumeric);
+            p.addParameter('projMat', [], @(x) isnumeric(x) && length(size(x))==4);
             
-            p.parse(w,varargin{:});
+            p.parse(ws,varargin{:});
             
-            obj.trialNum = w.trialNum;
-            obj.trialType = w.trialType;
-            obj.whiskerNames = w.whiskerNames;
-            obj.trajectoryIDs = w.trajectoryIDs;
-            obj.framePeriodInSec = w.framePeriodInSec;
-            obj.pxPerMm = w.pxPerMm;
-            obj.mouseName = w.mouseName;
-            obj.sessionName = w.sessionName;
-            obj.trackerFileName = w.trackerFileName;
-            obj.follicleCoordsX = w.follicleCoordsX;
-            obj.follicleCoordsY = w.follicleCoordsY;  
-            obj.useFlag = w.useFlag;
+            obj.trialNum = ws.trialNum;
+            obj.trialType = ws.trialType;
+            obj.whiskerNames = ws.whiskerNames;
+            obj.trajectoryIDs = ws.trajectoryIDs;
+            obj.framePeriodInSec = ws.framePeriodInSec;
+            obj.pxPerMm = ws.pxPerMm;
+            obj.mouseName = ws.mouseName;
+            obj.sessionName = ws.sessionName;
+            obj.trackerFileName = ws.trackerFileName;
+            obj.follicleCoordsX = ws.follicleCoordsX;
+            obj.follicleCoordsY = ws.follicleCoordsY;  
+            obj.useFlag = ws.useFlag;
             obj.rInMm = p.Results.r_in_mm;
             
             ntraj = length(obj.trajectoryIDs);
@@ -178,28 +180,29 @@ classdef WhiskerTrialLite_2pad < handle
             obj.M0 = cell(1,ntraj); % Moment at the follicle.
             obj.meanKappa = cell(1,ntraj); % Mean kappa over the ROI.
           
-            obj.barPos = w.barPos; %  Inherited from WhiskerSignalTrial. [frameNum XPosition YPosition]
-            obj.barPosOffset = w.barPosOffset; % Inherited from WhiskerSignalTrial. [x y], either 1X2 or nframesX2
-            obj.barRadius = w.barRadius; % Inherited from WhiskerSignalTrial.  In pixels. Must be radius of bar tracked by the bar tracker.
+            obj.barPos = ws.barPos; %  Inherited from WhiskerSignalTrial. [frameNum XPosition YPosition]
+            obj.barPosOffset = ws.barPosOffset; % Inherited from WhiskerSignalTrial. [x y], either 1X2 or nframesX2
+            obj.barRadius = ws.barRadius; % Inherited from WhiskerSignalTrial.  In pixels. Must be radius of bar tracked by the bar tracker.
             
-            obj.apPosition = w.apPosition;
-            obj.trialType = w.trialType;
+            obj.apPosition = ws.apPosition;
+            obj.trialType = ws.trialType;
 
             obj.thPolygon = p.Results.thPolygon;
                     
-            obj.poleAxesUp = w.poleAxesUp;
-            obj.poleAxesMoving = w.poleAxesMoving;
-            obj.whiskerPoleIntersection = w.whiskerPoleIntersection;
-            obj.whiskerEdgeCoord = w.whiskerEdgeCoord;
-            obj.poleUpFrames = w.poleUpFrames;
-            obj.poleMovingFrames = w.poleMovingFrames;          
+            obj.poleAxesUp = ws.poleAxesUp;
+            obj.poleAxesMoving = ws.poleAxesMoving;
+            obj.whiskerPoleIntersection = ws.whiskerPoleIntersection;
+            obj.whiskerEdgeCoord = ws.whiskerEdgeCoord;
+            obj.poleUpFrames = ws.poleUpFrames;
+            obj.poleMovingFrames = ws.poleMovingFrames;          
             
-            obj.nof = w.nof;
+            obj.nof = ws.nof;
+            obj.frontRInMm = obj.get_frontRInMm;
             
             for k=1:ntraj
                 tid = obj.trajectoryIDs(k);
                 
-                obj.time{k} = w.get_time(tid);
+                obj.time{k} = ws.get_time(tid);
                 
                 if all(isnan(obj.time{k})) % For instance with TIDs used for contact annotation, may not have any observations.
                     obj.deltaKappa{k} = NaN;
@@ -217,17 +220,24 @@ classdef WhiskerTrialLite_2pad < handle
                 end
                
                 if p.Results.calc_forces == true
-                   [obj.M0{k},obj.Faxial{k},t,obj.deltaKappa{k},obj.Fnorm{k},...
+                   [obj.M0{k},obj.Faxial{k},~,obj.deltaKappa{k},obj.Fnorm{k},...
                        obj.thetaAtBase{k},obj.thetaAtContact{k},obj.distanceToPoleCenter{k}, obj.meanKappa{k}, obj.Flateral{k}] = ...
-                       w.calc_M0_Faxial(tid,p.Results.r_in_mm,p.Results.whisker_radius_at_base, p.Results.whisker_length,...
+                       ws.calc_M0_Faxial(tid,p.Results.r_in_mm,p.Results.whisker_radius_at_base, p.Results.whisker_length,...
                        p.Results.youngs_modulus,p.Results.baseline_time_or_kappa_value,p.Results.proximity_threshold);                    
                 else
                     % Should consolidate into single function to optimize the following: 
-                    [obj.deltaKappa{k},~,~,~] = w.get_kappa_at_roi_point(tid,p.Results.r_in_mm);
-                    [obj.thetaAtBase{k},~] = w.get_theta_at_base(tid);
-                    obj.thetaAtBase{k} = obj.thetaAtBase{k} + p.Results.mirrorAngle;
+                    if k == 1
+                        [obj.deltaKappa{k},~,~,~] = ws.get_kappa_at_roi_point(tid,p.Results.r_in_mm);
+                        [obj.thetaAtBase{k},~] = ws.get_theta_at_base(tid);
+                        obj.thetaAtBase{k} = obj.thetaAtBase{k} + p.Results.mirrorAngle;
+                    else % k == 2
+                        [obj.deltaKappa{k},~,~,~] = ws.get_kappa_at_roi_point(tid,obj.frontRInMm);
+                        [obj.thetaAtBase{k},~] = ws.get_theta_at_base(tid);
+                    end
+                    
                 end
             end
+
             %% Temporary remedy 2017/05/30
 %             thp1 = obj.thPolygon(1:end/2,:);
 %             thp1 = [2*thp1(1,:) - thp1(end,:); thp1; 2*thp1(end,:) - thp1(1,:)];
@@ -235,22 +245,20 @@ classdef WhiskerTrialLite_2pad < handle
 %             thp2 = [2*thp2(1,:) - thp2(end,:); thp2; 2*thp2(end,:) - thp2(1,:)];
 %             obj.thPolygon = [thp1; thp2];            
             %%
-            A = viewmtx(psi1(iservo,idist),90-psi2(iservo,idist));
+                       
+            topInd = find(~isnan(ws.whiskerEdgeCoord(:,1)));
+            frontInd = find(~isnan(ws.whiskerEdgeCoord(:,2)));
+            apPositionInd = find(~isnan(ws.apPosition));
+            noNaNInd = intersect(intersect(topInd, frontInd), apPositionInd);
+            intersect_3d_total = [ws.whiskerEdgeCoord(noNaNInd,1), ws.whiskerEdgeCoord(noNaNInd,2), ws.apPosition(noNaNInd)];
+            
             intersect_4d = [intersect_3d_total, ones(size(intersect_3d_total,1),1)]';
-            intersect_2d = A*intersect_4d;
-            intersect_2d = unique(round(intersect_2d(1:2,:)',2),'rows');
-            th_4d1 = [xyz_psi2(1,:) + hp_peaks{iservo, idist}(1);xyz_psi2(2:3,:);ones(1,size(xyz_psi2,2))];
-            th_2d1 = A*th_4d1;
-            th_2d1 = unique(th_2d1(1:2,:)','rows');
-            th_4d2 = [xyz_psi2(1,:) + hp_peaks{iservo, idist}(2);xyz_psi2(2:3,:);ones(1,size(xyz_psi2,2))];
-            th_2d2 = A*th_4d2;
-            th_2d2 = unique(th_2d2(1:2,:)','rows');
-
+            intersect_2d = projMat*intersect_4d;
             
-            
-            obj.thTouchFrames = find(inpolygon(obj.whiskerEdgeCoord(:,1),obj.whiskerEdgeCoord(:,2), ...
-                obj.thPolygon(:,1), obj.thPolygon(:,2)));
-                        
+%             obj.thTouchFrames = find(inpolygon(obj.whiskerEdgeCoord(:,1),obj.whiskerEdgeCoord(:,2), ...
+%                 obj.thPolygon(:,1), obj.thPolygon(:,2)));
+            touchInd = inpolygon(intersect_2d(1,:)', intersect_2d(2,:)',    obj.thPolygon(:,1). obj.thPolygon(:,2));
+            obj.thTouchFrames = noNaNInd(touchInd);
             if isempty(obj.thTouchFrames)
                 obj.thTouchChunks = {};
             else
@@ -263,6 +271,103 @@ classdef WhiskerTrialLite_2pad < handle
             %% Applying threshold (But... how to determine the threshold?)
             
             
+        end
+        
+        function frontRInMm = get_frontRInMm(obj)
+            [~,~,y,x,~] = ws.get_theta_kappa_at_point(0,obj.rInMm); % x and y in (1,nframes)
+            [~,~,y0,x0,~] = ws.get_theta_kappa_at_point(0,0);
+            ratio = zeros(1,length(x));
+            for i = 1 : length(x)
+                xtip = x0(i) + (x(i)-x0(i))*10;
+                ytip = y0(i) + (y(i)-y0(i))*10;                
+                C1 = [xtip, x0(i); ytip, y0(i)];
+                C2 = [ws.poleAxesUp{1}(2,:);ws.poleAxesUp{1}(1,:)];
+                
+                P = Whisker.InterX(C1,C2); % Find points where whisker and mask curves intersect. Slower but more
+                                           % accurate version that isn't limited in resolution by the number of
+                                           % points whisker and mask are evaluated at.
+                if isempty(P) % stretch the pole axis by 3X
+                    C2 = [ws.poleAxesUp{1}(2,1) - (ws.poleAxesUp{1}(2,end) - ws.poleAxesUp{1}(2,1)), ws.poleAxesUp{1}(2,end) + (ws.poleAxesUp{1}(2,end) - ws.poleAxesUp{1}(2,1));
+                        ws.poleAxesUp{1}(1,1) - (ws.poleAxesUp{1}(1,end) - ws.poleAxesUp{1}(1,1)), ws.poleAxesUp{1}(1,end) + (ws.poleAxesUp{1}(1,end) - ws.poleAxesUp{1}(1,1))];
+                    P = Whisker.InterX(C1,C2);
+                end
+                if isempty(P)
+                    ratio(k) = nan;
+                else
+                    if size(P,2) > 1   % Don't need for faster version, which handles this.
+                        disp('Found more than 1 intersection of whisker and pole edge (top-view for calculating the ratio); using only first.')
+                        P = P(:,1);
+                    end
+                    ratio(k) = sqrt((P(1) - x(i))^2 + (P(2) - y(i))^2) / sqrt((P(1) - x0(i))^2 + (P(2) - y0(i))^2); 
+                end
+            end
+            
+            [~,~,y0,x0,~] = ws.get_theta_kappa_at_point(1,0);
+            frontRInMm = zeros(length(obj.time{2}),1);
+            noNaNInd = ismember(obj.time{2},obj.time{1});
+            for i = 1 : length(noNaNInd)
+                if noNaNInd == 0
+                    frontRInMm(i) = NaN;
+                else                    
+                    C1 = [x0(i), x0(i); ws.imagePixelDimsXY(2), ws.imagePixelDimsXY(1)];
+                    C2 = [ws.poleAxesUp{2}(2,:);ws.poleAxesUp{2}(1,:)];
+                    P = Whisker.InterX(C1,C2);
+                    if isempty(P) % stretch the pole axis by 3X
+                        C2 = [ws.poleAxesUp{1}(2,1) - (ws.poleAxesUp{1}(2,end) - ws.poleAxesUp{1}(2,1)), ws.poleAxesUp{1}(2,end) + (ws.poleAxesUp{1}(2,end) - ws.poleAxesUp{1}(2,1));
+                            ws.poleAxesUp{1}(1,1) - (ws.poleAxesUp{1}(1,end) - ws.poleAxesUp{1}(1,1)), ws.poleAxesUp{1}(1,end) + (ws.poleAxesUp{1}(1,end) - ws.poleAxesUp{1}(1,1))];
+                        P = Whisker.InterX(C1,C2);
+                    end
+                    topInd = find(obj.time{1} == obj.time{2}(i),1,'first');
+                    if ~isempty(P) && ~isempty(topInd)
+                        if size(P,2) > 1
+                            disp('Found more than 1 intersection of whisker and pole edge (front-view); using only first.')
+                            P = P(:,1);
+                        end
+                        rinmmEdge = [ws.poleAxesUp{2}(2,:); ws.poleAxesUp{2}(1,:) + ratio(topInd) * (y0(i) - P(2))];
+                        q = linspace(0,1);
+                        frontx = polyval(ws.polyFits{2}{1}(i,:), q);
+                        fronty = polyval(ws.polyFits{2}{2}(i,:), q);
+                        C1 = [frontx; fronty];
+                        P2 = Whisker.InterX(C1, rinmmEdge);
+                        if isempty(P2)                            
+                            rinmmEdge = [ws.poleAxesUp{2}(2,1) - (ws.poleAxesUp{2}(2,end) - ws.poleAxesUp{2}(2,1)), ws.poleAxesUp{2}(2,end) + (ws.poleAxesUp{2}(2,end) - ws.poleAxesUp{2}(2,1));
+                                        ws.poleAxesUp{2}(1,1) - (ws.poleAxesUp{2}(1,end) - ws.poleAxesUp{2}(1,1)), ws.poleAxesUp{2}(1,end) + (ws.poleAxesUp{2}(1,end) - ws.poleAxesUp{2}(1,1))];
+                            P2 = Whisker.InterX(rinmmEdge, [frontx;fronty]);
+                        end
+                        if ~isempty(P2)
+                            if size(P,2) > 1
+                                disp('Found more than 1 intersection of whisker and fictional pole edge (front-view); using only first.')
+                                P2 = P2(:,1);
+                            end
+                            
+                            pxDot = polyder(frontx);
+                            pxDoubleDot = polyder(pxDot);
+
+                            pyDot = polyder(fronty);
+                            pyDoubleDot = polyder(pyDot);
+
+                            xDot = polyval(pxDot,q);
+                            yDot = polyval(pyDot,q);
+
+                            dq = [0 diff(q)];
+                
+                            % Arc length as a function of q, after integration below:
+                            R = cumsum(sqrt(xDot.^2 + yDot.^2) .* dq); % arc length segments, in pixels, times dq.
+
+                            C = C1 - repmat([x0(i);y0(i)],[1 size(C1,2)]);
+                            err = sqrt(C(1,:).^2 + C(2,:).^2);
+                            ind = err==min(err);
+                            
+                            R = R - R(ind);
+                            
+                            C = C1 - repmat(P2, [1 size(C1,2)]);
+                            err2 = sqrt(C(1,:).^2 + C(2,:).^2);
+                            ind2 = err2==min(err2);
+                            frontRInMm(i) = R(ind2)/ws.pxPerMm;
+                        end                        
+                    end
+                end
+            end
         end
         
         function chunks = get_chunks(frames)

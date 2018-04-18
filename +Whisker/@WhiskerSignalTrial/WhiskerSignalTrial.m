@@ -32,6 +32,9 @@ classdef WhiskerSignalTrial < handle
                           % values in units of pixels.  We store both for speed later. If a mask will be specified to define
                           % the arc-length origin it must be applied prior to populating polyFitsROI.
                           % Populated by method fit_polys_roi().
+                            % {x}{3} contains q(1) q(end) s(1) s(end). s contains pixel arc
+                            % lengths and q are corresponding values in [0 1] for polyval.
+                            %
 
         % polyFitsMask:
         % Cell array of length length(trajectoryIDs), of format:
@@ -2756,7 +2759,7 @@ classdef WhiskerSignalTrial < handle
             end
         end
         
-        function [kappap,y,x,t] = get_kappa_at_roi_point(obj,tid,r_in_mm)
+        function [kappap,y,x,t] = get_kappa_at_roi_point(obj,tid,r_in_mm_list)
             %
             %   [kappap,y,x,t] = get_kappa_at_roi_point(obj,tid,r_in_mm)
             %
@@ -2780,6 +2783,11 @@ classdef WhiskerSignalTrial < handle
             %
             %       t: The corresponding times of each observation.
             %
+            
+            %             Update: 
+            %             r_in_mm treated as an array (nframes,1) to accomodate front-view kappa calculation
+            %             2018/04/17 JK
+                        
             if isnumeric(tid) % Trajectory ID specified.
                 ind = find(obj.trajectoryIDs == tid);
             elseif ischar(tid) % Whisker name specified.
@@ -2792,9 +2800,14 @@ classdef WhiskerSignalTrial < handle
             if isempty(ind)
                 error('Could not find specified trajectory ID.')
             end
+            
             t = obj.time{ind};
             f = t / obj.framePeriodInSec;
             nframes = length(f);
+            
+            if length(r_in_mm_list) == 1 
+                r_in_mm_list = ones(nframes,1)*r_in_mm_list;
+            end            
             
             [R,KAPPA,Y,X] = obj.arc_length_and_kappa_in_roi(tid); 
             
@@ -2803,18 +2816,25 @@ classdef WhiskerSignalTrial < handle
             y = zeros(1,nframes);
             
             for k=1:nframes
-                r = R{k} / obj.pxPerMm;
-                rval = min(r(r >= r_in_mm)); % Take the minimum value >= r_in_mm.
-                if isempty(rval)
+                if isnan(r_in_mm_list(k))
                     disp('r_in_mm not found within fitted whisker ROI; setting to NaN for this frame.')
                     kappap(k) = NaN;
                     y(k) = NaN;
                     x(k) = NaN;
                 else
-                    ind = find(r==rval,1,'first');
-                    kappap(k) = KAPPA{k}(ind);
-                    y(k) = Y{k}(ind);
-                    x(k) = X{k}(ind);
+                    r = R{k} / obj.pxPerMm;
+                    rval = min(r(r >= r_in_mm_list(k))); % Take the minimum value >= r_in_mm.
+                    if isempty(rval)
+                        disp('r_in_mm not found within fitted whisker ROI; setting to NaN for this frame.')
+                        kappap(k) = NaN;
+                        y(k) = NaN;
+                        x(k) = NaN;
+                    else
+                        ind = find(r==rval,1,'first');
+                        kappap(k) = KAPPA{k}(ind);
+                        y(k) = Y{k}(ind);
+                        x(k) = X{k}(ind);
+                    end
                 end
             end
         end            

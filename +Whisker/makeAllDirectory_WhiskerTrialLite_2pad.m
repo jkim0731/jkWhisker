@@ -85,7 +85,6 @@ p.addParameter('hp_peaks',{}, @iscell);
 p.addParameter('touch_hp',{}, @iscell);
 p.addParameter('touch_boundary_thickness', 1, @(x) isnumeric(x) && numel(x)==1);
 p.addParameter('servo_distance_pair',{}, @iscell);
-p.addParameter('mirrorAngle', [], @isnumeric); % angle of the mirror tilted compared to the mouse body axis
 
 p.parse(d,varargin{:});
 
@@ -141,7 +140,7 @@ if ~isempty(fnall)
                         'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
                         'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
                         'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
-                        'proximity_threshold',p.Results.proximity_threshold,'pole_pos',pole_pos, 'mirrorAngle', p.Results.mirrorAngle);
+                        'proximity_threshold',p.Results.proximity_threshold,'pole_pos',pole_pos, 'mirrorAngle', ws.slope);
                 else
                     angle = p.Results.behavior.trials{b_ind}.servoAngle;
                     distance = p.Results.behavior.trials{b_ind}.motorDistance;
@@ -165,7 +164,7 @@ if ~isempty(fnall)
                         'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
                         'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
                         'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
-                        'proximity_threshold',p.Results.proximity_threshold,'thPolygon',thPolygon', 'mirrorAngle', p.Results.mirrorAngle);
+                        'proximity_threshold',p.Results.proximity_threshold,'thPolygon',thPolygon', 'mirrorAngle', ws.slope, 'projMat', A);
                 end
                 outfn = [fn '_WL_2pad.mat'];
 
@@ -185,7 +184,7 @@ if ~isempty(fnall)
                         'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
                         'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
                         'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
-                        'proximity_threshold',p.Results.proximity_threshold,'pole_pos',pole_pos, 'mirrorAngle', p.Results.mirrorAngle);
+                        'proximity_threshold',p.Results.proximity_threshold,'pole_pos',pole_pos, 'mirrorAngle', ws.slope);
                 else
                     angle = p.Results.behavior.trials{b_ind}.servoAngle;
                     distance = p.Results.behavior.trials{b_ind}.motorDistance;
@@ -209,7 +208,7 @@ if ~isempty(fnall)
                         'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
                         'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
                         'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
-                        'proximity_threshold',p.Results.proximity_threshold,'thPolygon',thPolygon', 'mirrorAngle', p.Results.mirrorAngle);
+                        'proximity_threshold',p.Results.proximity_threshold,'thPolygon',thPolygon', 'mirrorAngle', ws.slope, 'projMat', A);
                 end
                 outfn = [fn '_WL_2pad.mat'];
 
