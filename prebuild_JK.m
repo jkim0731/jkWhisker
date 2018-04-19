@@ -1,23 +1,24 @@
 
 %% basic information
 mice = {'JK025'};
-videoloc = 'Y:\Whiskernas\JK_temp\whisker\tracked\';
+videoloc = 'F:\tracked\';
 if strcmp(videoloc(end),filesep)
     whisker_d = videoloc;
 else
     whisker_d = ([videoloc filesep]);
 end
-behavior_base_dir = 'Y:\Whiskernas\JK_temp\SoloData\';
+behavior_base_dir = 'F:\SoloData\';
 
 ppm = 17.81/2;
             % 'pxPerMm': 17.81002608 for telecentric lens
-ppm = ppm / 2; % for binning 2
-            % 'pxPerMm': 10.56526073 for microVideo -------------------------------------------------------------------------------------------------------------------------------------lens
 % comment out when doing for all of the sessions in the mouse directory
-sessions = {[4,19]};  
-sessions_pre = {[]};
 
-all_session = 0; % 1 if using all sessions, 0 if using selected sessions
+rInMm = 3; % mm from the mask along the whisker to calculate delta kappa
+
+sessions = {[1:9]};  
+sessions_pre = {[1]};
+
+all_session = 1; % 1 if using all sessions, 0 if using selected sessions
 networkfailtime = [];
 %% Define follicle points and masks
 % saves follicle_n_mask.mat file consists of variables 'maskx','masky','width', 'height', and 'follicle_first'
@@ -272,8 +273,8 @@ if all_session == 1
                     end
                     b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                     b_session = b{b_ind};
-                    
-                    buildWL(whisker_d, b_session)
+                    wd = [whisker_d, mouseName, sessionName];
+                    buildWL(wd, b_session, rInMm)
                 end
             end
         end
@@ -297,8 +298,8 @@ if all_session == 1
                 end
                 b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                 b_session = b{b_ind};
-                
-                buildWL(whisker_d, b_session)
+                wd = [whisker_d, mouseName, sessionName];
+                buildWL(wd, b_session, rInMm)
             end
         end
         
@@ -326,8 +327,8 @@ else
                     end
                     b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                     b_session = b{b_ind};
-
-                    buildWL(whisker_d, b_session)
+                    wd = [whisker_d, mouseName, sessionName];
+                    buildWL(wd, b_session, rInMm)
                 end
             end
         end
@@ -351,8 +352,8 @@ else
                     end
                     b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                     b_session = b{b_ind};
-
-                    buildWL(whisker_d, b_session)
+                    wd = [whisker_d, mouseName, sessionName];
+                    buildWL(wd, b_session, rInMm)
                 end
             end
         end

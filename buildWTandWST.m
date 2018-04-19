@@ -19,8 +19,8 @@ function nft = buildWTandWST(mouseName, sessionName, d, bSession, ppm)
     
     
     cd(whisker_d)
-%     delete *_WT.mat
-%     delete *_WST.mat
+    delete *_WT.mat
+    delete *_WST.mat
     delete *_errorWST.mat
     delete *_WL_2pad.mat
     
@@ -98,7 +98,6 @@ function nft = buildWTandWST(mouseName, sessionName, d, bSession, ppm)
 %     end 
 % end
 
-
 % assigning frame-by-frame AP positions
 wstList = dir('*_WST.mat');
 wstNums = zeros(length(wstList),1);
@@ -128,12 +127,16 @@ for i = 1 : length(angles)
             polePixVals = zeros(length(wsArray),2);
             for k = 1 : length(wsArray)
                 apPositions(k) = wsArray.trials{k}.apUpPosition;
-                polePixVals(k,:) = wsArray.trials{k}.topPoleBottomRight(wsArray.trials{k}.poleUpFrames(round(length(wsArray.trials{k}.poleUpFrames)/2))); % value at the center of poleUpFrames
+                polePixVals(k,:) = wsArray.trials{k}.topPoleBottomRight(wsArray.trials{k}.poleUpFrames(round(length(wsArray.trials{k}.poleUpFrames)/2)),:); % value at the center of poleUpFrames
             end    
 %             Calculate linear fit between euclidean distance between pixel values and differences in pole position values
             [~, baseInd] = max(apPositions);
             pixelDistances = sum((polePixVals - polePixVals(baseInd)).^2,2).^0.5;
             positionDiff = apPositions - apPositions(baseInd);
+            
+            poleImP = polyfit(polePixVals(:,1), polePixVals(:,2), 1);
+            mirrorAngle = atand(-poleImP(1));
+            
             p = polyfit(pixelDistances , positionDiff, 1); % linear fitting
             slope = p(1);        
             for k = 1 : length(wsArray)
@@ -145,12 +148,14 @@ for i = 1 : length(angles)
                 end
                 load([wsArray.trials{k}.trackerFileName, '_WST.mat']) % loading ws
                 ws.apPosition = apPosition;
-                ws.slope = slope;
+                ws.mirrorAngle = mirrorAngle;
                 save([wsArray.trials{k}.trackerFileName, '_WST.mat'], 'ws') % saving ws            
             end
         end
     end
 end
+
+
 
 
 cd(curr_d)
