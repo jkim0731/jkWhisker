@@ -34,14 +34,14 @@ else
         v = VideoReader([videoFn,'.mp4']);
     end
 end
-targetWidth = round(v.Width*wFactorTop):v.Width;
+targetWidth = round(v.Width*wFactorTop):v.Width-10;
 targetHeight = 10:round(v.Height*hFactorTop);
 rowSub = ones(length(targetWidth),1)*targetHeight;
 rowSub = rowSub(:);
 colSub = repmat(targetWidth,[1,length(targetHeight)]);
 topTargetInd = sub2ind([v.Height, v.Width], rowSub, colSub');
 
-targetWidth = 1:round(v.Width*wFactorFront);
+targetWidth = 10:round(v.Width*wFactorFront);
 targetHeight = 10:round(v.Height*hFactorFront);
 rowSub = ones(length(targetWidth),1)*targetHeight;
 rowSub = rowSub(:);
