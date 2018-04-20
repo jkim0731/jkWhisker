@@ -22,7 +22,7 @@ wFactorTop = 0.5;
 hFactorTop = 0.5;
 % targeting left top ~1/5.6 of the whole FOV for front-view pole tracking
 wFactorFront = 0.3;
-hFactorFront = 0.6;
+hFactorFront = 0.55;
 
 %% Initialization
 if isnumeric(videoFn)
