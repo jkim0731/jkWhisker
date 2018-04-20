@@ -1,13 +1,13 @@
 
 %% basic information
-mice = {'JK025'};
-videoloc = 'F:\tracked\';
+mice = {'JK041'};
+videoloc = 'C:\JK\';
 if strcmp(videoloc(end),filesep)
     whisker_d = videoloc;
 else
     whisker_d = ([videoloc filesep]);
 end
-behavior_base_dir = 'F:\SoloData\';
+behavior_base_dir = 'C:\JK\';
 
 ppm = 17.81/2;
             % 'pxPerMm': 17.81002608 for telecentric lens

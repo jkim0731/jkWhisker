@@ -35,14 +35,14 @@ else
     end
 end
 targetWidth = round(v.Width*wFactorTop):v.Width;
-targetHeight = 1:round(v.Height*hFactorTop);
+targetHeight = 10:round(v.Height*hFactorTop);
 rowSub = ones(length(targetWidth),1)*targetHeight;
 rowSub = rowSub(:);
 colSub = repmat(targetWidth,[1,length(targetHeight)]);
 topTargetInd = sub2ind([v.Height, v.Width], rowSub, colSub');
 
 targetWidth = 1:round(v.Width*wFactorFront);
-targetHeight = 1:round(v.Height*hFactorFront);
+targetHeight = 10:round(v.Height*hFactorFront);
 rowSub = ones(length(targetWidth),1)*targetHeight;
 rowSub = rowSub(:);
 colSub = repmat(targetWidth,[1,length(targetHeight)]);
@@ -77,10 +77,12 @@ for i = 1 : nof
         end
         btempTop = zeros(size(btempTop),'logical');
         btempTop(bccTop.PixelIdxList{bccind}) = 1;
-        bccTop = bwconncomp(btempTop);                    
-        s = regionprops(bccTop,'Extrema');        
-        topPix(i,:) = (floor(s.Extrema(5,:)) + floor(s.Extrema(6,:)))/2;
-        topPixforcheck(i,:) = floor(s.Extrema(4,:));
+        bccTop = bwconncomp(btempTop);
+        if length(bccTop.PixelIdxList{1}) > 50
+            s = regionprops(bccTop,'Extrema');        
+            topPix(i,:) = (floor(s.Extrema(5,:)) + floor(s.Extrema(6,:)))/2;
+            topPixforcheck(i,:) = floor(s.Extrema(4,:));
+        end
     end    
     
     candid = find(cellfun(@(x) length(intersect(x,frontTargetInd)), bcc.PixelIdxList));
@@ -98,9 +100,11 @@ for i = 1 : nof
         end
         btempFront = zeros(size(btempFront),'logical');
         btempFront(bccFront.PixelIdxList{bccind}) = 1;
-        bccFront = bwconncomp(btempFront);                    
-        s = regionprops(bccFront,'Extrema');
-        frontPix(i,:) = floor(s.Extrema(7,:));
+        bccFront = bwconncomp(btempFront);    
+        if length(bccFront.PixelIdxList{1}) > 50
+            s = regionprops(bccFront,'Extrema');
+            frontPix(i,:) = floor(s.Extrema(7,:));
+        end
     end        
 end
 
@@ -143,6 +147,7 @@ if ~isempty(candid)
     if angle~=90 % if it's NOT 90 degrees
         topPole(:,floor(s.Extrema(4,1))-7:end) = 0; % So, remove right-most 8 columns of the image from the pole. To remove tip (or kink) noise.
         bccTop = bwconncomp(topPole);
+
         if bccTop.NumObjects > 1
             maxYval = zeros(bccTop.NumObjects,1);
             for i = 1 : bccTop.NumObjects
@@ -159,6 +164,7 @@ if ~isempty(candid)
         bccTop = bwconncomp(topPole);
         s = regionprops(bccTop,'Extrema');        
         topSlope = (s.Extrema(4,2) - s.Extrema(5,2))/(s.Extrema(4,1) - s.Extrema(5,1));
+        
     else % if it's 90 degrees, calculate slope based on the pole movement
         % 5 frames before and after pole up
         frames = [poleUpFrames(1)-5:poleUpFrames(3),poleUpFrames(end-2):poleUpFrames(end)+5];

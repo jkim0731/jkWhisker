@@ -156,8 +156,8 @@ end
 
 if ~isempty(fnall)
     if exist('parfor','builtin') % Parallel Computing Toolbox is installed.
-        parfor k=1:nfiles
-%         for k=1:nfiles
+%         parfor k=1:nfiles
+        for k=1:nfiles
             fn = fnall{k};
             disp(['Processing .whiskers file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
 %             try % An error found during building .whiskers file. Whisker tracker error, so having a way out of using that trial
