@@ -9,7 +9,7 @@ classdef WhiskerTrial_2pad < Whisker.WhiskerTrial
         poleMovingFrames = [];
         poleAxesUp = cell(1,2); % {1} for top-view, {2} for front-view
         poleAxesMoving = {}; % axes for poles during moving. cell(nframes,2). only from poleMovingFrames
-        topPoleBottomRight = []; % frame-by-frame bottom-right pixel value in width (x-axis of the video) of the top-view pole. NaN if the pole is out of sight. 
+        topPix = []; % frame-by-frame bottom-right pixel value in width (x-axis of the video) of the top-view pole. NaN if the pole is out of sight. 
         angle = [];
         apUpPosition = [];
         nof = []; % number of frames (video, not tracker)
@@ -44,7 +44,7 @@ classdef WhiskerTrial_2pad < Whisker.WhiskerTrial
             obj = obj@Whisker.WhiskerTrial(p.Results.tracker_file_name, p.Results.trial_num, p.Results.trajectory_nums, 'mouseName', p.Results.mouseName, 'sessionName', p.Results.sessionName, 'trialType', p.Results.trialType);
             obj.angle = p.Results.angle;
             obj.apUpPosition = p.Results.apUpPosition;
-            [obj.nof, obj.poleUpFrames, obj.poleMovingFrames, obj.poleAxesUp, obj.poleAxesMoving, obj.topPoleBottomRight, obj.barPos] = Whisker.pole_edge_detection(obj.trackerFileName, obj.angle, obj.barRadius);
+            [obj.nof, obj.poleUpFrames, obj.poleMovingFrames, obj.poleAxesUp, obj.poleAxesMoving, obj.topPix, obj.barPos] = Whisker.pole_edge_detection(obj.trackerFileName, obj.angle, obj.barRadius);
             if ~isempty(obj.barPos)
                 obj.dist2pole = obj.distance_to_pole; 
             end

@@ -61,6 +61,8 @@ for i = 1 : nof
         temp = temp(:,:,1);
     end
     btemp = 1 - imbinarize(uint8(temp), 'adaptive','ForegroundPolarity','dark','Sensitivity',0.1);
+    btemp(:,1:20) = deal(0);
+    btemp(:,end-10:end) = deal(0);
     bcc = bwconncomp(btemp);
     candid = find(cellfun(@(x) length(intersect(x,topTargetInd)), bcc.PixelIdxList));
     if ~isempty(candid) 
@@ -125,6 +127,8 @@ for i = 1 : length(frames)
     vavg = vavg + double(temp)/length(frames);    
 end
 btemp = 1 - imbinarize(uint8(vavg), 'adaptive','ForegroundPolarity','dark','Sensitivity',0.1);
+btemp(:,1:20) = deal(0);
+btemp(:,end-10:end) = deal(0);
 bcc = bwconncomp(btemp);
 
 candid = find(cellfun(@(x) length(intersect(x,topTargetInd)), bcc.PixelIdxList));

@@ -127,7 +127,7 @@ for i = 1 : length(angles)
             polePixVals = zeros(length(wsArray),2);
             for k = 1 : length(wsArray)
                 apPositions(k) = wsArray.trials{k}.apUpPosition;
-                polePixVals(k,:) = wsArray.trials{k}.topPoleBottomRight(wsArray.trials{k}.poleUpFrames(round(length(wsArray.trials{k}.poleUpFrames)/2)),:); % value at the center of poleUpFrames
+                polePixVals(k,:) = wsArray.trials{k}.topPix(wsArray.trials{k}.poleUpFrames(round(length(wsArray.trials{k}.poleUpFrames)/2)),:); % value at the center of poleUpFrames
             end    
 %             Calculate linear fit between euclidean distance between pixel values and differences in pole position values
             [~, baseInd] = max(apPositions);
@@ -143,8 +143,8 @@ for i = 1 : length(angles)
                 apPosition = NaN(wsArray.trials{k}.nof,1);
                 apPosition(wsArray.trials{k}.poleUpFrames) = wsArray.trials{k}.apUpPosition;
                 for m = 1 : length(wsArray.trials{k}.poleMovingFrames)
-                    apPosition(wsArray.trials{k}.poleMovingFrames(m)) = wsArray.trials{k}.apUpPosition + slope * sqrt(sum((wsArray.trials{k}.topPoleBottomRight(wsArray.trials{k}.poleMovingFrames(m))...
-                                                                                                                 - wsArray.trials{k}.topPoleBottomRight(wsArray.trials{k}.poleUpFrames(round(length(wsArray.trials{k}.poleUpFrames)/2)))).^2));
+                    apPosition(wsArray.trials{k}.poleMovingFrames(m)) = wsArray.trials{k}.apUpPosition + slope * sqrt(sum((wsArray.trials{k}.topPix(wsArray.trials{k}.poleMovingFrames(m))...
+                                                                                                                 - wsArray.trials{k}.topPix(wsArray.trials{k}.poleUpFrames(round(length(wsArray.trials{k}.poleUpFrames)/2)))).^2));
                 end
                 load([wsArray.trials{k}.trackerFileName, '_WST.mat']) % loading ws
                 ws.apPosition = apPosition;
