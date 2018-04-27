@@ -10,12 +10,12 @@ mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
 % steps = {[10:70],[20:80],[140:200],[140:200]};
 %%%%%%%%%%%%%%%%%%%%%% try as short as possible to reduce time next step
 
-presession = [];
-sessionNum = 19;
+presession = 1:2;
+sessionNum = 1:40;
 
 useGPU = 0;
 options.WindowStyle = 'normal';
-for mi = 1 : length(mice)
+for mi = 2 : length(mice)
     mouseName = mice{mi};
 %%
 for sessionInd = 1 : length(sessionNum)
@@ -124,7 +124,7 @@ for sessionInd = 1 : length(sessionNum)
                 trial_nums{iservo,idist}(j) = bSession.trials{tt_ind(j)}.trialNum;
                 
                 load([temp_files{j},'_WST.mat']) % loading ws
-                poleTipCoords(j,:) = mean(ws.topPoleBottomRight(ws.poleUpFrames,:));
+                poleTipCoords(j,:) = mean(ws.topPix(ws.poleUpFrames,:));
                 apPosition(j) = bSession.trials{tt_ind(j)}.motorApPosition;
             end
             
