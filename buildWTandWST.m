@@ -68,8 +68,8 @@ function nft = buildWTandWST(mouseName, sessionName, d, bSession, ppm)
         end
     end
 %%
-% % while true
-% %     try
+while true
+    try
         if size(maskx{1},1) > size(maskx{1},2)
             Whisker.makeAllDirectory_WhiskerTrial_2pad(whisker_d,[0 1],'mask', {[maskx{1}';masky{1}'],[maskx{2}';masky{2}']},...
                 'trial_nums',trialNums,'include_files',includef,...
@@ -81,22 +81,22 @@ function nft = buildWTandWST(mouseName, sessionName, d, bSession, ppm)
                 'barRadius',3,'faceSideInImage', 'bottom', 'framePeriodInSec',1/310,...
                 'imagePixelDimsXY',[width height],'pxPerMm',ppm,'mouseName',mouseName,'sessionName',sessionName,'protractionDirection','rightward', 'behavior', bSession);
         end
-% %         break
-% %     catch
-% %         disp('It''s in pause because of network failure')
-% %         nft = [nft; clock]; 
-% %     end
-% % end
+        break
+    catch
+        disp('It''s in pause because of network failure')
+        nft = [nft; clock]; 
+    end
+end
 
-% while true
-%     try
+while true
+    try
         Whisker.makeAllDirectory_WhiskerSignalTrial_2pad(whisker_d,'include_files',includef,'polyRoiInPix',[ppm 6*ppm]);
-%         break
-%     catch
-%         disp('It''s in pause because of network failure')
-%         nft = [nft; clock]; 
-%     end 
-% end
+        break
+    catch
+        disp('It''s in pause because of network failure')
+        nft = [nft; clock]; 
+    end 
+end
 
 % assigning frame-by-frame AP positions
 wstList = dir('*_WST.mat');

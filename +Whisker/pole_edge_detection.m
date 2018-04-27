@@ -80,11 +80,11 @@ for i = 1 : nof
         btempTop = zeros(size(btempTop),'logical');
         btempTop(bccTop.PixelIdxList{bccind}) = 1;
         bccTop = bwconncomp(btempTop);
-        if length(bccTop.PixelIdxList{1}) > 50
+%         if length(bccTop.PixelIdxList{1}) > 10
             s = regionprops(bccTop,'Extrema');        
             topPix(i,:) = (floor(s.Extrema(5,:)) + floor(s.Extrema(6,:)))/2;
             topPixforcheck(i,:) = floor(s.Extrema(4,:));
-        end
+%         end
     end    
     
     candid = find(cellfun(@(x) length(intersect(x,frontTargetInd)), bcc.PixelIdxList));
@@ -103,10 +103,10 @@ for i = 1 : nof
         btempFront = zeros(size(btempFront),'logical');
         btempFront(bccFront.PixelIdxList{bccind}) = 1;
         bccFront = bwconncomp(btempFront);    
-        if length(bccFront.PixelIdxList{1}) > 50
+%         if length(bccFront.PixelIdxList{1}) > 50
             s = regionprops(bccFront,'Extrema');
             frontPix(i,:) = floor(s.Extrema(7,:));
-        end
+%         end
     end        
 end
 
