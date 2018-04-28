@@ -1,4 +1,4 @@
-function [nof, poleUpFrames, poleMovingFrames, poleAxesUp, poleAxesMoving, topPix, barPos] = pole_edge_detection(videoFn, angle, radius)
+function [nof, poleUpFrames, poleMovingFrames, poleAxesUp, poleAxesMoving, topPix, barPos, binvavg] = pole_edge_detection(videoFn, angle, radius)
 
 % Automatic detection of pole_edge from video. Both front and top view.
 % Currently only for 2pad 2017 JK
@@ -21,7 +21,7 @@ function [nof, poleUpFrames, poleMovingFrames, poleAxesUp, poleAxesMoving, topPi
 wFactorTop = 0.5;
 hFactorTop = 0.5;
 % targeting left top ~1/5.6 of the whole FOV for front-view pole tracking
-wFactorFront = 0.3;
+wFactorFront = 0.15;
 hFactorFront = 0.55;
 
 %% Initialization
@@ -115,6 +115,10 @@ poleUpFrames = find(topPix(:,1) <= poleUpPix + 1, 1, 'first') : find(topPix(:,1)
 poleMovingFrames = setdiff(     find(topPix(:,1)),    union(poleUpFrames,  union( find(isnan(topPix(:,1))), find(isnan(frontPix(:,1))) )  )     );
 poleAxesMoving = cell(length(poleMovingFrames),2);
 %% Binarized image from averaged pole up images (~ 10 frames, evenly distributed across pole up frames)
+% hard-coded padding for some front pole image error
+leftPad = 20;
+rightPad = 10;
+
 % And calculate pole edge slopes
 frames = poleUpFrames(5): round((poleUpFrames(end-5) - poleUpFrames(5))/10) : poleUpFrames(end-5);
 vavg = zeros(v.height,v.width);
@@ -127,97 +131,87 @@ for i = 1 : length(frames)
     vavg = vavg + double(temp)/length(frames);    
 end
 btemp = 1 - imbinarize(uint8(vavg), 'adaptive','ForegroundPolarity','dark','Sensitivity',0.1);
-btemp(:,1:20) = deal(0);
-btemp(:,end-10:end) = deal(0);
+binvavg = btemp;
+btemp(:,1:leftPad) = deal(0);
+btemp(:,end-rightPad:end) = deal(0);
 bcc = bwconncomp(btemp);
 
 candid = find(cellfun(@(x) length(intersect(x,topTargetInd)), bcc.PixelIdxList));
-if ~isempty(candid) 
-    topPole = zeros(size(btemp),'logical');
-    for j = 1 : length(candid)
-        topPole(bcc.PixelIdxList{candid(j)}) = 1;
-    end
+topPole = zeros(size(btemp),'logical');
+for j = 1 : length(candid)
+    topPole(bcc.PixelIdxList{candid(j)}) = 1;
+end
+bccTop = bwconncomp(topPole);
+
+if bccTop.NumObjects > 1
+    [~,bccind] = max(cellfun(@(x) length(x), bccTop.PixelIdxList));
+else
+    bccind = 1;
+end
+topPole = zeros(size(topPole),'logical');
+topPole(bccTop.PixelIdxList{bccind}) = 1;
+bccTop = bwconncomp(topPole);
+s = regionprops(bccTop,'Extrema');
+if angle~=90 % if it's NOT 90 degrees
+    topPole(:,floor(s.Extrema(4,1))-7:end) = 0; % So, remove right-most 8 columns of the image from the pole. To remove tip (or kink) noise.
     bccTop = bwconncomp(topPole);
 
     if bccTop.NumObjects > 1
-        [~,bccind] = max(cellfun(@(x) length(x), bccTop.PixelIdxList));
+        maxYval = zeros(bccTop.NumObjects,1);
+        for i = 1 : bccTop.NumObjects
+            [yval, ~] = ind2sub([v.height, v.width],bccTop.PixelIdxList{i});
+            maxYval = max(yval);
+        end
+        [~, maxInd] = max(maxYval);
+        bccind = maxInd;
     else
         bccind = 1;
     end
     topPole = zeros(size(topPole),'logical');
     topPole(bccTop.PixelIdxList{bccind}) = 1;
     bccTop = bwconncomp(topPole);
-    s = regionprops(bccTop,'Extrema');
-    if angle~=90 % if it's NOT 90 degrees
-        topPole(:,floor(s.Extrema(4,1))-7:end) = 0; % So, remove right-most 8 columns of the image from the pole. To remove tip (or kink) noise.
-        bccTop = bwconncomp(topPole);
-
-        if bccTop.NumObjects > 1
-            maxYval = zeros(bccTop.NumObjects,1);
-            for i = 1 : bccTop.NumObjects
-                [yval, ~] = ind2sub([v.height, v.width],bccTop.PixelIdxList{i});
-                maxYval = max(yval);
-            end
-            [~, maxInd] = max(maxYval);
-            bccind = maxInd;
-        else
-            bccind = 1;
-        end
-        topPole = zeros(size(topPole),'logical');
-        topPole(bccTop.PixelIdxList{bccind}) = 1;
-        bccTop = bwconncomp(topPole);
-        s = regionprops(bccTop,'Extrema');        
-        topSlope = (s.Extrema(4,2) - s.Extrema(5,2))/(s.Extrema(4,1) - s.Extrema(5,1));
-        
-    else % if it's 90 degrees, calculate slope based on the pole movement
-        % 5 frames before and after pole up
-        frames = [poleUpFrames(1)-5:poleUpFrames(3),poleUpFrames(end-2):poleUpFrames(end)+5];
-        p = polyfit(topPix(frames,1),topPix(frames,2),1); % linear fitting. p(1) is going to be the slope
-        topSlope = p(1);
-    end
-    
-end
+    s = regionprops(bccTop,'Extrema');        
+    topSlope = (s.Extrema(4,2) - mean([s.Extrema(5,2), s.Extrema(6,2)]))/(s.Extrema(4,1) - mean([s.Extrema(5,1),s.Extrema(6,1)]));
+else % if it's 90 degrees, calculate slope based on the pole movement
+    % 5 frames before and after pole up
+    frames = [poleUpFrames(1)-5:poleUpFrames(3),poleUpFrames(end-2):poleUpFrames(end)+5];
+    p = polyfit(topPix(frames,1),topPix(frames,2),1); % linear fitting. p(1) is going to be the slope
+    topSlope = p(1);
+end   
+topExtrema = (floor(s.Extrema(5,:)) + floor(s.Extrema(6,:)))/2;    
 
 candid = find(cellfun(@(x) length(intersect(x,frontTargetInd)), bcc.PixelIdxList));
-if ~isempty(candid) 
-    frontPole = zeros(size(btemp),'logical');
-    for j = 1 : length(candid)
-        frontPole(bcc.PixelIdxList{candid(j)}) = 1;
-    end
-    bccFront = bwconncomp(frontPole);
-
-    if bccFront.NumObjects > 1
-        [~,bccind] = max(cellfun(@(x) length(x), bccFront.PixelIdxList));
-    else
-        bccind = 1;
-    end
-    frontPole = zeros(size(frontPole),'logical');
-    frontPole(bccFront.PixelIdxList{bccind}) = 1;
-    bccFront = bwconncomp(frontPole);
-    s = regionprops(bccFront,'Extrema');
-    frontPole(:,floor(s.Extrema(4,1))-2:end) = 0; % Remove right-most 3 columns of the image from the pole. 
-    bccFront = bwconncomp(frontPole);
-    s = regionprops(bccFront,'Extrema');
-    frontSlope = (s.Extrema(4,2) - s.Extrema(7,2))/(s.Extrema(4,1) - s.Extrema(7,1));    
+frontPole = zeros(size(btemp),'logical');
+for j = 1 : length(candid)
+    frontPole(bcc.PixelIdxList{candid(j)}) = 1;
 end
+bccFront = bwconncomp(frontPole);
+
+if bccFront.NumObjects > 1
+    [~,bccind] = max(cellfun(@(x) length(x), bccFront.PixelIdxList));
+else
+    bccind = 1;
+end
+frontPole = zeros(size(frontPole),'logical');
+frontPole(bccFront.PixelIdxList{bccind}) = 1;
+bccFront = bwconncomp(frontPole);
+s = regionprops(bccFront,'Extrema');
+frontPole(:,floor(s.Extrema(4,1))-2:end) = 0; % Remove right-most 3 columns of the image from the pole. 
+bccFront = bwconncomp(frontPole);
+s = regionprops(bccFront,'Extrema');
+frontSlope = (s.Extrema(4,2) - s.Extrema(7,2))/(s.Extrema(4,1) - s.Extrema(7,1));    
+frontExtrema = floor(s.Extrema(7,:));
 
 %% Calculte pole Up axes and adjust topPix, frontPix, and moving frames
 % Based on pixel values (left-bottom for front-view and bottom-right for top-view) and the slopes calculated above
 
 % for front
-q = linspace(1,v.width*0.4);
-middleUpFrame = poleUpFrames(round(length(poleUpFrames)/2));
-poleAxesUp{2} = [frontPix(middleUpFrame,2) + q * frontSlope; q];
-ind = find(frontPix(:,1)>0);
-if ~isempty(ind)
-    for i = 1 : length(ind)
-        frontPix(ind(i),:) = [NaN, NaN];
-    end
-end
+q = linspace(-leftPad,v.width*0.4-leftPad);
+poleAxesUp{2} = [frontExtrema(1,2) + q * frontSlope; q + leftPad];
 
 % for top
 q = linspace(v.width,v.width*0.4);
-originY = topPix(middleUpFrame,2) + (v.width - topPix(middleUpFrame,1)) * topSlope; % originX is at v.width
+originY = topExtrema(1,2) + (v.width - topExtrema(1,1)) * topSlope; % originX is at v.width
 % if angle ~= 90
 %     ind = find(topPixforcheck(:,2) < originY);
 % else
