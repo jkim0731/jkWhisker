@@ -2,9 +2,9 @@
 
 %% Setup whisker array builder 
 % behavior_base_dir = 'F:\SoloData\';
-behavior_base_dir = 'Y:\Whiskernas\JK_temp\SoloData\';
+behavior_base_dir = 'D:\Jinho_works\Data\SoloData\';
 % whisker_base_dir = 'F:\tracked\';
-whisker_base_dir = 'Y:\Whiskernas\JK_temp\whisker\tracked\';
+whisker_base_dir = 'D:\Jinho_works\Data\whisker\';
 mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
 %%%%%%%%%%%%%%%%%%%%%% manual selection
 % steps = {[10:70],[20:80],[140:200],[140:200]};
@@ -15,10 +15,12 @@ sessionNum = 1:40;
 
 useGPU = 0;
 options.WindowStyle = 'normal';
-for mi = 2 : length(mice)
+% for mi = 1 : length(mice)
+for mi = 1
     mouseName = mice{mi};
 %%
-for sessionInd = 1 : length(sessionNum)
+for sessionInd = 1
+% for sessionInd = 1 : length(sessionNum)
     sessionName = sprintf('S%02d',sessionNum(sessionInd));
 
 % for sessionInd = 1 : length(presession)
@@ -137,9 +139,14 @@ for sessionInd = 1 : length(sessionNum)
 %                     try        
                         topInd = find(~isnan(ws.trials{tnum}.whiskerEdgeCoord(:,1)));
                         frontInd = find(~isnan(ws.trials{tnum}.whiskerEdgeCoord(:,2)));
-                        apPositionInd = find(~isnan(ws.trials{tnum}.apPosition));
-                        noNaNInd = intersect(intersect(topInd, frontInd), apPositionInd);
+                        noNaNInd = intersect(ws.trials{tnum}.poleUpFrames, intersect(topInd, frontInd));
                         intersect_3d_total = [intersect_3d_total; ws.trials{tnum}.whiskerEdgeCoord(noNaNInd,1), ws.trials{tnum}.whiskerEdgeCoord(noNaNInd,2), ws.trials{tnum}.apPosition(noNaNInd)];
+%                         topInd = find(~isnan(ws.trials{tnum}.whiskerEdgeCoord(:,1)));
+%                         frontInd = find(~isnan(ws.trials{tnum}.whiskerEdgeCoord(:,2)));
+%                         apPositionInd = find(~isnan(ws.trials{tnum}.apPosition));
+%                         noNaNInd = intersect(intersect(topInd, frontInd), apPositionInd);
+%                         noNaNInd = intersect(intersect(topInd, frontInd), apPositionInd);
+%                         intersect_3d_total = [intersect_3d_total; ws.trials{tnum}.whiskerEdgeCoord(noNaNInd,1), ws.trials{tnum}.whiskerEdgeCoord(noNaNInd,2), ws.trials{tnum}.apPosition(noNaNInd)];
 %                     catch
 %                         fprintf('Skipping trial #%d because of index problems \n',tnum);        
 %                     end
