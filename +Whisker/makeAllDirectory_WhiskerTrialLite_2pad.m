@@ -104,6 +104,7 @@ currentDir = pwd;
 cd(d)
 
 ws = Whisker.WhiskerSignalTrialArray_2pad(d);
+
 mirrorAngle = mean(cellfun(@(x) x.mirrorAngle, ws.trials));
 
 fnall = arrayfun(@(x) x.name(1:(end-8)), dir([d '*_WST.mat']),'UniformOutput',false);

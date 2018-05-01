@@ -50,7 +50,8 @@ classdef WhiskerSignalTrialArray_2pad < handle
             %
             %
             p = inputParser;
-            p.addOptional('w_or_d', '', @(x) ischar(x) || isa(x,'Whisker.WhiskerTrialArray_2pad'));                      
+            p.addOptional('w_or_d', '', @(x) ischar(x) || isa(x,'Whisker.WhiskerTrialArray_2pad'));
+%             p.addOptional('w_or_d', '', @(x) ischar(x) || isa(x,'Whisker.WhiskerTrialArray'));
             p.addParamValue('polyRoiInPix', NaN); 
             
             % Arguments for use when w_or_d is a directory path:

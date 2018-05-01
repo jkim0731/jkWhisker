@@ -68,7 +68,7 @@ function P = InterX(L1,varargin)
 
     %...Obtain the points where an intersection is expected
     [i,j] = find(C1&C2);
-    if ~isempty(i) && ~isempty(j)
+%     if ~isempty(i) && ~isempty(j)
         x2 = x2';dx2=dx2';y2=y2';dy2=dy2';  
         L = dy2(j).*dx1(i) - dy1(i).*dx2(j);
         i = i(L~=0); j=j(L~=0); L=L(L~=0);  %...Avoid divisions by 0
@@ -78,6 +78,6 @@ function P = InterX(L1,varargin)
              + dx1(i).*(dy2(j).*x2(j) - dx2(j).*y2(j))),...
                dy1(i).*(dy2(j).*x2(j) - dx2(j).*y2(j))...
              + dy2(j).*(dx1(i).*y1(i) - dy1(i).*x1(i))]./[L L],'rows')';
-    else
-        P = [];
-    end
+%     else
+%         P = [];
+%     end

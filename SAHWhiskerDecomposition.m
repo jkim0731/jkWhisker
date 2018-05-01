@@ -2,10 +2,9 @@ function [hh, amplitude, filteredSignal, midpoint, amplitudeS, midpointS, phase,
 %% calculate whisker amplitude and midpoint
 
 
-sampleRate=  310;
+sampleRate = 310;
 
-% make any nan thetaAtBase = mean of the surrounding points (10 on each
-% side)
+% make any nan thetaAtBase = mean of the surrounding points (10 on each side)
 try
     theta(isnan(theta)) = nanmean(theta(repmat(find(isnan(theta)),21,1)+repmat([-10:10]',1,length(find(isnan(theta))))));
 catch

@@ -2,14 +2,14 @@
 %% basic information
 mice = {'JK025'};
 % videoloc = 'Y:\Whiskernas\JK_temp\whisker\tracked\';
-videoloc = 'D:\2p\JK\whisker\';
+videoloc = 'D:\Jinho_works\Data\whisker\';
 if strcmp(videoloc(end),filesep)
     whisker_d = videoloc;
 else
     whisker_d = ([videoloc filesep]);
 end
 % behavior_base_dir = 'Y:\Whiskernas\JK_temp\SoloData\';
-behavior_base_dir = 'D:\2p\JK\whisker\';
+behavior_base_dir = 'D:\Jinho_works\Data\SoloData\';
 
 ppm = 17.81/2;
             % 'pxPerMm': 17.81002608 for telecentric lens
@@ -17,7 +17,8 @@ ppm = 17.81/2;
 
 rInMm = 3; % mm from the mask along the whisker to calculate delta kappa
 
-sessions = {[1,4,6,17,18,19,22]};  
+% sessions = {[1,4,6,17,18,19,22]};  
+sessions = {[1]};  
 sessions_pre = {[]};
 
 all_session = 0; % 1 if using all sessions, 0 if using selected sessions
