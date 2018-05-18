@@ -68,8 +68,8 @@ function nft = buildWTandWST(mouseName, sessionName, d, bSession, ppm)
         end
     end
 %%
-while true
-    try
+% while true
+%     try
         if size(maskx{1},1) > size(maskx{1},2)
             Whisker.makeAllDirectory_WhiskerTrial_2pad(whisker_d,[0 1],'mask', {[maskx{1}';masky{1}'],[maskx{2}';masky{2}']},...
                 'trial_nums',trialNums,'include_files',includef,...
@@ -81,22 +81,22 @@ while true
                 'barRadius',3,'faceSideInImage', 'bottom', 'framePeriodInSec',1/310,...
                 'imagePixelDimsXY',[width height],'pxPerMm',ppm,'mouseName',mouseName,'sessionName',sessionName,'protractionDirection','rightward', 'behavior', bSession);
         end
-        break
-    catch
-        disp('It''s in pause because of network failure')
-        nft = [nft; clock]; 
-    end
-end
+%         break
+%     catch
+%         disp('It''s in pause because of network failure')
+%         nft = [nft; clock]; 
+%     end
+% end
 
-while true
-    try
+% while true
+%     try
         Whisker.makeAllDirectory_WhiskerSignalTrial_2pad(whisker_d,'include_files',includef,'polyRoiInPix',[ppm 6*ppm]);
-        break
-    catch
-        disp('It''s in pause because of network failure')
-        nft = [nft; clock]; 
-    end 
-end
+%         break
+%     catch
+%         disp('It''s in pause because of network failure')
+%         nft = [nft; clock]; 
+%     end 
+% end
 
 % assigning frame-by-frame AP positions
 wstList = dir('*_WST.mat');
@@ -123,11 +123,13 @@ for i = 1 : length(angles)
 
             wsArray = Whisker.WhiskerSignalTrialArray_2pad(whisker_d,'include_files',trialFns);
     
-            apPositions = zeros(length(wsArray),1);
-            polePixVals = zeros(length(wsArray),2);
+            apPositions = nan(length(wsArray),1);
+            polePixVals = nan(length(wsArray),2);
             for k = 1 : length(wsArray)
-                apPositions(k) = wsArray.trials{k}.apUpPosition;
-                polePixVals(k,:) = wsArray.trials{k}.topPix(wsArray.trials{k}.poleUpFrames(round(length(wsArray.trials{k}.poleUpFrames)/2)),:); % value at the center of poleUpFrames
+                if ~isempty(wsArray.trials{k}.poleUpFrames)
+                    apPositions(k) = wsArray.trials{k}.apUpPosition;
+                    polePixVals(k,:) = wsArray.trials{k}.topPix(wsArray.trials{k}.poleUpFrames(round(length(wsArray.trials{k}.poleUpFrames)/2)),:); % value at the center of poleUpFrames
+                end
             end    
 %             Calculate linear fit between euclidean distance between pixel values and differences in pole position values
             [~, baseInd] = max(apPositions);

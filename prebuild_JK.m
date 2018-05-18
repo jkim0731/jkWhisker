@@ -1,15 +1,15 @@
 
 %% basic information
-mice = {'JK025'};
-% videoloc = 'Y:\Whiskernas\JK_temp\whisker\tracked\';
-videoloc = 'D:\Jinho_works\Data\whisker\';
+mice = {'JK037','JK038','JK039','JK041'};
+% mice = {'JK030'};
+
+videoloc = 'D:\WhiskerVideo\';
 if strcmp(videoloc(end),filesep)
     whisker_d = videoloc;
 else
     whisker_d = ([videoloc filesep]);
 end
-% behavior_base_dir = 'Y:\Whiskernas\JK_temp\SoloData\';
-behavior_base_dir = 'D:\Jinho_works\Data\SoloData\';
+behavior_base_dir = 'D:\SoloData\';
 
 ppm = 17.81/2;
             % 'pxPerMm': 17.81002608 for telecentric lens
@@ -17,17 +17,19 @@ ppm = 17.81/2;
 
 rInMm = 3; % mm from the mask along the whisker to calculate delta kappa
 
-% sessions = {[1,4,6,17,18,19,22]};  
-sessions = {[1]};  
-sessions_pre = {[]};
+sessions = {[6:40],[1:40],[1:40],[1:40]};  
+% sessions = {[19:40]};  
+% sessions = {[]};  
+sessions_pre = {[1:2],[1:2],[1:2],[1:2]};
+
 
 all_session = 0; % 1 if using all sessions, 0 if using selected sessions
 networkfailtime = [];
 
 DoFollicle = 0;
 DoRemeasure = 0;
-DoWTandWST = 0;
-DoWL = 1;
+DoWTandWST = 1;
+DoWL = 0;
 
 %% Define follicle points and masks
 % saves follicle_n_mask.mat file consists of variables 'maskx','masky','width', 'height', and 'follicle_first'
@@ -225,6 +227,7 @@ if DoWTandWST
                         else
                             load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
                         end
+                        
                         b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                         b_session = b{b_ind};
                         buildWTandWST(mouseName, sessionName, whisker_d, b_session, ppm)

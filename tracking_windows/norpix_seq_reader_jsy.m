@@ -1,4 +1,11 @@
-function [] = norpix_seq_reader_jsy(seqIn)
+function norpix_seq_reader_jsy(seqIn)
+% Reading seq file and converting to mp4 file directly, without using tiff
+% stacks. Seq file info from norpix manual.
+% When number of frames are larger than a threshold "nframes_threshold", it
+% divides the file into multiple mp4 files. 
+% Using ffmpeg to solve weird problem of number of frames being doubled in
+% whisker tracker. 
+
 %Open file
 tic
 seqID = fopen(seqIn);
@@ -16,6 +23,7 @@ seqInfo = dir(seqIn);
 seqSize = seqInfo.bytes;
 totalFrameNumber = (seqSize-8192)/iTrueSize;
 nframes_threshold = 1e5;
+ffmpegPath = 'C:\Users\shires\Documents\GitHub\jkWhisker\tracking_windows\ffmpeg';
 
 %Perform sanity checks
 if (iWidth*iHeight) ~= iSize
@@ -24,12 +32,12 @@ end
 
 %Create mp4 name
 [path,seqName,~] = fileparts(seqIn);
-mp4Name = [path filesep seqName '.mp4'];
+mp4Name = [path filesep seqName '_pre.mp4'];
 
 if totalFrameNumber > nframes_threshold
     frameNum = 0;
     for i = 1 : ceil(totalFrameNumber/nframes_threshold)        
-        mp4Name = [path filesep seqName sprintf('_%02d.mp4',i)];
+        mp4Name = [path filesep seqName sprintf('_%02d_pre.mp4',i)];
         newVid = VideoWriter(mp4Name, 'MPEG-4');
         open(newVid)
         temp_nframes = 0;
@@ -54,7 +62,11 @@ if totalFrameNumber > nframes_threshold
             frameNum = frameNum + 1;
             temp_nframes = temp_nframes + 1;
         end
-        close(newVid)        
+        close(newVid)
+        mp4NameFin = [path filesep seqName sprintf('_%02d.mp4',i)];
+        mp4CorrectionCMD = sprintf('%s -i %s -b:v 800k -codec:v mpeg4 -c:a copy %s',ffmpegPath, mp4Name, mp4NameFin);
+        system(mp4CorrectionCMD);
+        
     end
 else
     %Create and open mp4 file
@@ -91,6 +103,9 @@ else
         frameNum = frameNum + 1;
     end
     close(newVid)
+    mp4NameFin = [path filesep seqName '.mp4'];
+    mp4CorrectionCMD = sprintf('%s -i %s -b:v 800k -codec:v mpeg4 -c:a copy %s', ffmpegPath, mp4Name, mp4NameFin);
+    system(mp4CorrectionCMD);
 end
 fclose(seqID);
 toc
