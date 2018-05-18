@@ -34,12 +34,24 @@ end
 [path,seqName,~] = fileparts(seqIn);
 mp4Name = [path filesep seqName '_pre.mp4'];
 
+% Create timestamp file name
+tsName = [path, filesep, seqName, '_timestamp.mat'];
+tsSec = [];
+tsMilli = [];
+tsMicro = [];
+
 if totalFrameNumber > nframes_threshold
     frameNum = 0;
     for i = 1 : ceil(totalFrameNumber/nframes_threshold)        
         mp4Name = [path filesep seqName sprintf('_%02d_pre.mp4',i)];
         newVid = VideoWriter(mp4Name, 'MPEG-4');
         open(newVid)
+        
+        tsName = [path, filesep, seqName, sprintf('_%02dtimestamp.mat',i)];
+        tsSec = [];
+        tsMilli = [];
+        tsMicro = [];
+
         temp_nframes = 0;
         while temp_nframes < nframes_threshold
             %Read frame from seq
@@ -48,6 +60,13 @@ if totalFrameNumber > nframes_threshold
                 break
             end
             currentFrame = uint8(fread(seqID, [iWidth,iHeight], 'uint8'));
+            currentSec = fread(seqID, 1, 'uint32');
+            tsSec = [tsSec; currentSec];
+            currentMilli = fread(seqID, 1, 'uint16');
+            tsMilli = [tsMilli; currentMilli];
+            currentMicro = fread(seqID, 1, 'uint16');
+            tsMicro = [tsMicro; currentMicro];
+            
             [checkW, checkH] = size(currentFrame);
             if currentFrame == -1
                 break
@@ -67,6 +86,7 @@ if totalFrameNumber > nframes_threshold
         mp4CorrectionCMD = sprintf('%s -i %s -b:v 800k -codec:v mpeg4 -c:a copy %s',ffmpegPath, mp4Name, mp4NameFin);
         system(mp4CorrectionCMD);
         
+        save(tsName, 'tsSec', 'tsMicro', 'tsMilli')
     end
 else
     %Create and open mp4 file
@@ -86,6 +106,13 @@ else
             break
         end
         currentFrame = fread(seqID, [iWidth,iHeight], 'uint8');
+        currentSec = fread(seqID, 1, 'int32');
+        tsSec = [tsSec; currentSec];
+        currentMilli = fread(seqID, 1, 'uint16');
+        tsMilli = [tsMilli; currentMilli];
+        currentMicro = fread(seqID, 1, 'uint16');
+        tsMicro = [tsMicro; currentMicro];
+
         [checkW, checkH] = size(currentFrame);
         if currentFrame == -1
             break
@@ -104,8 +131,10 @@ else
     end
     close(newVid)
     mp4NameFin = [path filesep seqName '.mp4'];
-    mp4CorrectionCMD = sprintf('%s -i %s -b:v 800k -codec:v mpeg4 -c:a copy %s', ffmpegPath, mp4Name, mp4NameFin);
+    mp4CorrectionCMD = sprintf('%s -i %s -b:v 800k -codec:v mpeg4 -c:a copy %s', ffmpegPath, mp4Name, mp4NameFin);    
     system(mp4CorrectionCMD);
+    delete(mp4Name);
+    save(tsName, 'tsSec', 'tsMicro', 'tsMilli')
 end
 fclose(seqID);
 toc

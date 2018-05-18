@@ -6,19 +6,19 @@
 % =========================================================================
 % TRACKING PARAMETERS -----------------------------------------------------
 NUMBER_OF_WHISKERS = 2;
-ppm = 17.81002608/2; % for TPM telecentric lens
+ppm = 17.81002608; % for TPM telecentric lens w/o binning
 PIXEL_DENSITY = 1/ppm;
 FACE_LOCATION = 'bottom';
 DISPLAY_STATISTICS = true;
 CONVERT_ALL_VIDEOS = true;
-NUMBER_OF_RESERVED_CORES = 0;
+NUMBER_OF_RESERVED_CORES = 1;
 USE_ERROR_CHECK = true;
-base_dir = 'Y:\Whiskernas\JK_temp\whisker\';
+base_dir = 'D:\JK\';
 
 % DIRECTORY LIST ----------------------------------------------------------
 %Directory to find files to convert or track
 cd(base_dir)
-dirlist = dir('JK*spont');
+dirlist = dir('JK*');
 convertVid = {true, false, true, false};
 % =========================================================================
 % Queue settings should only be changed above this line
