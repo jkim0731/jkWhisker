@@ -67,7 +67,9 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
             obj.apUpPosition = w.apUpPosition;
             obj.binvavg = w.binvavg;
             
-            obj.find_whisker_pole_intersection;
+            if ~strcmp(w.trialType,'oo') % when it's not a catch trial 
+                obj.find_whisker_pole_intersection;
+            end
         end
         
         function obj = find_whisker_pole_intersection(obj)
