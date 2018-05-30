@@ -127,11 +127,20 @@ classdef WhiskerSignalTrialArray_2pad < handle
                 
                 nfiles = length(fnall);
                 
+                if sum(isnan(cellfun(@(x) str2double(x), fnall))) < 1
+                    fnallnums = cellfun(@(x) str2double(x), fnall);
+                    fnallnums = sort(fnallnums);
+                    fnall = cell(nfiles,1);
+                    for fni = 1 : nfiles
+                        fnall{fni} = num2str(fnallnums(fni));
+                    end
+                end
+                
                 obj.trials = cell(1, nfiles);
                 if ~isempty(fnall)
                     for k=1:nfiles
                         fn = fnall{k};
-                        disp(['Loading ''_WST.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
+                        disp(['Loading ''_WST.mat'' file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
                         
                         load([fn '_WST.mat'],'ws');
                         if ~isa(ws,'Whisker.WhiskerSignalTrial_2pad')

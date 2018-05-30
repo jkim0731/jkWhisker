@@ -19,11 +19,11 @@ function nft = buildWTandWST(mouseName, sessionName, d, bSession, ppm)
     
     
     cd(whisker_d)
-    delete *_WT.mat
-    delete *_WST.mat
-    delete *_errorWST.mat
-    delete *_WL_2pad.mat
-    
+%     delete *_WT.mat
+%     delete *_WST.mat
+%     delete *_errorWST.mat
+%     delete *_WL_2pad.mat
+%     
     
     
     

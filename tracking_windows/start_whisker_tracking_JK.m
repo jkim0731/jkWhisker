@@ -1,4 +1,4 @@
-function [copyTime, convertTime, totalFiles] = start_mp4_conversion(varargin)
+function [copyTime, trackTime, convertTime, totalFiles] = start_whisker_tracking_JK(varargin)
     % START_WHISKER_TRACKING An improved version of the mp4 converter and Janelia farm whisker tracking script
     % START_WHISKER_TRACKING(STARTDIR, ENDDIR) specifies location of current files and where to send them, defaults to working directory
     % START_WHISKER_TRACKING(STARTDIR, ENDDIR, CONVERTVIDEO) CONVERTVIDEO = 1 will convert seq -> mp4, = 0 will skip conversion
@@ -40,6 +40,8 @@ function [copyTime, convertTime, totalFiles] = start_mp4_conversion(varargin)
     if strcmp(startDir, endDir)
         transferVideo = false;
     end
+    numCores = feature('numcores'); %identify number of cores available for MATLAB to use
+    numCores = numCores - reservedCores; 
   
     %% SECTION 2: CONVERT .SEQ TO .MP4 --------------------------------------
     mp4List = dir([startDir filesep '*mp4']);
@@ -61,14 +63,50 @@ function [copyTime, convertTime, totalFiles] = start_mp4_conversion(varargin)
     else
         fprintf('Skipping video conversion in %s \n', startDir)
     end
-    totalFiles = length(dir('*.mp4'));
+
+    %% SECTION 3: TRACK MP4 FILES WITH JANELIA TRACKER ----------------------
+    mp4List = dir([startDir filesep '*mp4']);
+    if isempty(mp4List)
+        error('There are no MP4 files to track in the directory: %s', startDir)
+    end
+    tic;
+    jkname = split(startDir,'\');
+    jkname = jkname{end};
+    fprintf('STARTING WHISKER TRACKING OF %s \n', jkname)
+
+    try
+        system(['copy C:\Users\shires\Documents\GitHub\jkWhisker\default.parameters ', startDir]);
+    catch
+        error('No default.parameters')
+    end
+
+    whisker_tracker_true_parallel(startDir, pixDen, whiskerNum, faceSide, numCores, errorCheck) % Uses 'classify' for multiple whisker tracking.
+    disp('FINISHED TRACKING')
+    trackTime = toc;
+
+    nf_mp4 = length(dir([startDir, filesep, '*.mp4']));
+    nf_whiskers = length(dir([startDir, filesep, '*.whiskers']));
+    nf_measurements = length(dir([startDir, filesep, '*.measurements']));
+    if nf_mp4 ~= nf_whiskers || nf_mp4 ~= nf_measurements
+        error('Number of files do not match')
+    end
+    totalFiles = nf_whiskers;
+
     %% SECTION 4: COPY FILES ------------------------------------------------
 
     if transferVideo == 1
         tic;
         system(['copy ', startDir, '\*.mp4 ', endDir]);
+        system(['copy ', startDir, '\*.whiskers ', endDir]);
+        system(['copy ', startDir, '\*.measurements ', endDir]);
+        system(['copy ', startDir, '\default.parameters ', endDir]);
+        system(['copy ', startDir, '\*.detectorbank ', endDir]);
         copyTime = toc;
         delete([startDir, '\*.mp4']);
+        delete([startDir, '\*.whiskers']);
+        delete([startDir, '\*.measurements']);
+        delete([startDir, '\default.parameters']);
+        delete([startDir, '\*.detectorbank']);
     end
 
 end

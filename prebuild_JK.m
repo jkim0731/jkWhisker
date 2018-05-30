@@ -1,7 +1,6 @@
 
 %% basic information
-mice = {'JK041'};
-% mice = {'JK030'};
+mice = {'JK036'};
 
 videoloc = 'D:\WhiskerVideo\';
 if strcmp(videoloc(end),filesep)
@@ -17,10 +16,10 @@ ppm = 17.81/2;
 
 rInMm = 3; % mm from the mask along the whisker to calculate delta kappa
 
-sessions = {[1:40]};  
+sessions = {[6]};  
 % sessions = {[19:40]};  
 % sessions = {[]};  
-sessions_pre = {[1:2]};
+sessions_pre = {[]};
 
 
 all_session = 0; % 1 if using all sessions, 0 if using selected sessions

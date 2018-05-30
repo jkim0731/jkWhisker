@@ -1,4 +1,4 @@
-function [copyTime, convertTime, totalFiles] = start_mp4_conversion(varargin)
+function [copyTime, convertTime, totalFiles] = start_mp4_conversion4(varargin)
     % START_WHISKER_TRACKING An improved version of the mp4 converter and Janelia farm whisker tracking script
     % START_WHISKER_TRACKING(STARTDIR, ENDDIR) specifies location of current files and where to send them, defaults to working directory
     % START_WHISKER_TRACKING(STARTDIR, ENDDIR, CONVERTVIDEO) CONVERTVIDEO = 1 will convert seq -> mp4, = 0 will skip conversion
@@ -40,6 +40,8 @@ function [copyTime, convertTime, totalFiles] = start_mp4_conversion(varargin)
     if strcmp(startDir, endDir)
         transferVideo = false;
     end
+    numCores = feature('numcores'); %identify number of cores available for MATLAB to use
+    numCores = numCores - reservedCores; 
   
     %% SECTION 2: CONVERT .SEQ TO .MP4 --------------------------------------
     mp4List = dir([startDir filesep '*mp4']);
@@ -55,7 +57,7 @@ function [copyTime, convertTime, totalFiles] = start_mp4_conversion(varargin)
         
         tic
         fprintf('STARTING MP4 CONVERSION OF %s \n', startDir)
-        seq_to_mp4_JK(startDir,'dir')
+        seq_to_mp4_JK2(startDir,'dir', 1)
         fprintf('FINISHED MP4 CONVERSION \n')
         convertTime = toc;
     else
@@ -64,7 +66,7 @@ function [copyTime, convertTime, totalFiles] = start_mp4_conversion(varargin)
     totalFiles = length(dir('*.mp4'));
     %% SECTION 4: COPY FILES ------------------------------------------------
 
-    if transferVideo == 1
+    if transferVideo
         tic;
         system(['copy ', startDir, '\*.mp4 ', endDir]);
         copyTime = toc;

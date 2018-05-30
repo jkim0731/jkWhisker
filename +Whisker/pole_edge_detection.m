@@ -19,19 +19,21 @@ function [nof, poleUpFrames, poleMovingFrames, poleAxesUp, poleAxesMoving, topPi
 %% Fixed parameters
 % targeting right top 1/4 of the whole FOV for top-view pole tracking
 wFactorTop = 0.6;
-hFactorTop = 0.7;
+hFactorTop = 0.6;
 % targeting left top ~1/5.6 of the whole FOV for front-view pole tracking
 wFactorFront = 0.3;
-hFactorFront = 0.6;
+hFactorFront = 0.4;
 
-excludeHFactor = 0.8; % anything has pixel value under 0.8 height should be ignored (because it is the face)
+excludeHFactor = 0.7; % anything has pixel value under 0.8 height should be ignored (because it is the face)
+
 
 % hard-coded padding for some front pole image error
 topKinkPad = 7;
 topTipPad = 2;
 frontTipPad = 2;
-frontLinkPad = 40;
+frontLinkPad = 45;
 topLinkPad = 10;
+topExPad = 15; % sometimes top pole is divided into two, and linker gets chosen because of bulky body. To solve this, pad 0 at the top (only for top pole part)
 %% Initialization
 if isnumeric(videoFn)
     v = VideoReader([num2str(videoFn),'.mp4']);
@@ -63,6 +65,8 @@ rowSub = rowSub(:);
 colSub = repmat(excludeWidth,[1,length(excludeHeight)]);
 excludeHInd = sub2ind([v.Height, v.Width], rowSub, colSub');
 
+
+
 nof = fix(v.FrameRate*v.Duration);
 
 topPix = NaN(nof,2); % bottom-right of top-view pole
@@ -73,7 +77,9 @@ frontPix = NaN(nof,2); % left-bottom of front-view pole
 for i = 1 : nof
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % For debugging
-%     v.CurrentTime = 600/v.FrameRate;
+    %%
+%     i=400;
+%     v.CurrentTime = i/v.FrameRate;
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     temp = readFrame(v);
     if  length(size(temp)) > 2 % temporary solution for having RGB-like mp4 file 2018/03/16 JK
@@ -91,6 +97,7 @@ for i = 1 : nof
                 btempTop(bcc.PixelIdxList{candid(j)}) = 1;
             end
         end
+        btempTop(1:topExPad,:) = deal(0);
         
         bccTop = bwconncomp(btempTop);
         if bccTop.NumObjects
@@ -135,11 +142,15 @@ for i = 1 : nof
 %         end
           
         end    
-    end        
+    end 
+    
+    % for debugging
+%     figure, imshow(btempTop)
+    
 end
 %%
 poleFrames = find(~isnan(topPix(:,1)));
-if ~isempty(find(diff(poleFrames)-1))
+if ~isempty(find(diff(poleFrames)-1,1))
     chunks = [1; find(diff(poleFrames)-1)+1; length(poleFrames)];
     [~,chunkInd] = max(diff(chunks));      
     for i = 1 : length(chunks)-1
@@ -149,9 +160,12 @@ if ~isempty(find(diff(poleFrames)-1))
     end
 end
 %%        
+[n, edges] = histcounts(topPix(:,1), floor(min(topPix(:,1))):ceil(max(topPix(:,1))));
+edgeInd = find(n > max(n)/2, 1, 'last');
+poleUpPix = edges(edgeInd+1);
+% poleUpPix = mode(topPix(:,1));
 
-poleUpPix = mode(topPix(:,1));
-poleUpFrames = find(topPix(:,1) <= poleUpPix + 1, 1, 'first') : find(topPix(:,1) <= poleUpPix + 1, 1, 'last'); % for just in case where pixel values are noisy
+poleUpFrames = find(topPix(:,1) <= poleUpPix, 1, 'first') : find(topPix(:,1) <= poleUpPix, 1, 'last'); % for just in case where pixel values are noisy
 poleMovingFrames = setdiff(     find(topPix(:,1)),    union(poleUpFrames,  union( find(isnan(topPix(:,1))), find(isnan(frontPix(:,1))) )  )     );
 poleAxesMoving = cell(length(poleMovingFrames),2);
 %% Binarized image from averaged pole up images (~ 10 frames, evenly distributed across pole up frames)
