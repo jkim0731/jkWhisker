@@ -1,7 +1,7 @@
 close all
-mouse = 'JK036';
-session = 'S06';
-dirBase = 'D:\WhiskerVideo\';
+mouse = 'JK041';
+session = 'S05';
+dirBase = 'E:\WhiskerVideo\';
 dirName = [dirBase, mouse, session];
 wsArray = Whisker.WhiskerSignalTrialArray_2pad(dirName);
 poleUpLength = cellfun(@(x) length(x.poleUpFrames), wsArray.trials);
@@ -24,7 +24,8 @@ subplot(312), plot(poleMovingLength(plotnum))
 subplot(313), plot(noPoleLength(plotnum))
 
 %%
-olnum = 569; % outlier number
+
+olnum = 362; % outlier number
 
 figure, 
 if ~isempty(wsArray.trials{olnum}.topPix)

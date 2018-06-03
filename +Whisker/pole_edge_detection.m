@@ -22,7 +22,7 @@ wFactorTop = 0.6;
 hFactorTop = 0.6;
 % targeting left top ~1/5.6 of the whole FOV for front-view pole tracking
 wFactorFront = 0.3;
-hFactorFront = 0.4;
+hFactorFront = 0.7;
 
 excludeHFactor = 0.7; % anything has pixel value under 0.8 height should be ignored (because it is the face)
 

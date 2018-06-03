@@ -84,7 +84,7 @@ if totalFrameNumber > nframes_threshold
         end
         close(newVid)
         mp4NameFin = [path filesep seqName sprintf('_%02d.mp4',i)];
-        mp4CorrectionCMD = sprintf('%s -i %s -b:v 800k -codec:v mpeg4 -c:a copy %s',ffmpegPath, mp4Name, mp4NameFin);
+        mp4CorrectionCMD = sprintf('%s -i %s -b:v 5M -vcodec libx264 -c:a copy %s',ffmpegPath, mp4Name, mp4NameFin);
         system(mp4CorrectionCMD);
         
         save(tsName, 'tsSec', 'tsMicro', 'tsMilli')
@@ -132,7 +132,7 @@ else
     end
     close(newVid)
     mp4NameFin = [path filesep seqName '.mp4'];
-    mp4CorrectionCMD = sprintf('%s -i %s -b:v 800k -codec:v mpeg4 -c:a copy %s', ffmpegPath, mp4Name, mp4NameFin);    
+    mp4CorrectionCMD = sprintf('%s -i %s -b:v 5M -vcodec libx264 -c:a copy %s', ffmpegPath, mp4Name, mp4NameFin);    
     system(mp4CorrectionCMD);
     delete(mp4Name);
     save(tsName, 'tsSec', 'tsMicro', 'tsMilli')

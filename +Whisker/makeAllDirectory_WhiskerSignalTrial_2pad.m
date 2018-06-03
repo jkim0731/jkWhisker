@@ -107,14 +107,13 @@ if ~isempty(inBoth)
 end
 
 
-fnall = {'408', '449','555','570'};
-
-
+fnall = {'12','16','20','22','26','56'};
 nfiles = length(fnall);
+
 if ~isempty(fnall)
     if exist('parfor','builtin') % Parallel Computing Toolbox is installed.
-%         parfor k=1:nfiles
-        for k=1:nfiles
+        parfor k=1:nfiles
+%         for k=1:nfiles
             fn = fnall{k};
             disp(['Processing ''_WT.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
             

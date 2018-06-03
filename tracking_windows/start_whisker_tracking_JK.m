@@ -107,6 +107,7 @@ function [copyTime, trackTime, convertTime, totalFiles] = start_whisker_tracking
         delete([startDir, '\*.measurements']);
         delete([startDir, '\default.parameters']);
         delete([startDir, '\*.detectorbank']);
+        delete([startDir, '\*.seq']);
     end
 
 end

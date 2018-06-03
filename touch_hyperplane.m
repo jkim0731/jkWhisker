@@ -2,16 +2,17 @@
 
 %% Setup whisker array builder 
 % behavior_base_dir = 'F:\SoloData\';
-behavior_base_dir = 'D:\2p\JK\SoloData\';
+behavior_base_dir = 'E:\SoloData\';
 % whisker_base_dir = 'F:\tracked\';
-whisker_base_dir = 'D:\2p\JK\whisker\';
-mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
+whisker_base_dir = 'E:\WhiskerVideo\';
+mice = {'JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
 %%%%%%%%%%%%%%%%%%%%%% manual selection
 % steps = {[10:70],[20:80],[140:200],[140:200]};
 %%%%%%%%%%%%%%%%%%%%%% try as short as possible to reduce time next step
 
-presession = 1:2;
-sessionNum = [22];
+% presession = 1:2;
+sessionNum = [3,16,17];
+% sessions = {[3,16,17],[3,21,22],[1,17,18],[7],[2],[1,22:25],[3]};  
 
 useGPU = 0;
 options.WindowStyle = 'normal';
@@ -123,7 +124,7 @@ for mi = 1
         trial_nums = cell(length(servo_values),length(distance_values));
         apPositionPolyfits = cell(length(servo_values),length(distance_values)); % linear fitting parameters for anterior-posterior motor position in each types    
         for iservo = 1 : length(servo_values)
-%         for iservo = 4 : length(servo_values)
+%         for iservo = 4
             for idist = 1 : length(distance_values)
                 tt_ind = intersect(find(cellfun(@(x) (x.servoAngle == servo_values(iservo)),bSession.trials)), find(cellfun(@(x) (x.motorDistance == distance_values(idist)),bSession.trials)));
                 tt_wst_ind = find(cellfun(@(x) ismember(x.trialNum, wstNums), bSession.trials));
@@ -425,114 +426,158 @@ for mi = 1
                                 end
                         end
                     end
+
                     close all
                     %% Calculate touch hyperplanes
-                    disp('Sweeping the hyperplane')
-                    maxdist = ceil(sqrt(max(intersect_3d_total(:,1).^2) + max(intersect_3d_total(:,2).^2)));
-                    xmin = -maxdist; xmax = maxdist; zmin_data = min(intersect_3d_total(:,3)); zmax_data = max(intersect_3d_total(:,3)); zdiff = zmax_data - zmin_data; zmax = zmax_data + zdiff; zmin = zmin_data - zdiff;
-                    ymin_data = min(intersect_3d_total(:,2)); ymax_data = max(intersect_3d_total(:,2));
-                    z = zmin:zmax;
-                    xyz = zeros((length(z))*(xmax-xmin+1),3);
-                    for i = xmin:xmax
-                        xyz((i-xmin)*length(z)+1 : (i-xmin+1)*length(z),:) = [ones(length(z),1)*i, zeros(length(z),1), z'];
-                    end
+                    answer7 = 'Yes'; psi2Flip = 0;
+                    while strcmp(answer7, 'Yes')
+                        answer7 = 'No'; % stay in this while loop only when certain condition is met (psi2 flip for some 90 degrees)
+                    
+                        disp('Sweeping the hyperplane')
+                        maxdist = ceil(sqrt(max(intersect_3d_total(:,1).^2) + max(intersect_3d_total(:,2).^2)));
+                        xmin = -maxdist; xmax = maxdist; zmin_data = min(intersect_3d_total(:,3)); zmax_data = max(intersect_3d_total(:,3)); zdiff = zmax_data - zmin_data; zmax = zmax_data + zdiff; zmin = zmin_data - zdiff;
+                        ymin_data = min(intersect_3d_total(:,2)); ymax_data = max(intersect_3d_total(:,2));
+                        z = zmin:zmax;
+                        xyz = zeros((length(z))*(xmax-xmin+1),3);
+                        for i = xmin:xmax
+                            xyz((i-xmin)*length(z)+1 : (i-xmin+1)*length(z),:) = [ones(length(z),1)*i, zeros(length(z),1), z'];
+                        end
 
-                    hp_decision = 'No';
-                    while(strcmp(hp_decision,'No'))
-                        [xyz_psi1, ~, ~] = AxelRot(xyz',psi1(iservo,idist),[0 0 1], 0); % rotate psi1 degrees counterclockwise around z axis
+                        hp_decision = 'No';
+                        while(strcmp(hp_decision,'No'))
+                            [xyz_psi1, ~, ~] = AxelRot(xyz',psi1(iservo,idist),[0 0 1], 0); % rotate psi1 degrees counterclockwise around z axis
 
-                        zcenter = floor(mean([zmax_data, zmin_data]));
-                        x0 = [0 0 zcenter];
-                        u = [1 tand(psi1(iservo,idist)) 0];
-                        [xyz_psi2, ~, ~] = AxelRot(xyz_psi1, psi2(iservo,idist), u, x0); 
-
-                        xyz_psi2(:,xyz_psi2(3,:) < zmin_data) = [];
-                        xyz_psi2(:,xyz_psi2(3,:) > zmax_data) = [];
-                        xyz_psi2(:,xyz_psi2(2,:) < ymin_data) = [];
-                        xyz_psi2(:,xyz_psi2(2,:) > ymax_data) = [];
-                        if isempty(xyz_psi2) 
+                            zcenter = floor(mean([zmax_data, zmin_data]));
+                            x0 = [0 0 zcenter];
+                            u = [1 tand(psi1(iservo,idist)) 0];
                             [xyz_psi2, ~, ~] = AxelRot(xyz_psi1, psi2(iservo,idist), u, x0); 
+
+                            xyz_psi2(:,xyz_psi2(3,:) < zmin_data) = [];
+                            xyz_psi2(:,xyz_psi2(3,:) > zmax_data) = [];
                             xyz_psi2(:,xyz_psi2(2,:) < ymin_data) = [];
                             xyz_psi2(:,xyz_psi2(2,:) > ymax_data) = [];
-                        end
-                        %%
-    %                     figure, plot3(intersect_3d_total(:,1),intersect_3d_total(:,2), intersect_3d_total(:,3),'k.', 'MarkerSize',3), xlabel('top'), ylabel('front'), zlabel('pos'), hold on
-    %                     zmaxind = find(xyz_psi2(3,:) == zmax_data); zminind = find(xyz_psi2(3,:) == zmin_data);
-    %                     for zi = 1 : length(zmaxind)
-    %                         xind = find(abs(xyz_psi2(1,:) - xyz_psi2(1,zmaxind(zi))) < 1);
-    %                         [~, minzind] = min(xyz_psi2(3,xind));                        
-    %                         plot3(xyz_psi2(1,[zmaxind(zi), xind(minzind)]), xyz_psi2(2,[zmaxind(zi), xind(minzind)]), xyz_psi2(3,[zmaxind(zi), xind(minzind)]), 'r-')
-    %                     end
+                            if isempty(xyz_psi2) 
+                                [xyz_psi2, ~, ~] = AxelRot(xyz_psi1, psi2(iservo,idist), u, x0); 
+                                xyz_psi2(:,xyz_psi2(2,:) < ymin_data) = [];
+                                xyz_psi2(:,xyz_psi2(2,:) > ymax_data) = [];
+                            end
+                            %%
+        %                     figure, plot3(intersect_3d_total(:,1),intersect_3d_total(:,2), intersect_3d_total(:,3),'k.', 'MarkerSize',3), xlabel('top'), ylabel('front'), zlabel('pos'), hold on
+        %                     zmaxind = find(xyz_psi2(3,:) == zmax_data); zminind = find(xyz_psi2(3,:) == zmin_data);
+        %                     for zi = 1 : length(zmaxind)
+        %                         xind = find(abs(xyz_psi2(1,:) - xyz_psi2(1,zmaxind(zi))) < 1);
+        %                         [~, minzind] = min(xyz_psi2(3,xind));                        
+        %                         plot3(xyz_psi2(1,[zmaxind(zi), xind(minzind)]), xyz_psi2(2,[zmaxind(zi), xind(minzind)]), xyz_psi2(3,[zmaxind(zi), xind(minzind)]), 'r-')
+        %                     end
 
-                        %% test
-                        figure, plot3(intersect_3d_total(:,1),intersect_3d_total(:,2), intersect_3d_total(:,3),'k.', 'MarkerSize',3), xlabel('top'), ylabel('front'), zlabel('pos'), hold on                    
-                        plot3(xyz_psi2(1,:), xyz_psi2(2,:), xyz_psi2(3,:), 'r.')
-                        %% ~ 0.5 min (depending on the length of "steps" and the size of xyz_psi2)
-                        intersect_pix = round(intersect_3d_total);
+                            %% test
+                            figure, plot3(intersect_3d_total(:,1),intersect_3d_total(:,2), intersect_3d_total(:,3),'k.', 'MarkerSize',3), xlabel('top'), ylabel('front'), zlabel('pos'), hold on                    
+                            plot3(xyz_psi2(1,:), xyz_psi2(2,:), xyz_psi2(3,:), 'r.')
+                            %% ~ 0.5 min (depending on the length of "steps" and the size of xyz_psi2)
+                            intersect_pix = round(intersect_3d_total);
 
-                        if isempty(steps{iservo, idist})
-                            steps{iservo, idist} = 50 : 150;
-                        end
-                        num_points = zeros(length(steps{iservo, idist}),1);
-                        parfor i = 1:length(steps{iservo, idist}) % this is time consuming...
-                            hp = round(xyz_psi2);
-                            hp(1,:) = hp(1,:)+ steps{iservo, idist}(i);    
-                            num_points(i) = sum(ismember(intersect_pix, hp','rows'));
-                        end
+                            if isempty(steps{iservo, idist})
+                                steps{iservo, idist} = 50 : 150;
+                            end
+                            num_points = zeros(length(steps{iservo, idist}),1);
+                            parfor i = 1:length(steps{iservo, idist}) % this is time consuming...
+                                hp = round(xyz_psi2);
+                                hp(1,:) = hp(1,:)+ steps{iservo, idist}(i);    
+                                num_points(i) = sum(ismember(intersect_pix, hp','rows'));
+                            end
 
-                        h1 = figure('WindowStyle','normal'); plot(steps{iservo, idist},num_points(:), 'k-', 'LineWidth', 3), xlabel('translocation (pix)'), ylabel('# intersection')
+                            h1 = figure('WindowStyle','normal'); plot(steps{iservo, idist},num_points(:), 'k-', 'LineWidth', 3), xlabel('translocation (pix)'), ylabel('# intersection')
 
-    %                     questTitle='Touch hyperplane peaks'; start(timer('StartDelay',1,'TimerFcn',@(o,e)set(findall(0,'Tag',questTitle),'WindowStyle','normal')));         
-                        answer = MFquestdlg([0.5, 0.3], 'Does the result look correct?', 'Touch hyperplane peaks', 'Yes', 'No', 'Yes');            
-                        peak_answer = 'Yes';
-                        while(strcmp(peak_answer,'Yes'))
-                            if strcmp(answer,'Yes')
-                                while true
-                                    datacursormode(h1,'on')
-                                    hp_peak_ans = inputdlg({'Left peak','Right peak'},'What are the peak points?',1,{'',''},optionsFin);
-                                    if ~isempty(hp_peak_ans) && ~isempty(hp_peak_ans{1}) && ~isempty(hp_peak_ans{2})
-                                        break
+        %                     questTitle='Touch hyperplane peaks'; start(timer('StartDelay',1,'TimerFcn',@(o,e)set(findall(0,'Tag',questTitle),'WindowStyle','normal')));         
+                            answer = MFquestdlg([0.5, 0.3], 'Does the result look correct?', 'Touch hyperplane peaks', 'Yes', 'No', 'Yes');            
+                            peak_answer = 'Yes';
+                            while(strcmp(peak_answer,'Yes'))
+                                if strcmp(answer,'Yes')
+                                    while true
+                                        datacursormode(h1,'on')
+                                        hp_peak_ans = inputdlg({'Left peak','Right peak'},'What are the peak points?',1,{'',''},optionsFin);
+                                        if ~isempty(hp_peak_ans) && ~isempty(hp_peak_ans{1}) && ~isempty(hp_peak_ans{2})
+                                            break
+                                        end
                                     end
-                                end
-                                hp_peaks{iservo, idist} = [str2double(hp_peak_ans{1}) str2double(hp_peak_ans{2})];                    
+                                    hp_peaks{iservo, idist} = [str2double(hp_peak_ans{1}) str2double(hp_peak_ans{2})];                    
 
-                                % Final confirmation
-                                % project the peak hyperplanes and all coordinates onto psi1 psi2 view
-                                %%
-                                h2 = figure('units','normalized','outerposition',[0 0 1 1]);                     
-                                A = viewmtx(psi1(iservo,idist),90-psi2(iservo,idist));
-                                intersect_4d = [intersect_3d_total, ones(size(intersect_3d_total,1),1)]';
-                                intersect_2d = A*intersect_4d;
-                                intersect_2d = unique(round(intersect_2d(1:2,:)',2),'rows');
-                                th_4d1 = [xyz_psi2(1,:) + hp_peaks{iservo, idist}(1);xyz_psi2(2:3,:);ones(1,size(xyz_psi2,2))];
-                                th_2d1 = A*th_4d1;
-                                th_2d1 = unique(th_2d1(1:2,:)','rows');
-                                th_4d2 = [xyz_psi2(1,:) + hp_peaks{iservo, idist}(2);xyz_psi2(2:3,:);ones(1,size(xyz_psi2,2))];
-                                th_2d2 = A*th_4d2;
-                                th_2d2 = unique(th_2d2(1:2,:)','rows');
-                                scatter(intersect_2d(:,1),intersect_2d(:,2),'k.'), hold on, scatter(th_2d1(:,1), th_2d1(:,2),'r.'), scatter(th_2d2(:,1), th_2d2(:,2),'r.')
-                                %%
-    %                             questTitle='Final Confirmation'; start(timer('StartDelay',1,'TimerFcn',@(o,e)set(findall(0,'Tag',questTitle),'WindowStyle','normal')));         
-                                answer2 = MFquestdlg([0.5, 0.3], 'Is the result REALLY correct?', 'Final Confirmation', 'Yes', 'No', 'Yes');
-                                switch answer2
-                                    case 'Yes'
-                                        close(h2);
-                                        peak_answer = 'No'; % get out of peak while
-                                        hp_decision = 'Yes';
-                                        done_flag = 0; % the whole precedure is finally done. get out of while(done_flag) loop.
-                                    case 'No'
-                                        answer3 = MFquestdlg([0.5, 0.3], 'Do you want to change the steps?', 'Touch hyperplane sweep steps', 'Yes', 'No', 'Yes');
-                                        switch answer3
-                                            case 'Yes'                                    
-                                                step_boundary_cell = inputdlg({'First step','Last step'},'What are the sweep boundaries?',1,{'',''},options);
-                                                steps{iservo, idist} = str2double(step_boundary_cell{1}):str2double(step_boundary_cell{2});
-                                                peak_answer = 'No'; % get out of peak while
-                                                close all
-                                            case 'No'
-                                                peak_answer = MFquestdlg([0.5, 0.3], 'Do you want to change the peak points?', 'Touch hyperplane peaks', 'Yes', 'No', 'Yes');
-                                                if strcmp(peak_answer,'Yes')                                        
-                                                    close(h2);
-                                                else
+                                    % Final confirmation
+                                    % project the peak hyperplanes and all coordinates onto psi1 psi2 view
+                                    %%
+                                    h2 = figure('units','normalized','outerposition',[0 0 1 1]); 
+                                    if psi2Flip
+                                        A = viewmtx(psi1(iservo,idist),-90+psi2(iservo,idist));
+                                    else
+                                        A = viewmtx(psi1(iservo,idist),90-psi2(iservo,idist));
+                                    end
+                                    intersect_4d = [intersect_3d_total, ones(size(intersect_3d_total,1),1)]';
+                                    intersect_2d = A*intersect_4d;
+                                    intersect_2d = unique(round(intersect_2d(1:2,:)',2),'rows');
+                                    th_4d1 = [xyz_psi2(1,:) + hp_peaks{iservo, idist}(1);xyz_psi2(2:3,:);ones(1,size(xyz_psi2,2))];
+                                    th_2d1 = A*th_4d1;
+                                    th_2d1 = unique(th_2d1(1:2,:)','rows');
+                                    th_4d2 = [xyz_psi2(1,:) + hp_peaks{iservo, idist}(2);xyz_psi2(2:3,:);ones(1,size(xyz_psi2,2))];
+                                    th_2d2 = A*th_4d2;
+                                    th_2d2 = unique(th_2d2(1:2,:)','rows');
+                                    scatter(intersect_2d(:,1),intersect_2d(:,2),'k.'), hold on, scatter(th_2d1(:,1), th_2d1(:,2),'r.'), scatter(th_2d2(:,1), th_2d2(:,2),'r.')
+                                    %%
+        %                             questTitle='Final Confirmation'; start(timer('StartDelay',1,'TimerFcn',@(o,e)set(findall(0,'Tag',questTitle),'WindowStyle','normal')));         
+                                    answer2 = MFquestdlg([0.5, 0.3], 'Is the result REALLY correct?', 'Final Confirmation', 'Yes', 'No', 'Yes');
+                                    switch answer2
+                                        case 'Yes'
+                                            close(h2);
+                                            peak_answer = 'No'; % get out of peak while
+                                            hp_decision = 'Yes';
+                                            done_flag = 0; % the whole precedure is finally done. get out of while(done_flag) loop.
+                                        case 'No'
+                                            answer3 = MFquestdlg([0.5, 0.3], 'Do you want to change the steps?', 'Touch hyperplane sweep steps', 'Yes', 'No', 'Yes');
+                                            switch answer3
+                                                case 'Yes'                                    
+                                                    step_boundary_cell = inputdlg({'First step','Last step'},'What are the sweep boundaries?',1,{'',''},options);
+                                                    steps{iservo, idist} = str2double(step_boundary_cell{1}):str2double(step_boundary_cell{2});
+                                                    peak_answer = 'No'; % get out of peak while
+                                                    close all
+                                                case 'No'
+                                                    peak_answer = MFquestdlg([0.5, 0.3], 'Do you want to change the peak points?', 'Touch hyperplane peaks', 'Yes', 'No', 'Yes');
+                                                    if strcmp(peak_answer,'Yes')                                        
+                                                        close(h2);
+                                                    else
+                                                        psi1_return_answer = MFquestdlg([0.5, 0.3], 'Do you want to select polygon for psi1?', 'Return to psi1 polygon', 'Yes', 'No', 'Yes');
+                                                        if strcmp(psi1_return_answer, 'Yes')
+                                                            close all
+                                                            psi1_polygon_answer = 'No';
+                                                            peak_answer = 'No';
+                                                            hp_decision = 'Yes';
+                                                        else
+                                                            psi1_adjust = inputdlg('How much change in psi1? (Negative for CW)', 'psi1 manual adjustment', 1, {''}, options);
+                                                            if psi1_adjust{1}
+                                                                psi1(iservo,idist) = psi1(iservo,idist) + str2double(psi1_adjust{1});
+                                                            else
+                                                                error(['No optimal hyperplanes peaks found in ' sessionName ' of ' mouseName])
+                                                            end
+                                                        end
+                                                    end
+                                            end
+                                    end                    
+                                else % answer = 'No' to question 'Does the result look correct?'
+                                    answer3 = MFquestdlg([0.5, 0.3], 'Do you want to change the steps?', 'Touch hyperplane sweep steps', 'Yes', 'No', 'Yes');
+                                    switch answer3
+                                        case 'Yes'                            
+                                            step_boundary_cell = inputdlg({'First step','Last step'},'What are the sweep boundaries?',1,{'',''},options);
+                                            steps{iservo, idist} = str2double(step_boundary_cell{1}):str2double(step_boundary_cell{2});
+                                            peak_answer = 'No';
+                                            close all
+                                        case 'No'
+                                            answer7 = MFquestdlg([0.5, 0.3], 'Do you want to flip psi2?', 'Wierd psi2 error', 'Yes', 'No', 'Yes');
+                                            switch answer7
+                                                case 'Yes'
+                                                    psi2(iservo,idist) = -psi2(iservo,idist);
+                                                    psi2Flip = 1;
+                                                    peak_answer = 'No';
+                                                case 'No'
+                %                                     questTitle = 'Return to psi1 polygon'; 
+                %                                     start(timer('StartDelay',1,'TimerFcn',@(o,e)set(findall(0,'Tag',questTitle),'WindowStyle','normal')));
                                                     psi1_return_answer = MFquestdlg([0.5, 0.3], 'Do you want to select polygon for psi1?', 'Return to psi1 polygon', 'Yes', 'No', 'Yes');
                                                     if strcmp(psi1_return_answer, 'Yes')
                                                         close all
@@ -540,47 +585,20 @@ for mi = 1
                                                         peak_answer = 'No';
                                                         hp_decision = 'Yes';
                                                     else
-                                                        psi1_adjust = inputdlg('How much change in psi1? (Negative for CW)', 'psi1 manual adjustment', 1, {''}, options);
+                                                        psi1_adjust = inputdlg('How much change in psi1?', 'psi1 manual adjustment', 1, {''}, options);
                                                         if psi1_adjust{1}
                                                             psi1(iservo,idist) = psi1(iservo,idist) + str2double(psi1_adjust{1});
                                                         else
                                                             error(['No optimal hyperplanes peaks found in ' sessionName ' of ' mouseName])
                                                         end
-                                                    end
-                                                end
-                                        end
-                                end                    
-                            else % answer = 'No' to question 'Does the result look correct?'
-                                answer3 = MFquestdlg([0.5, 0.3], 'Do you want to change the steps?', 'Touch hyperplane sweep steps', 'Yes', 'No', 'Yes');
-                                switch answer3
-                                    case 'Yes'                            
-                                        step_boundary_cell = inputdlg({'First step','Last step'},'What are the sweep boundaries?',1,{'',''},options);
-                                        steps{iservo, idist} = str2double(step_boundary_cell{1}):str2double(step_boundary_cell{2});
-                                        peak_answer = 'No';
-                                        close all
-                                    case 'No'
-    %                                     questTitle = 'Return to psi1 polygon'; 
-    %                                     start(timer('StartDelay',1,'TimerFcn',@(o,e)set(findall(0,'Tag',questTitle),'WindowStyle','normal')));
-                                        psi1_return_answer = MFquestdlg([0.5, 0.3], 'Do you want to select polygon for psi1?', 'Return to psi1 polygon', 'Yes', 'No', 'Yes');
-                                        if strcmp(psi1_return_answer, 'Yes')
-                                            close all
-                                            psi1_polygon_answer = 'No';
-                                            peak_answer = 'No';
-                                            hp_decision = 'Yes';
-                                        else
-                                            psi1_adjust = inputdlg('How much change in psi1?', 'psi1 manual adjustment', 1, {''}, options);
-                                            if psi1_adjust{1}
-                                                psi1(iservo,idist) = psi1(iservo,idist) + str2double(psi1_adjust{1});
-                                            else
-                                                error(['No optimal hyperplanes peaks found in ' sessionName ' of ' mouseName])
+                                                    end       
                                             end
-                                        end                                
+                                    end
                                 end
                             end
                         end
                     end
                 end
-
                 %% save parameters
                 close all
                 steps_hp{iservo, idist} = steps;

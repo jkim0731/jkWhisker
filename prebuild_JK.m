@@ -1,23 +1,29 @@
 
 %% basic information
-mice = {'JK036'};
+mice = {'JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
+% mice = {'JK039'};
 
-videoloc = 'D:\WhiskerVideo\';
+videoloc = 'E:\WhiskerVideo\';
 if strcmp(videoloc(end),filesep)
     whisker_d = videoloc;
 else
     whisker_d = ([videoloc filesep]);
 end
-behavior_base_dir = 'D:\SoloData\';
+behavior_base_dir = 'E:\SoloData\';
 
 ppm = 17.81/2;
             % 'pxPerMm': 17.81002608 for telecentric lens
 % comment out when doing for all of the sessions in the mouse directory
 
 rInMm = 3; % mm from the mask along the whisker to calculate delta kappa
-
-sessions = {[6]};  
-% sessions = {[19:40]};  
+%%
+%%
+%%
+% sessions = {[14,15]};  % for JK039. Did not check JK041 S06~S31 
+%%
+%%
+%%
+sessions = {[3,16,17],[3,21,22],[1,17,18],[7],[2],[1,22:25],[3]};  
 % sessions = {[]};  
 sessions_pre = {[]};
 
@@ -27,8 +33,8 @@ networkfailtime = [];
 
 DoFollicle = 0;
 DoRemeasure = 0;
-DoWTandWST = 1;
-DoWL = 0;
+DoWTandWST = 0;
+DoWL = 1;
 
 %% Define follicle points and masks
 % saves follicle_n_mask.mat file consists of variables 'maskx','masky','width', 'height', and 'follicle_first'

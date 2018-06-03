@@ -13,7 +13,7 @@ DISPLAY_STATISTICS = true;
 CONVERT_ALL_VIDEOS = true;
 NUMBER_OF_RESERVED_CORES = 1;
 USE_ERROR_CHECK = true;
-base_dir = 'D:\JK\';
+base_dir = 'D:\';
 
 % DIRECTORY LIST ----------------------------------------------------------
 %Directory to find files to convert or track
@@ -70,5 +70,4 @@ if DISPLAY_STATISTICS == true
   fprintf('Whisker tracking took %.02f seconds or %.02f percent of the total time \n', sumTrackTime, trackPct)
   fprintf('You tracked a total of %.00f files with an average time of %.02f seconds per file \n', sumFiles, timePerFile)
   fprintf('Aaaaaaaaaaaaand we''re done! \n')
-
 end
