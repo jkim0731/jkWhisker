@@ -18,22 +18,22 @@ function [nof, poleUpFrames, poleMovingFrames, poleAxesUp, poleAxesMoving, topPi
 % pole_position estimation and calculating pole available timepoints
 %% Fixed parameters
 % targeting right top 1/4 of the whole FOV for top-view pole tracking
-wFactorTop = 0.6;
+wFactorTop = 0.5;
 hFactorTop = 0.6;
 % targeting left top ~1/5.6 of the whole FOV for front-view pole tracking
 wFactorFront = 0.3;
 hFactorFront = 0.7;
 
-excludeHFactor = 0.7; % anything has pixel value under 0.8 height should be ignored (because it is the face)
-
+excludeHFactor = 0.65; % anything has pixel value under 0.8 height should be ignored (because it is the face)
 
 % hard-coded padding for some front pole image error
 topKinkPad = 7;
 topTipPad = 2;
 frontTipPad = 2;
-frontLinkPad = 45;
-topLinkPad = 10;
-topExPad = 15; % sometimes top pole is divided into two, and linker gets chosen because of bulky body. To solve this, pad 0 at the top (only for top pole part)
+frontLinkPad = 65;
+% topLinkPad = 10;
+% topExPad = 40; % sometimes top pole is divided into two, and linker gets chosen because of bulky body. To solve this, pad 0 at the top (only for top pole part)
+% Instead, choose the lower one when there are multiple objects on the top view
 %% Initialization
 if isnumeric(videoFn)
     v = VideoReader([num2str(videoFn),'.mp4']);
@@ -65,8 +65,6 @@ rowSub = rowSub(:);
 colSub = repmat(excludeWidth,[1,length(excludeHeight)]);
 excludeHInd = sub2ind([v.Height, v.Width], rowSub, colSub');
 
-
-
 nof = fix(v.FrameRate*v.Duration);
 
 topPix = NaN(nof,2); % bottom-right of top-view pole
@@ -75,21 +73,30 @@ frontPix = NaN(nof,2); % left-bottom of front-view pole
 
 %% Gathering frame-by-frame information
 for i = 1 : nof
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % For debugging
-    %%
+%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     % For debugging
+%     %%
 %     i=400;
 %     v.CurrentTime = i/v.FrameRate;
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     temp = readFrame(v);
     if  length(size(temp)) > 2 % temporary solution for having RGB-like mp4 file 2018/03/16 JK
         temp = temp(:,:,1);
     end
     btemp = 1 - imbinarize(uint8(temp), 'adaptive','ForegroundPolarity','dark','Sensitivity',0.1);
     btemp(:,1:frontLinkPad) = deal(0);
-    btemp(:,end-topLinkPad:end) = deal(0);
+%     btemp(:,end-topLinkPad:end) = deal(0);
     bcc = bwconncomp(btemp);
     candid = find(cellfun(@(x) length(intersect(x,topTargetInd)), bcc.PixelIdxList));
+
+%     % for debuggin
+%     [topi,topj] = ind2sub(size(btemp),topTargetInd);
+%     topTargetArea = zeros(size(btemp),'logical');
+%     for iii = 1:length(topi)
+%         topTargetArea(topi(iii),topj(iii)) = 1;
+%     end
+%     figure, imshowpair(topTargetArea, btemp)
+    
     if ~isempty(candid) 
         btempTop = zeros(size(btemp),'logical');
         for j = 1 : length(candid)
@@ -97,12 +104,18 @@ for i = 1 : nof
                 btempTop(bcc.PixelIdxList{candid(j)}) = 1;
             end
         end
-        btempTop(1:topExPad,:) = deal(0);
+%         btempTop(1:topExPad,:) = deal(0);
         
         bccTop = bwconncomp(btempTop);
         if bccTop.NumObjects
             if bccTop.NumObjects > 1
-                [~,bccind] = max(cellfun(@(x) length(x), bccTop.PixelIdxList));
+                lowestPix = zeros(bccTop.NumObjects,1);
+                for lpi = 1 : bccTop.NumObjects
+                    [yval,~] = ind2sub(size(btempTop),bccTop.PixelIdxList{lpi});
+                    lowestPix(lpi) = max(yval);
+                end
+%                 [~,bccind] = max(cellfun(@(x) length(x), bccTop.PixelIdxList));
+                [~,bccind] = max(lowestPix);
             else
                 bccind = 1;
             end
@@ -129,7 +142,13 @@ for i = 1 : nof
 
         if bccFront.NumObjects
             if bccFront.NumObjects > 1
+%                 rightMostPix = zeros(bccFront.NumObjects,1);
+%                 for rmpi = 1 : bccFront.NumObjects
+%                     [~,xval] = ind2sub(size(btempFront),bccTop.PixelIdxList{rmpi});
+%                     rightMostPix(rmpi) = max(xval);
+%                 end
                 [~,bccind] = max(cellfun(@(x) length(x), bccFront.PixelIdxList));
+%                 [~,bccind] = max(rightMostPix);
             else
                 bccind = 1;
             end
@@ -144,7 +163,7 @@ for i = 1 : nof
         end    
     end 
     
-    % for debugging
+%     % for debugging
 %     figure, imshow(btempTop)
     
 end
@@ -180,10 +199,11 @@ for i = 1 : length(frames)
     end
     vavg = vavg + double(temp)/length(frames);    
 end
+
 btemp = 1 - imbinarize(uint8(vavg), 'adaptive','ForegroundPolarity','dark','Sensitivity',0.1);
 binvavg = btemp;
 btemp(:,1:frontLinkPad) = deal(0);
-btemp(:,end-topLinkPad:end) = deal(0);
+% btemp(:,end-topLinkPad:end) = deal(0);
 bcc = bwconncomp(btemp);
 
 candid = find(cellfun(@(x) length(intersect(x,topTargetInd)), bcc.PixelIdxList));
@@ -193,6 +213,7 @@ for j = 1 : length(candid)
         topPole(bcc.PixelIdxList{candid(j)}) = 1;
     end
 end
+% topPole(1:topExPad,:) = deal(0);
 bccTop = bwconncomp(topPole);
 if bccTop.NumObjects 
     [~,bccind] = max(cellfun(@(x) length(x), bccTop.PixelIdxList));
@@ -221,15 +242,24 @@ topPole = zeros(size(btemp),'logical');
 topPole(bccTop.PixelIdxList{bccind}) = 1;
 s = regionprops(topPole,'Extrema');
 if angle < 90
+    topPole(:,1:floor(s.Extrema(6,1))+topTipPad) = 0; % to remove dirty pole tip
     topPole(:,floor(s.Extrema(4,1))-topKinkPad:end) = 0; % to remove kink region of the pole
 elseif angle > 90
     topPole(:,floor(s.Extrema(4,1))-topTipPad:end) = 0; % to remove dirty pole tip
+    topPole(:,1:floor(s.Extrema(6,1))+topKinkPad) = 0; % to remove kink region of the pole
 end
+% the above will help better estimate the pole edge
 bccTop = bwconncomp(topPole);
 
 if bccTop.NumObjects % Sometimes there can be no pole because of paw movements and other reasons
     if bccTop.NumObjects > 1
-        [~,bccind] = max(cellfun(@(x) length(x), bccTop.PixelIdxList));
+        lowestPix = zeros(bccTop.NumObjects,1);
+        for lpi = 1 : bccTop.NumObjects
+            [yval,~] = ind2sub(size(btempTop),bccTop.PixelIdxList{lpi});
+            lowestPix(lpi) = max(yval);
+        end
+%         [~,bccind] = max(cellfun(@(x) length(x), bccTop.PixelIdxList));
+        [~,bccind] = max(lowestPix);
     else
         bccind = 1;
     end
@@ -238,7 +268,8 @@ if bccTop.NumObjects % Sometimes there can be no pole because of paw movements a
     topPole(bccTop.PixelIdxList{bccind}) = 1;
     s = regionprops(topPole,'Extrema');
     if angle~=90 % if it's NOT 90 degrees
-        topSlope = (s.Extrema(4,2) - mean([s.Extrema(5,2), s.Extrema(6,2)]))/(s.Extrema(4,1) - mean([s.Extrema(5,1),s.Extrema(6,1)]));
+%         topSlope = (s.Extrema(4,2) - mean([s.Extrema(5,2), s.Extrema(6,2)]))/(s.Extrema(4,1) - mean([s.Extrema(5,1),s.Extrema(6,1)]));
+        topSlope = (s.Extrema(4,2) - s.Extrema(5,2))/(s.Extrema(4,1) - s.Extrema(5,1));
     else % if it's 90 degrees, calculate slope based on the pole movement
         % 5 frames before and after pole up       
         try

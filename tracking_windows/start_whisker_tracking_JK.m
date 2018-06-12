@@ -17,6 +17,11 @@ function [copyTime, trackTime, convertTime, totalFiles] = start_whisker_tracking
 
 
     %% SECTION 1: INPUT HANDLING -------------------------------------------
+    % Default outputs
+    copyTime = 0;
+    trackTime = 0;
+    convertTime = 0;
+    totalFiles =0;
     %Default Settings:
     startDir = pwd;
     endDir = pwd;

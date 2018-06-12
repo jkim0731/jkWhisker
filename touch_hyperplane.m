@@ -5,23 +5,24 @@
 behavior_base_dir = 'E:\SoloData\';
 % whisker_base_dir = 'F:\tracked\';
 whisker_base_dir = 'E:\WhiskerVideo\';
-mice = {'JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
+mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
 %%%%%%%%%%%%%%%%%%%%%% manual selection
 % steps = {[10:70],[20:80],[140:200],[140:200]};
 %%%%%%%%%%%%%%%%%%%%%% try as short as possible to reduce time next step
 
 % presession = 1:2;
-sessionNum = [3,16,17];
-% sessions = {[3,16,17],[3,21,22],[1,17,18],[7],[2],[1,22:25],[3]};  
+% sessionNum = [7];
 
+sessions = {[],[],[],[],[],[],[24:25],[3]};  % Need to add JK039 S01 as soon as Y NAS is recovered.
 useGPU = 0;
 options.WindowStyle = 'normal';
 optionsFin.WindowStyle = 'normal';
 optionsFin.Units = 'normalized';
 optionsFin.Position = [0.3 0.3 0.2 0.2];
-% for mi = 1 : length(mice)
-for mi = 1
+for mi = 4 : length(mice)
+% for mi = 5
     mouseName = mice{mi};
+    sessionNum = sessions{mi};
     %%
     % for sessionInd = 4
     for sessionInd = 1 : length(sessionNum)
@@ -47,7 +48,11 @@ for mi = 1
     %         disp('touch hyperplane already calculated.')    
     %         continue
     %     end
-
+        if strcmp(sessionName,'S99')
+            sessionName = 'S17';
+        elseif strcmp(sessionName,'S91')
+            sessionName = 'S01';
+        end
         if exist('b','var')
             if strcmp(b{1}.mouseName, mouseName)
                 disp('using the same behavior file')
@@ -123,11 +128,23 @@ for mi = 1
         hp_peaks = cell(length(servo_values),length(distance_values)); % touch hyperplane peak points. 2 points for each hyperplane
         trial_nums = cell(length(servo_values),length(distance_values));
         apPositionPolyfits = cell(length(servo_values),length(distance_values)); % linear fitting parameters for anterior-posterior motor position in each types    
+        %%
         for iservo = 1 : length(servo_values)
-%         for iservo = 4
+%         for iservo = 1 : length(servo_values)
             for idist = 1 : length(distance_values)
+%             for idist = 4 : length(distance_values)                
                 tt_ind = intersect(find(cellfun(@(x) (x.servoAngle == servo_values(iservo)),bSession.trials)), find(cellfun(@(x) (x.motorDistance == distance_values(idist)),bSession.trials)));
-                tt_wst_ind = find(cellfun(@(x) ismember(x.trialNum, wstNums), bSession.trials));
+%                 % special treatment for touching the mirror
+%                 % Temporary for JK030 S22
+%                 if idist == 4
+%                     tt_exception = find(cellfun(@(x) x.motorApPosition < 79500, bSession.trials));
+%                     tt_ind = intersect(tt_ind,tt_exception);
+%                 elseif idist == 5
+%                     tt_exception = find(cellfun(@(x) x.motorApPosition < 83000, bSession.trials));
+%                     tt_ind = intersect(tt_ind,tt_exception);
+%                 end
+
+                tt_wst_ind = find(cellfun(@(x) ismember(x.trialNum, wstNums), bSession.trials));                
                 tt_ind = intersect(tt_ind, tt_wst_ind);
                 temp_files = cell(length(tt_ind),1);
                 trial_nums{iservo,idist} = zeros(length(tt_ind),1);
@@ -204,13 +221,19 @@ for mi = 1
                         title(['Angle = ', num2str(servo_values(iservo)), ', Distance = ', num2str(distance_values(idist))]), xlabel('Top-view intersection coord'), ylabel('Front-view intersection coord'), zlabel('Pole position')
 
                         %% when interested in certain points in the figure                    
-    %                     % 244 - 72580;
-    %                     zvalue = 72210;
-    %                     tnum = intersect(tt_ind, find(cellfun(@(x) abs(x.motorApPosition - zvalue) < 10, bSession.trials)))
-    %                     tnum_ws = find(cellfun(@(x) x.trialNum == tnum(1), ws.trials))
-    %                     ws.trials{tnum_ws}.trackerFileName
-    %                     figure, plot3(ws.trials{tnum_ws}.whisker_edge_coord(:,1), ws.trials{tnum_ws}.whisker_edge_coord(:,2), 1:length(ws.trials{tnum_ws}.whisker_edge_coord(:,1)))
-    %                     xlabel('Top-view intersection coord'), ylabel('Front-view intersection coord'), zlabel('Frame #'), title(num2str(tnum))
+    %                     % 'oo': 245   246   353   382   436   558   559
+% 45:     441 447 456
+%     
+    
+%                         zvalue = 66000;
+%                         tnumHigher = intersect(tt_ind, find(cellfun(@(x) x.motorApPosition < zvalue, bSession.trials)))
+%                         tnumLower = intersect(tt_ind, find(cellfun(@(x) x.motorApPosition > zvalue, bSession.trials)))
+%                         zvalue = 42410;
+%                         tnum = intersect(tt_ind, find(cellfun(@(x) abs(x.motorApPosition - zvalue) < 10, bSession.trials)))
+%                         tnum_ws = find(cellfun(@(x) x.trialNum == tnum(1), ws.trials))
+%                         ws.trials{tnum_ws}.trackerFileName
+%                         figure, plot3(ws.trials{tnum_ws}.whiskerEdgeCoord(:,1), ws.trials{tnum_ws}.whiskerEdgeCoord(:,2), 1:length(ws.trials{tnum_ws}.whiskerEdgeCoord(:,1)))
+%                         xlabel('Top-view intersection coord'), ylabel('Front-view intersection coord'), zlabel('Frame #'), title(num2str(tnum))
                         %% Calculate psi1 % takes ~ 15 sec
                         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Manual selection
                         ind_opt = 1; % optimal peak index. Starting from 1
@@ -233,7 +256,7 @@ for mi = 1
                             x2d_proj = zeros(x2d_dim);
                             j_offset = min(x2d_pix(1,:)) - 1;
                             i_offset = min(x2d_pix(2,:)) - 1;
-                            for j = 1 : length(x2d_pix)
+                            for j = 1 : size(x2d_pix,2)
                                 x2d_proj(x2d_pix(2,j) - i_offset, x2d_pix(1,j) - j_offset) = x2d_proj(x2d_pix(2,j) - i_offset, x2d_pix(1,j) - j_offset) + 1;
                             end
                             stds_pre(i) = std(x2d_proj(x2d_proj(:)~=0));
@@ -434,21 +457,23 @@ for mi = 1
                         answer7 = 'No'; % stay in this while loop only when certain condition is met (psi2 flip for some 90 degrees)
                     
                         disp('Sweeping the hyperplane')
-                        maxdist = ceil(sqrt(max(intersect_3d_total(:,1).^2) + max(intersect_3d_total(:,2).^2)));
-                        xmin = -maxdist; xmax = maxdist; zmin_data = min(intersect_3d_total(:,3)); zmax_data = max(intersect_3d_total(:,3)); zdiff = zmax_data - zmin_data; zmax = zmax_data + zdiff; zmin = zmin_data - zdiff;
+                        maxdist = ceil(sqrt(max(intersect_3d_total(:,1).^2) + max(intersect_3d_total(:,2).^2))); xmin = -maxdist; xmax = maxdist;                        
+                        zmin_data = min(intersect_3d_total(:,3)); zmax_data = max(intersect_3d_total(:,3)); zdiff = zmax_data - zmin_data; zmax = zmax_data + zdiff; zmin = zmin_data - zdiff;
                         ymin_data = min(intersect_3d_total(:,2)); ymax_data = max(intersect_3d_total(:,2));
                         z = zmin:zmax;
                         xyz = zeros((length(z))*(xmax-xmin+1),3);
                         for i = xmin:xmax
-                            xyz((i-xmin)*length(z)+1 : (i-xmin+1)*length(z),:) = [ones(length(z),1)*i, zeros(length(z),1), z'];
+                            xyz((i-xmin)*length(z)+1 : (i-xmin+1)*length(z),:) = [ones(length(z),1)*i + mean(intersect_3d_total(:,1)), zeros(length(z),1) + mean(intersect_3d_total(:,2)), z'];
                         end
-
+                        
                         hp_decision = 'No';
                         while(strcmp(hp_decision,'No'))
-                            [xyz_psi1, ~, ~] = AxelRot(xyz',psi1(iservo,idist),[0 0 1], 0); % rotate psi1 degrees counterclockwise around z axis
+%                             [xyz_psi1, ~, ~] = AxelRot(xyz',psi1(iservo,idist),[0 0 1], 0); % rotate psi1 degrees counterclockwise around z axis
+                            [xyz_psi1, ~, ~] = AxelRot(xyz',psi1(iservo,idist),[0 0 1], [mean(intersect_3d_total(:,1)) mean(intersect_3d_total(:,2)) 0]); % rotate psi1 degrees counterclockwise around z axis
 
                             zcenter = floor(mean([zmax_data, zmin_data]));
-                            x0 = [0 0 zcenter];
+%                             x0 = [0 0 zcenter];
+                            x0 = [mean(intersect_3d_total(:,1)) mean(intersect_3d_total(:,2)) zcenter];                            
                             u = [1 tand(psi1(iservo,idist)) 0];
                             [xyz_psi2, ~, ~] = AxelRot(xyz_psi1, psi2(iservo,idist), u, x0); 
 
@@ -456,11 +481,11 @@ for mi = 1
                             xyz_psi2(:,xyz_psi2(3,:) > zmax_data) = [];
                             xyz_psi2(:,xyz_psi2(2,:) < ymin_data) = [];
                             xyz_psi2(:,xyz_psi2(2,:) > ymax_data) = [];
-                            if isempty(xyz_psi2) 
-                                [xyz_psi2, ~, ~] = AxelRot(xyz_psi1, psi2(iservo,idist), u, x0); 
-                                xyz_psi2(:,xyz_psi2(2,:) < ymin_data) = [];
-                                xyz_psi2(:,xyz_psi2(2,:) > ymax_data) = [];
-                            end
+%                             if isempty(xyz_psi2) 
+%                                 [xyz_psi2, ~, ~] = AxelRot(xyz_psi1, psi2(iservo,idist), u, x0); 
+%                                 xyz_psi2(:,xyz_psi2(2,:) < ymin_data) = [];
+%                                 xyz_psi2(:,xyz_psi2(2,:) > ymax_data) = [];
+%                             end
                             %%
         %                     figure, plot3(intersect_3d_total(:,1),intersect_3d_total(:,2), intersect_3d_total(:,3),'k.', 'MarkerSize',3), xlabel('top'), ylabel('front'), zlabel('pos'), hold on
         %                     zmaxind = find(xyz_psi2(3,:) == zmax_data); zminind = find(xyz_psi2(3,:) == zmin_data);
@@ -477,7 +502,7 @@ for mi = 1
                             intersect_pix = round(intersect_3d_total);
 
                             if isempty(steps{iservo, idist})
-                                steps{iservo, idist} = 50 : 150;
+                                steps{iservo, idist} = -50 : 0;
                             end
                             num_points = zeros(length(steps{iservo, idist}),1);
                             parfor i = 1:length(steps{iservo, idist}) % this is time consuming...

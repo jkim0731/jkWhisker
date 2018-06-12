@@ -76,7 +76,7 @@ end
 
     R3x3 = nargin>2 && isequal(x0,'R');
 
-    if nargin<3 || R3x3 || isempty(x0), 
+    if nargin<3 || R3x3 || isempty(x0) 
         x0=[0;0;0]; 
     end
 
@@ -99,7 +99,7 @@ end
       varargout{1}=M(1:3,1:3);
     end
     
-    if nargout>1,
+    if nargout>1
       varargout{2}=M(1:3,4);  
     end
 

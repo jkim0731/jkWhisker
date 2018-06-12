@@ -1634,6 +1634,7 @@ classdef WhiskerTrial < handle
                         whisker0Format = false;
                     end
                     parfor k = 1 : nframes
+%                     for k = 1 : nframes
                         f = trajectoryData{k};
                         x = f{4};
                         if whisker0Format == true

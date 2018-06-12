@@ -135,7 +135,7 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
                                 obj.whiskerEdgeCoord(k,i) = sqrt(sum((temp'-currAxis(:,1)).^2)); % the distances from each axis origin
                             else  % extrapolate the whisker and find the intersection with pole edge
                                 % increase the whisker outward for 30% based on the polynomial fitting
-                                q = linspace(0,1); 
+                                q = linspace(0,1.3); 
                                 xall = polyval(fittedX,q);
                                 yall = polyval(fittedY,q);
                                 C = [yall+1;xall+1];

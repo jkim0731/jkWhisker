@@ -107,7 +107,7 @@ if ~isempty(inBoth)
 end
 
 
-fnall = {'12','16','20','22','26','56'};
+% fnall = {'589'};
 nfiles = length(fnall);
 
 if ~isempty(fnall)

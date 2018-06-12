@@ -1,6 +1,6 @@
 close all
 mouse = 'JK041';
-session = 'S05';
+session = 'S03';
 dirBase = 'E:\WhiskerVideo\';
 dirName = [dirBase, mouse, session];
 wsArray = Whisker.WhiskerSignalTrialArray_2pad(dirName);
@@ -8,13 +8,11 @@ poleUpLength = cellfun(@(x) length(x.poleUpFrames), wsArray.trials);
 poleMovingLength = cellfun(@(x) length(x.poleMovingFrames), wsArray.trials);
 noPoleLength = cellfun(@(x) x.nof - length(x.poleUpFrames) - length(x.poleMovingFrames), wsArray.trials);
 
-
 figure,
 oonum = find(cellfun(@(x) strcmp(x.trialType,'oo'), wsArray.trials));
 subplot(311), plot(poleUpLength), hold on, plot(oonum,poleUpLength(oonum), 'r.')
 subplot(312), plot(poleMovingLength), hold on, plot(oonum,poleMovingLength(oonum), 'r.')
 subplot(313), plot(noPoleLength), hold on, plot(oonum,noPoleLength(oonum), 'r.')
-
 
 %%
 figure
@@ -25,7 +23,7 @@ subplot(313), plot(noPoleLength(plotnum))
 
 %%
 
-olnum = 362; % outlier number
+olnum = 18; % outlier number
 
 figure, 
 if ~isempty(wsArray.trials{olnum}.topPix)

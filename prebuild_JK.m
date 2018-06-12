@@ -1,7 +1,6 @@
-
 %% basic information
-mice = {'JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
-% mice = {'JK039'};
+% mice = {'JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
+mice = {'JK036'};
 
 videoloc = 'E:\WhiskerVideo\';
 if strcmp(videoloc(end),filesep)
@@ -18,15 +17,13 @@ ppm = 17.81/2;
 rInMm = 3; % mm from the mask along the whisker to calculate delta kappa
 %%
 %%
-%%
+%% re-do these
 % sessions = {[14,15]};  % for JK039. Did not check JK041 S06~S31 
 %%
 %%
 %%
-sessions = {[3,16,17],[3,21,22],[1,17,18],[7],[2],[1,22:25],[3]};  
-% sessions = {[]};  
-sessions_pre = {[]};
-
+% sessions = {[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[22:25],[3]};  
+sessions = {[1]};  
 
 all_session = 0; % 1 if using all sessions, 0 if using selected sessions
 networkfailtime = [];
@@ -232,8 +229,11 @@ if DoWTandWST
                         else
                             load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
                         end
-                        
-                        b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
+                        if strcmp(sessionName, 'S91')
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
+                        else
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
+                        end
                         b_session = b{b_ind};
                         buildWTandWST(mouseName, sessionName, whisker_d, b_session, ppm)
                     end

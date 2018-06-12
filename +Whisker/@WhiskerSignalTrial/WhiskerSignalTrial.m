@@ -99,7 +99,7 @@ classdef WhiskerSignalTrial < handle
         barRadius = 3; % Inherited from WhiskerTrial.  In pixels. Must be radius of bar tracked by the bar tracker.
         time = {};
         nof = []; % number of frames of the video. Need for comparison with time, so that to see if there was any error during tracking. 2017/04/03 JK
-        pxPerMm = 17.81/2;; %  Inherited from WhiskerTrial, but give default value.
+        pxPerMm = 17.81/2; %  Inherited from WhiskerTrial, but give default value.
         faceSideInImage = 'bottom'; % Inherited from WhiskerTrial, but give default value.
         % Can be: 'top', 'bottom', 'left','right'.
         % May need to make this a cell array of strings, one per trajectory ID

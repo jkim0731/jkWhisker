@@ -154,7 +154,7 @@ else
     trial_nums = p.Results.trial_nums;
 end
 
-fnall = {'12','16','20','22','26','56'};
+% fnall = {'589'};
 nfiles = length(fnall);
 
 
@@ -172,7 +172,7 @@ if ~isempty(fnall)
                 bInd = bInd(1); % Temporary solution because of same trialNum of 'oo' trialType trials with one trial before
                 %%
                 %%
-                w = Whisker.WhiskerTrial_2pad(fn, trial_nums(k), p.Results.trajectory_nums, 'mouseName', p.Results.mouseName, 'sessionName',...
+                w = Whisker.WhiskerTrial_2pad(fn, p.Results.behavior.trials{bInd}.trialNum, p.Results.trajectory_nums, 'mouseName', p.Results.mouseName, 'sessionName',...
                     p.Results.sessionName, 'trialType', p.Results.behavior.trials{bInd}.trialType, 'angle', p.Results.behavior.trials{bInd}.servoAngle, 'apUpPosition', p.Results.behavior.trials{bInd}.motorApPosition);
 
                 w.barRadius = p.Results.barRadius;

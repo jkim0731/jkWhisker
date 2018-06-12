@@ -129,6 +129,8 @@ if ~isempty(inBoth)
     disp(inBoth)
 end
 
+fnall = {'353'};
+
 nfiles = length(fnall);
 
 if ~isempty(fnall)
@@ -143,12 +145,12 @@ if ~isempty(fnall)
                 b_ind = find(cellfun(@(x) x.trialNum,p.Results.behavior.trials)==str2double(fn));
                 pole_pos = p.Results.behavior.trials{b_ind}.motorApPosition;
                 
-                if isempty(p.Results.touch_hp) || isempty(p.Results.hp_peaks)                
+                if isempty(p.Results.touch_hp) || isempty(p.Results.hp_peaks) || strcmp(p.Results.behavior.trials{b_ind}.trialType, 'oo')
                     wl = Whisker.WhiskerTrialLite_2pad(ws,'calc_forces',p.Results.calc_forces,...
                         'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
                         'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
                         'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
-                        'proximity_threshold',p.Results.proximity_threshold,'pole_pos',pole_pos, 'mirrorAngle', mirrorAngle, 'rInMm', p.Results.rInMm);
+                        'proximity_threshold',p.Results.proximity_threshold,'mirrorAngle', mirrorAngle, 'rInMm', p.Results.rInMm);
                 else
                     angle = p.Results.behavior.trials{b_ind}.servoAngle;
                     distance = p.Results.behavior.trials{b_ind}.motorDistance;
