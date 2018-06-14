@@ -111,7 +111,7 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
                             fittedY = obj.polyFits{i}{2}(frame_ind,:);
                             xall = polyval(fittedX,q);
                             yall = polyval(fittedY,q);
-                            C = [yall+1;xall+1];
+                            C = [xall+1;yall+1]; % [y;x] order is changed to [x;y] for consistency 2018/06/13 JK
     %                         C = [ty'+1;tx'+1]; % converting whisker tracker points into normal MATLAB coordinates
 
                             if ismember(k,obj.poleMovingFrames)
@@ -124,21 +124,21 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
                                 continue
                             end
 
-                            temp = Whisker.InterX(currAxis,C); % Whisker.InterX only gets inputs as column pairs of points (x = C(1,:), y = C(2,:))                        
+                            temp = Whisker.InterX(currAxis,C); % Whisker.InterX only gets inputs as column pairs of points (x = C(1,:), y = C(2,:))
                             if ~isempty(temp)
                                 temp = temp'; % row vector
                                 if size(temp,1) > 1
-                                    temp = sortrows(temp,-1); % sort temp descending order of the first column, which is 1st dim (or ty)
+                                    temp = sortrows(temp,-2); % sort temp descending order of the second column, which is 1st dim (or ty). Changed from 1st column to 2nd 2018/06/13 JK                                    
                                     temp = temp(1,:); % select the largest value (lowest in the video)
                                 end
-                                obj.whiskerPoleIntersection{k,i} = temp; 
+                                obj.whiskerPoleIntersection{k,i} = temp; % This is not changed, (for analysis of JK025~041), since the important one is just whiskerEdgeCoord, calculated symmetrically. 2018/06/13 JK
                                 obj.whiskerEdgeCoord(k,i) = sqrt(sum((temp'-currAxis(:,1)).^2)); % the distances from each axis origin
                             else  % extrapolate the whisker and find the intersection with pole edge
                                 % increase the whisker outward for 30% based on the polynomial fitting
                                 q = linspace(0,1.3); 
                                 xall = polyval(fittedX,q);
                                 yall = polyval(fittedY,q);
-                                C = [yall+1;xall+1];
+                                C = [xall+1;yall+1];
                                 temp = Whisker.InterX(currAxis,C);
     %                             if ty(1) < ty(end) % follicle at the beginning of the vector (column)
     %                                 ty = flip(ty);
@@ -152,7 +152,7 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
                                 if ~isempty(temp)
                                     temp = temp'; % row vector
                                     if size(temp,1) > 1
-                                        temp = sortrows(temp,-1); % sort temp descending order of the first column, which is 1st dim (or ty)
+                                        temp = sortrows(temp,-2); % sort temp descending order of the first column, which is 1st dim (or ty) (This is the comment before the change 2018/06/13)
                                         temp = temp(1,:); % select the largest value (lowest in the video)
                                     end                            
                                     obj.whiskerPoleIntersection{k,i} = temp; 
@@ -185,8 +185,8 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
                                            % accurate version that isn't limited in resolution by the number of
                                            % points whisker and mask are evaluated at.
                 if isempty(P) % stretch the pole axis by 3X
-                    C2 = [obj.poleAxesUp{1}(2,1) - (obj.poleAxesUp{1}(2,end) - obj.poleAxesUp{1}(2,1)), obj.poleAxesUp{1}(2,end) + (obj.poleAxesUp{1}(2,end) - obj.poleAxesUp{1}(2,1));
-                        obj.poleAxesUp{1}(1,1) - (obj.poleAxesUp{1}(1,end) - obj.poleAxesUp{1}(1,1)), obj.poleAxesUp{1}(1,end) + (obj.poleAxesUp{1}(1,end) - obj.poleAxesUp{1}(1,1))];
+                    C2 = [obj.poleAxesUp{1}(1,1) - (obj.poleAxesUp{1}(1,end) - obj.poleAxesUp{1}(1,1)), obj.poleAxesUp{1}(1,end) + (obj.poleAxesUp{1}(1,end) - obj.poleAxesUp{1}(1,1));
+                        obj.poleAxesUp{1}(2,1) - (obj.poleAxesUp{1}(2,end) - obj.poleAxesUp{1}(2,1)), obj.poleAxesUp{1}(2,end) + (obj.poleAxesUp{1}(2,end) - obj.poleAxesUp{1}(2,1))];
                     P = Whisker.InterX(C1,C2);
                 end
                 if isempty(P)
@@ -263,7 +263,101 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
                     end
                 end
             end
-        end
+        end        
+
+%         function frontRInMm = get_frontRInMm(obj, rInMm)
+%             [~,~,y,x,~] = obj.get_theta_kappa_at_point(0,rInMm); % x and y in (1,nframes)
+%             [~,~,y0,x0,~] = obj.get_theta_kappa_at_point(0,0);
+%             ratio = zeros(1,length(x));
+%             for i = 1 : length(x)
+%                 xtip = x0(i) + (x(i)-x0(i))*10;
+%                 ytip = y0(i) + (y(i)-y0(i))*10;                
+%                 C1 = [xtip, x0(i); ytip, y0(i)];
+%                 C2 = [obj.poleAxesUp{1}(2,:);obj.poleAxesUp{1}(1,:)];
+%                 
+%                 P = Whisker.InterX(C1,C2); % Find points where whisker and mask curves intersect. Slower but more
+%                                            % accurate version that isn't limited in resolution by the number of
+%                                            % points whisker and mask are evaluated at.
+%                 if isempty(P) % stretch the pole axis by 3X
+%                     C2 = [obj.poleAxesUp{1}(2,1) - (obj.poleAxesUp{1}(2,end) - obj.poleAxesUp{1}(2,1)), obj.poleAxesUp{1}(2,end) + (obj.poleAxesUp{1}(2,end) - obj.poleAxesUp{1}(2,1));
+%                         obj.poleAxesUp{1}(1,1) - (obj.poleAxesUp{1}(1,end) - obj.poleAxesUp{1}(1,1)), obj.poleAxesUp{1}(1,end) + (obj.poleAxesUp{1}(1,end) - obj.poleAxesUp{1}(1,1))];
+%                     P = Whisker.InterX(C1,C2);
+%                 end
+%                 if isempty(P)
+%                     ratio(i) = nan;
+%                 else
+%                     if size(P,2) > 1   % Don't need for faster version, which handles this.
+%                         disp('Found more than 1 intersection of whisker and pole edge (top-view for calculating the ratio); using only first.')
+%                         P = P(:,1);
+%                     end
+%                     ratio(i) = sqrt((P(1) - x(i))^2 + (P(2) - y(i))^2) / sqrt((P(1) - x0(i))^2 + (P(2) - y0(i))^2); 
+%                 end
+%             end
+%             
+%             [~,~,y0,x0,~] = obj.get_theta_kappa_at_point(1,0);
+%             frontRInMm = zeros(length(obj.time{2}),1);
+%             noNaNInd = ismember(obj.time{2},obj.time{1});
+%             for i = 1 : length(noNaNInd)
+%                 if noNaNInd == 0
+%                     frontRInMm(i) = NaN;
+%                 else                    
+%                     C1 = [x0(i), x0(i); obj.imagePixelDimsXY(2), obj.imagePixelDimsXY(1)];
+%                     C2 = [obj.poleAxesUp{2}(2,:);obj.poleAxesUp{2}(1,:)];
+%                     P = Whisker.InterX(C1,C2);
+%                     if isempty(P) % stretch the pole axis by 3X
+%                         C2 = [obj.poleAxesUp{1}(2,1) - (obj.poleAxesUp{1}(2,end) - obj.poleAxesUp{1}(2,1)), obj.poleAxesUp{1}(2,end) + (obj.poleAxesUp{1}(2,end) - obj.poleAxesUp{1}(2,1));
+%                             obj.poleAxesUp{1}(1,1) - (obj.poleAxesUp{1}(1,end) - obj.poleAxesUp{1}(1,1)), obj.poleAxesUp{1}(1,end) + (obj.poleAxesUp{1}(1,end) - obj.poleAxesUp{1}(1,1))];
+%                         P = Whisker.InterX(C1,C2);
+%                     end
+%                     topInd = find(obj.time{1} == obj.time{2}(i),1,'first');
+%                     if ~isempty(P) && ~isempty(topInd)
+%                         if size(P,2) > 1
+%                             disp('Found more than 1 intersection of whisker and pole edge (front-view); using only first.')
+%                             P = P(:,1);
+%                         end
+%                         rinmmEdge = [obj.poleAxesUp{2}(2,:); obj.poleAxesUp{2}(1,:) + ratio(topInd) * (y0(i) - P(2))];
+%                         q = linspace(0,1);
+%                         frontx = polyval(obj.polyFits{2}{1}(i,:), q);
+%                         fronty = polyval(obj.polyFits{2}{2}(i,:), q);
+%                         C1 = [frontx; fronty];
+%                         P2 = Whisker.InterX(C1, rinmmEdge);
+%                         if isempty(P2)                            
+%                             rinmmEdge = [obj.poleAxesUp{2}(2,1) - (obj.poleAxesUp{2}(2,end) - obj.poleAxesUp{2}(2,1)), obj.poleAxesUp{2}(2,end) + (obj.poleAxesUp{2}(2,end) - obj.poleAxesUp{2}(2,1));
+%                                         obj.poleAxesUp{2}(1,1) - (obj.poleAxesUp{2}(1,end) - obj.poleAxesUp{2}(1,1)), obj.poleAxesUp{2}(1,end) + (obj.poleAxesUp{2}(1,end) - obj.poleAxesUp{2}(1,1))];
+%                             P2 = Whisker.InterX(rinmmEdge, [frontx;fronty]);
+%                         end
+%                         if ~isempty(P2)
+%                             if size(P,2) > 1
+%                                 disp('Found more than 1 intersection of whisker and fictional pole edge (front-view); using only first.')
+%                                 P2 = P2(:,1);
+%                             end
+%                             
+%                             pxDot = polyder(frontx);
+%                             pyDot = polyder(fronty);
+% 
+%                             xDot = polyval(pxDot,q);
+%                             yDot = polyval(pyDot,q);
+% 
+%                             dq = [0 diff(q)];
+%                 
+%                             % Arc length as a function of q, after integration below:
+%                             R = cumsum(sqrt(xDot.^2 + yDot.^2) .* dq); % arc length segments, in pixels, times dq.
+% 
+%                             C = C1 - repmat([x0(i);y0(i)],[1 size(C1,2)]);
+%                             err = sqrt(C(1,:).^2 + C(2,:).^2);
+%                             ind = err==min(err);
+%                             
+%                             R = R - R(ind);
+%                             
+%                             C = C1 - repmat(P2, [1 size(C1,2)]);
+%                             err2 = sqrt(C(1,:).^2 + C(2,:).^2);
+%                             ind2 = err2==min(err2);
+%                             frontRInMm(i) = R(ind2)/obj.pxPerMm;
+%                         end                        
+%                     end
+%                 end
+%             end
+%         end
         
         
 %         function show_nan_polyfits_with_mask(obj, varargin)

@@ -336,8 +336,8 @@ if bccTop.NumObjects % Sometimes there can be no pole because of paw movements a
 
             % for front
             q = linspace(-frontLinkPad,v.width*0.4-frontLinkPad);
-            poleAxesUp{2} = [frontExtrema(1,2) + q * frontSlope; q + frontLinkPad];
-
+            poleAxesUp{2} = [q + frontLinkPad; frontExtrema(1,2) + q * frontSlope]; % order is changed from [y;x] to [x;y] 2018/06/13 JK
+%             poleAxesUp{2} = [frontExtrema(1,2) + q * frontSlope; q + frontLinkPad;];
             % for top
             q = linspace(v.width,v.width*0.4);
             originY = topExtrema(1,2) + (v.width - topExtrema(1,1)) * topSlope; % originX is at v.width
@@ -359,8 +359,8 @@ if bccTop.NumObjects % Sometimes there can be no pole because of paw movements a
                 end
             end
 
-            poleAxesUp{1} = [originY + (q-q(1)) * topSlope; q];
-
+            poleAxesUp{1} = [q; originY + (q-q(1)) * topSlope]; % order is changed from [y;x] to [x;y] 2018/06/13 JK
+%             poleAxesUp{1} = [originY + (q-q(1)) * topSlope; q]; 
             % adjust pole moving frames
             poleMovingFrames = setdiff(   poleMovingFrames,    union( find(isnan(topPix(:,1))), find(isnan(frontPix(:,1))) )   );
 
@@ -381,14 +381,14 @@ if bccTop.NumObjects % Sometimes there can be no pole because of paw movements a
             % for front
             q = linspace(1,v.width*0.4);
             for i = 1 : length(poleMovingFrames)
-                poleAxesMoving{i,2} = [frontPix(poleMovingFrames(i),2)+ q * frontSlope; q];
+                poleAxesMoving{i,2} = [q; frontPix(poleMovingFrames(i),2)+ q * frontSlope]; % order is changed from [y;x] to [x;y] 2018/06/13 JK
             end
 
             % for top
             q = linspace(v.width,v.width*0.4);
             for i = 1 : length(poleMovingFrames)
                 originY = topPix(poleMovingFrames(i),2) + (v.width - topPix(poleMovingFrames(i),1)) * topSlope;
-                poleAxesMoving{i,1} = [originY + (q-q(1)) * topSlope; q];
+                poleAxesMoving{i,1} = [q; originY + (q-q(1)) * topSlope]; % order is changed from [y;x] to [x;y] 2018/06/13 JK
             end
         else
             barPos = [];
