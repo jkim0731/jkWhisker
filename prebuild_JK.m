@@ -1,6 +1,6 @@
 %% basic information
 % mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
-mice = {'JK036'};
+mice = {'JK039','JK041'};
 
 videoloc = 'E:\WhiskerVideo\';
 if strcmp(videoloc(end),filesep)
@@ -23,7 +23,8 @@ rInMm = 3; % mm from the mask along the whisker to calculate delta kappa
 %%
 %%
 % sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[22:25],[3]};  
-sessions = {[1]};  
+sessions = {[23:25],[3]};
+sessions_pre = {[],[],[],[],[],[],[],[]};
 
 all_session = 0; % 1 if using all sessions, 0 if using selected sessions
 networkfailtime = [];
@@ -295,7 +296,11 @@ if DoWL
                         else
                             load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
                         end
-                        b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
+                        if strcmp(sessionName, 'S91')
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
+                        else
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
+                        end
                         b_session = b{b_ind};
                         wd = [whisker_d, mouseName, sessionName];
                         buildWL(wd, b_session, rInMm)
@@ -349,7 +354,11 @@ if DoWL
                         else
                             load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
                         end
-                        b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
+                        if strcmp(sessionName, 'S91')
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
+                        else
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
+                        end
                         b_session = b{b_ind};
                         wd = [whisker_d, mouseName, sessionName];
                         buildWL(wd, b_session, rInMm)

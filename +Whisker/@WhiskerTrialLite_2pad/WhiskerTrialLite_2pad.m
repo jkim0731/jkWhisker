@@ -60,6 +60,7 @@ classdef WhiskerTrialLite_2pad < handle
         poleMovingFrames = [];
         
         thPolygon = []; % convex hull of the touch hyperplane at this specific pole position
+        touchBoundaryThickness = [];
         thTouchFrames = []; % touch frames derived from the touch hyperplane.
         thTouchChunks = {}; % divide thTouchFrames into chunks based on the continuity
         
@@ -150,6 +151,7 @@ classdef WhiskerTrialLite_2pad < handle
             p.addParameter('mirrorAngle', [], @isnumeric); % averaged from all the trials in the session
             p.addParameter('projMat', [], @(x) isnumeric(x) && length(size(x))==2);
             p.addParameter('rInMm',{}, @isnumeric);
+            p.addParameter('touchBoundaryThickness', [], @isnumeric);
             
             p.parse(ws,varargin{:});
             
@@ -188,6 +190,7 @@ classdef WhiskerTrialLite_2pad < handle
             obj.trialType = ws.trialType;
 
             obj.thPolygon = p.Results.thPolygon;
+            obj.touchBoundaryThickness = p.Results.touchBoundaryThickness;
                     
             obj.poleAxesUp = ws.poleAxesUp;
             obj.poleAxesMoving = ws.poleAxesMoving;
@@ -245,20 +248,34 @@ classdef WhiskerTrialLite_2pad < handle
 %             thp2 = [2*thp2(1,:) - thp2(end,:); thp2; 2*thp2(end,:) - thp2(1,:)];
 %             obj.thPolygon = [thp1; thp2];            
             %%
-                       
-            topInd = find(~isnan(ws.whiskerEdgeCoord(:,1)));
-            frontInd = find(~isnan(ws.whiskerEdgeCoord(:,2)));
-            apPositionInd = find(~isnan(ws.apPosition));
-            noNaNInd = intersect(intersect(topInd, frontInd), apPositionInd);
-            intersect_3d_total = [ws.whiskerEdgeCoord(noNaNInd,1), ws.whiskerEdgeCoord(noNaNInd,2), ws.apPosition(noNaNInd)];
+            if strcmp(ws.trialType, 'oo')
+                obj.thTouchFrames = [];
+            else
+                topInd = find(~isnan(ws.whiskerEdgeCoord(:,1)));
+                frontInd = find(~isnan(ws.whiskerEdgeCoord(:,2)));
+                apPositionInd = find(~isnan(ws.apPosition));
+                noNaNInd = intersect(intersect(topInd, frontInd), apPositionInd);
+                intersect_3d_total = [ws.whiskerEdgeCoord(noNaNInd,1), ws.whiskerEdgeCoord(noNaNInd,2), ws.apPosition(noNaNInd)];
+
+                intersect_4d = [intersect_3d_total, ones(size(intersect_3d_total,1),1)]';
+                intersect_2d = p.Results.projMat*intersect_4d;
+
+    %             obj.thTouchFrames = find(inpolygon(obj.whiskerEdgeCoord(:,1),obj.whiskerEdgeCoord(:,2), ...
+    %                 obj.thPolygon(:,1), obj.thPolygon(:,2)));
+                touchInd = inpolygon(intersect_2d(1,:)', intersect_2d(2,:)',    obj.thPolygon(1,:), obj.thPolygon(2,:));
+                obj.thTouchFrames = noNaNInd(touchInd);
+            end
+            %
+            %
+            % for debugging
+%             figure, 
+%             plot(intersect_2d(1,:), intersect_2d(2,:), 'k.'), hold on            
+%             plot(obj.thPolygon(1,:), obj.thPolygon(2,:), 'r-')
+%             plot(intersect_2d(1,touchInd), intersect_2d(2,touchInd), 'b.')
+            %
+            %
+            %
             
-            intersect_4d = [intersect_3d_total, ones(size(intersect_3d_total,1),1)]';
-            intersect_2d = p.Results.projMat*intersect_4d;
-            
-%             obj.thTouchFrames = find(inpolygon(obj.whiskerEdgeCoord(:,1),obj.whiskerEdgeCoord(:,2), ...
-%                 obj.thPolygon(:,1), obj.thPolygon(:,2)));
-            touchInd = inpolygon(intersect_2d(1,:)', intersect_2d(2,:)',    obj.thPolygon(1,:), obj.thPolygon(2,:));
-            obj.thTouchFrames = noNaNInd(touchInd);
             if isempty(obj.thTouchFrames)
                 obj.thTouchChunks = {};
             else

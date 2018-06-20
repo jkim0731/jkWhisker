@@ -13,14 +13,14 @@ mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
 % presession = 1:2;
 % sessionNum = [7];
 
-sessions = {[],[],[],[],[],[],[24:25],[3]};  % Need to add JK039 S01 as soon as Y NAS is recovered.
+sessions = {[3,16,17],[16,17],[],[],[],[],[23],[3]};  % Need to add JK039 S01 as soon as Y NAS is recovered.
 useGPU = 0;
 options.WindowStyle = 'normal';
 optionsFin.WindowStyle = 'normal';
 optionsFin.Units = 'normalized';
 optionsFin.Position = [0.3 0.3 0.2 0.2];
-for mi = 4 : length(mice)
-% for mi = 5
+% for mi = 4 : length(mice)
+for mi = 7
     mouseName = mice{mi};
     sessionNum = sessions{mi};
     %%
@@ -44,10 +44,13 @@ for mi = 4 : length(mice)
             continue
         end    
 
-    %     if ~isempty(dir([whisker_d, '*touch_hp.mat']))
-    %         disp('touch hyperplane already calculated.')    
-    %         continue
-    %     end
+        
+%         if ~isempty(dir([whisker_d, '*touch_hp.mat']))
+%             disp('touch hyperplane already calculated.')    
+%             continue
+%         end
+        
+        
         if strcmp(sessionName,'S99')
             sessionName = 'S17';
         elseif strcmp(sessionName,'S91')
@@ -130,7 +133,7 @@ for mi = 4 : length(mice)
         apPositionPolyfits = cell(length(servo_values),length(distance_values)); % linear fitting parameters for anterior-posterior motor position in each types    
         %%
         for iservo = 1 : length(servo_values)
-%         for iservo = 1 : length(servo_values)
+%         for iservo = 4 : length(servo_values)
             for idist = 1 : length(distance_values)
 %             for idist = 4 : length(distance_values)                
                 tt_ind = intersect(find(cellfun(@(x) (x.servoAngle == servo_values(iservo)),bSession.trials)), find(cellfun(@(x) (x.motorDistance == distance_values(idist)),bSession.trials)));
@@ -474,18 +477,22 @@ for mi = 4 : length(mice)
                             zcenter = floor(mean([zmax_data, zmin_data]));
 %                             x0 = [0 0 zcenter];
                             x0 = [mean(intersect_3d_total(:,1)) mean(intersect_3d_total(:,2)) zcenter];                            
-                            u = [1 tand(psi1(iservo,idist)) 0];
+                            if psi1(iservo,idist) == 90
+                                u = [0 1 0];
+                            else
+                                u = [1 tand(psi1(iservo,idist)) 0];
+                            end
                             [xyz_psi2, ~, ~] = AxelRot(xyz_psi1, psi2(iservo,idist), u, x0); 
 
                             xyz_psi2(:,xyz_psi2(3,:) < zmin_data) = [];
                             xyz_psi2(:,xyz_psi2(3,:) > zmax_data) = [];
                             xyz_psi2(:,xyz_psi2(2,:) < ymin_data) = [];
                             xyz_psi2(:,xyz_psi2(2,:) > ymax_data) = [];
-%                             if isempty(xyz_psi2) 
-%                                 [xyz_psi2, ~, ~] = AxelRot(xyz_psi1, psi2(iservo,idist), u, x0); 
-%                                 xyz_psi2(:,xyz_psi2(2,:) < ymin_data) = [];
-%                                 xyz_psi2(:,xyz_psi2(2,:) > ymax_data) = [];
-%                             end
+                            if isempty(xyz_psi2) 
+                                [xyz_psi2, ~, ~] = AxelRot(xyz_psi1, psi2(iservo,idist), u, x0); 
+                                xyz_psi2(:,xyz_psi2(2,:) < ymin_data) = [];
+                                xyz_psi2(:,xyz_psi2(2,:) > ymax_data) = [];
+                            end
                             %%
         %                     figure, plot3(intersect_3d_total(:,1),intersect_3d_total(:,2), intersect_3d_total(:,3),'k.', 'MarkerSize',3), xlabel('top'), ylabel('front'), zlabel('pos'), hold on
         %                     zmaxind = find(xyz_psi2(3,:) == zmax_data); zminind = find(xyz_psi2(3,:) == zmin_data);

@@ -129,7 +129,7 @@ if ~isempty(inBoth)
     disp(inBoth)
 end
 
-fnall = {'353'};
+% fnall = {'2','3','4','5','6','7','8','9','10','100','200','300'};
 
 nfiles = length(fnall);
 
@@ -169,12 +169,16 @@ if ~isempty(fnall)
                         tempTouchHP(1,:) + p.Results.hp_peaks{th_ind}(2) + p.Results.touch_boundary_thickness; ...
                         tempTouchHP(2:3,:), tempTouchHP(2:3,:);     ones(1,size(tempTouchHP,2)*2) ];
                     thPolygon = A*touch4d;
+                    thPolygon = round(thPolygon*10000)/10000;
                     thPolygon = unique(thPolygon(1:2,:)','rows');
+                    cvh = convhull(thPolygon);
+                    thPolygon = thPolygon(cvh,:);
                     wl = Whisker.WhiskerTrialLite_2pad(ws,'calc_forces',p.Results.calc_forces,...
                         'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
                         'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
                         'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
-                        'proximity_threshold',p.Results.proximity_threshold,'thPolygon',thPolygon', 'mirrorAngle', mirrorAngle, 'projMat', A, 'rInMm', p.Results.rInMm);
+                        'proximity_threshold',p.Results.proximity_threshold,'thPolygon',thPolygon', ...
+                        'mirrorAngle', mirrorAngle, 'projMat', A, 'rInMm', p.Results.rInMm, 'touchBoundaryThickness', p.Results.touch_boundary_thickness);
                 end
                 outfn = [fn '_WL_2pad.mat'];
 

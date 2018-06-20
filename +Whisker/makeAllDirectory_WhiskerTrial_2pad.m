@@ -154,10 +154,8 @@ else
     trial_nums = p.Results.trial_nums;
 end
 
-% fnall = {'589'};
+% fnall = {'143'};
 nfiles = length(fnall);
-
-
 
 if ~isempty(fnall)
     if exist('parfor','builtin') % Parallel Computing Toolbox is installed.

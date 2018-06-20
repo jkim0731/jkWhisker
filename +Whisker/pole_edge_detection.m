@@ -24,13 +24,13 @@ hFactorTop = 0.6;
 wFactorFront = 0.3;
 hFactorFront = 0.7;
 
-excludeHFactor = 0.65; % anything has pixel value under 0.8 height should be ignored (because it is the face)
+excludeHFactor = 0.8; % anything has pixel value under 0.8 height should be ignored (because it is the face)
 
 % hard-coded padding for some front pole image error
 topKinkPad = 7;
 topTipPad = 2;
 frontTipPad = 2;
-frontLinkPad = 65;
+frontLinkPad = 20;
 % topLinkPad = 10;
 % topExPad = 40; % sometimes top pole is divided into two, and linker gets chosen because of bulky body. To solve this, pad 0 at the top (only for top pole part)
 % Instead, choose the lower one when there are multiple objects on the top view
