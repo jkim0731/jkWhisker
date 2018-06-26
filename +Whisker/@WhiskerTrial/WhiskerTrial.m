@@ -1262,7 +1262,14 @@ classdef WhiskerTrial < handle
                                 %                                                 % that is limited in resolution by the number of
                                 %                                                 % points whisker and mask are evaluated at (i.e., by number of points in q).
 
-                                if isempty(P)                                    
+                                if isempty(P)
+                                    %
+                                    % for debugging
+                                    %                                    
+                                    disp(num2str(k))
+                                    %
+                                    %
+                                    %
                                     % first, stretch the mask (30% for now) and see if there is any intersection
                                     disp('Stretching the mask fit 30% longer')
                                     C2 = [polyval(pxm,linspace(-0.3,1.3,100)); polyval(pym,linspace(-0.3,1.3,100))];

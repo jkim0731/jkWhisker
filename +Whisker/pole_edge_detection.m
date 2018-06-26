@@ -21,16 +21,16 @@ function [nof, poleUpFrames, poleMovingFrames, poleAxesUp, poleAxesMoving, topPi
 wFactorTop = 0.5;
 hFactorTop = 0.6;
 % targeting left top ~1/5.6 of the whole FOV for front-view pole tracking
-wFactorFront = 0.3;
+wFactorFront = 0.35;
 hFactorFront = 0.7;
 
-excludeHFactor = 0.8; % anything has pixel value under 0.8 height should be ignored (because it is the face)
+excludeHFactor = 0.7; % anything has pixel value under 0.8 height should be ignored (because it is the face)
 
 % hard-coded padding for some front pole image error
 topKinkPad = 7;
 topTipPad = 2;
 frontTipPad = 2;
-frontLinkPad = 20;
+frontLinkPad = 40;
 % topLinkPad = 10;
 % topExPad = 40; % sometimes top pole is divided into two, and linker gets chosen because of bulky body. To solve this, pad 0 at the top (only for top pole part)
 % Instead, choose the lower one when there are multiple objects on the top view
@@ -213,6 +213,7 @@ for j = 1 : length(candid)
         topPole(bcc.PixelIdxList{candid(j)}) = 1;
     end
 end
+topPole(:,1:round(size(topPole,2)*wFactorTop)) = deal(0);
 % topPole(1:topExPad,:) = deal(0);
 bccTop = bwconncomp(topPole);
 if bccTop.NumObjects 
@@ -290,6 +291,7 @@ if bccTop.NumObjects % Sometimes there can be no pole because of paw movements a
             frontPole(bcc.PixelIdxList{candid(j)}) = 1;
         end
     end
+    frontPole(:,round(size(frontPole,2)*wFactorFront):end) = deal(0);
     bccFront = bwconncomp(frontPole);
     if bccFront.NumObjects > 0
         [~,bccind] = max(cellfun(@(x) length(x), bccFront.PixelIdxList));

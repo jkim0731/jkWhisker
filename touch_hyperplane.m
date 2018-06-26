@@ -13,14 +13,14 @@ mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
 % presession = 1:2;
 % sessionNum = [7];
 
-sessions = {[3,16,17],[16,17],[],[],[],[],[23],[3]};  % Need to add JK039 S01 as soon as Y NAS is recovered.
+sessions = {[3,16,17],[16,17],[3],[],[],[],[23],[3]};  % Need to add JK039 S01 as soon as Y NAS is recovered.
 useGPU = 0;
 options.WindowStyle = 'normal';
 optionsFin.WindowStyle = 'normal';
 optionsFin.Units = 'normalized';
 optionsFin.Position = [0.3 0.3 0.2 0.2];
 % for mi = 4 : length(mice)
-for mi = 7
+for mi = 3
     mouseName = mice{mi};
     sessionNum = sessions{mi};
     %%
@@ -131,9 +131,13 @@ for mi = 7
         hp_peaks = cell(length(servo_values),length(distance_values)); % touch hyperplane peak points. 2 points for each hyperplane
         trial_nums = cell(length(servo_values),length(distance_values));
         apPositionPolyfits = cell(length(servo_values),length(distance_values)); % linear fitting parameters for anterior-posterior motor position in each types    
+        
+        thflist = dir([whisker_d, '*touch_hp.mat']);
+        load(thflist(1).name);
+        
         %%
         for iservo = 1 : length(servo_values)
-%         for iservo = 4 : length(servo_values)
+%         for iservo = 7 : length(servo_values)
             for idist = 1 : length(distance_values)
 %             for idist = 4 : length(distance_values)                
                 tt_ind = intersect(find(cellfun(@(x) (x.servoAngle == servo_values(iservo)),bSession.trials)), find(cellfun(@(x) (x.motorDistance == distance_values(idist)),bSession.trials)));
@@ -227,8 +231,8 @@ for mi = 7
     %                     % 'oo': 245   246   353   382   436   558   559
 % 45:     441 447 456
 %     
-    
-%                         zvalue = 66000;
+% %     
+%                         zvalue = 68000;
 %                         tnumHigher = intersect(tt_ind, find(cellfun(@(x) x.motorApPosition < zvalue, bSession.trials)))
 %                         tnumLower = intersect(tt_ind, find(cellfun(@(x) x.motorApPosition > zvalue, bSession.trials)))
 %                         zvalue = 42410;

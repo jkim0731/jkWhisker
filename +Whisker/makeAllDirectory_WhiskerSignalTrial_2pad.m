@@ -107,7 +107,7 @@ if ~isempty(inBoth)
 end
 
 
-% fnall = {'589'};
+% fnall = {'487'};
 nfiles = length(fnall);
 
 if ~isempty(fnall)

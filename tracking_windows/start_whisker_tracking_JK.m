@@ -106,13 +106,16 @@ function [copyTime, trackTime, convertTime, totalFiles] = start_whisker_tracking
         system(['copy ', startDir, '\*.measurements ', endDir]);
         system(['copy ', startDir, '\default.parameters ', endDir]);
         system(['copy ', startDir, '\*.detectorbank ', endDir]);
+        system(['copy ', startDir, '\*timestamp.mat ', endDir]);
         copyTime = toc;
         delete([startDir, '\*.mp4']);
         delete([startDir, '\*.whiskers']);
         delete([startDir, '\*.measurements']);
         delete([startDir, '\default.parameters']);
         delete([startDir, '\*.detectorbank']);
+        delete([startDir, '\*timestamp.mat']);
         delete([startDir, '\*.seq']);
+        
     end
 
 end
