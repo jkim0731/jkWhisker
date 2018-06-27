@@ -50,7 +50,9 @@ classdef WhiskerTrialLite_2pad < handle
         M0I = {};
         contactInds = {};
 
+        servoAngle = []; % Inherited from WhiskerSignalTrial.
         apPosition = []; % Inherited from WhiskerSignalTrial.
+        radialDistance = [] ; % Inherited from WhiskerSignalTrial.
         poleAxesUp = {}; % Inherited from WhiskerSignalTrial.
         poleAxesMoving = cell(1,2); % Inherited from WhiskerSignalTrial.
         whiskerPoleIntersection = {}; % Inherited from WhiskerSignalTrial.
@@ -186,9 +188,11 @@ classdef WhiskerTrialLite_2pad < handle
             obj.barPosOffset = ws.barPosOffset; % Inherited from WhiskerSignalTrial. [x y], either 1X2 or nframesX2
             obj.barRadius = ws.barRadius; % Inherited from WhiskerSignalTrial.  In pixels. Must be radius of bar tracked by the bar tracker.
             
+            obj.servoAngle = ws.angle;
             obj.apPosition = ws.apPosition;
+            obj.radialDistance = ws.radialDistance;
             obj.trialType = ws.trialType;
-
+    
             obj.thPolygon = p.Results.thPolygon;
             obj.touchBoundaryThickness = p.Results.touchBoundaryThickness;
                     
@@ -197,7 +201,7 @@ classdef WhiskerTrialLite_2pad < handle
             obj.whiskerPoleIntersection = ws.whiskerPoleIntersection;
             obj.whiskerEdgeCoord = ws.whiskerEdgeCoord;
             obj.poleUpFrames = ws.poleUpFrames;
-            obj.poleMovingFrames = ws.poleMovingFrames;          
+            obj.poleMovingFrames = ws.poleMovingFrames;
             
             obj.nof = ws.nof;
             obj.frontRInMm = ws.get_frontRInMm(obj.rInMm);

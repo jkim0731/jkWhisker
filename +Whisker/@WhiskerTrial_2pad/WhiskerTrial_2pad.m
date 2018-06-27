@@ -12,6 +12,7 @@ classdef WhiskerTrial_2pad < Whisker.WhiskerTrial
         topPix = []; % frame-by-frame bottom-right pixel value in width (x-axis of the video) of the top-view pole. NaN if the pole is out of sight. 
         angle = [];
         apUpPosition = [];
+        radialDistance = [];
         nof = []; % number of frames (video, not tracker)
         dist2pole = [];
         binvavg = []; % binary average image of the video during pole up frames
@@ -39,6 +40,7 @@ classdef WhiskerTrial_2pad < Whisker.WhiskerTrial
             p.addParameter('trialType', '', @ischar);
             p.addParameter('angle', [], @isnumeric);
             p.addParameter('apUpPosition', [], @isnumeric);
+            p.addParameter('radialDistance', [], @isnumeric);
 
             p.parse(tracker_file_name, trial_num, trajectory_nums, varargin{:});
             

@@ -30,6 +30,7 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
         binvavg = [];
         
         apPosition = []; % given anterior-posterior motor position during pole up frames, and estimated positions during pole moving frames.        
+        radialDistance = []; 
         % to be calculated after WST is made once, collecting all data from all the trials of the same angle in the session
         mirrorAngle = []; % 
         % to be calculated after WST is made once, collecting all data from all the trials of the same angle in the session
@@ -45,7 +46,7 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
     end
     
     methods (Access = public)
-        function obj = WhiskerSignalTrial_2pad(w, varargin)
+        function obj = WhiskerSignalTrial_2pad(w, varargin) % w is whisker trial 2pad obj
 
             obj = obj@Whisker.WhiskerSignalTrial(w,varargin{:});
             
@@ -65,7 +66,9 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
             obj.dist2pole = w.dist2pole;
             obj.topPix = w.topPix;
             obj.apUpPosition = w.apUpPosition;
+            obj.radialDistance = w.radialDistance;
             obj.binvavg = w.binvavg;
+            
             
             if ~strcmp(w.trialType,'oo') % when it's not a catch trial 
                 obj.find_whisker_pole_intersection;

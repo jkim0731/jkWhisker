@@ -171,7 +171,8 @@ if ~isempty(fnall)
                 %%
                 %%
                 w = Whisker.WhiskerTrial_2pad(fn, p.Results.behavior.trials{bInd}.trialNum, p.Results.trajectory_nums, 'mouseName', p.Results.mouseName, 'sessionName',...
-                    p.Results.sessionName, 'trialType', p.Results.behavior.trials{bInd}.trialType, 'angle', p.Results.behavior.trials{bInd}.servoAngle, 'apUpPosition', p.Results.behavior.trials{bInd}.motorApPosition);
+                    p.Results.sessionName, 'trialType', p.Results.behavior.trials{bInd}.trialType, 'angle', p.Results.behavior.trials{bInd}.servoAngle, ...
+                    'apUpPosition', p.Results.behavior.trials{bInd}.motorApPosition, 'radialDistance', p.Results.behavior.trials{bInd}.motorDistance);
 
                 w.barRadius = p.Results.barRadius;
                 w.barPosOffset = p.Results.barPosOffset;
