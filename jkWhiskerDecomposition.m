@@ -1,8 +1,8 @@
-function [hh, amplitude, filteredSignal, midpoint, amplitudeS, midpointS, phase, phaseS] =  SAHWhiskerDecomposition(theta)
+function [hh, amplitude, filteredSignal, midpoint, amplitudeS, midpointS, phase, phaseS] =  jkWhiskerDecomposition(theta)
 %% calculate whisker amplitude and midpoint
 
 
-sampleRate = 310;
+sampleRate = 311;
 
 % make any nan thetaAtBase = mean of the surrounding points (10 on each side)
 try

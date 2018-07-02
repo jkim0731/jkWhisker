@@ -2,9 +2,9 @@
 
 %% Setup whisker array builder 
 % behavior_base_dir = 'F:\SoloData\';
-behavior_base_dir = 'E:\SoloData\';
+behavior_base_dir = 'J:\SoloData\';
 % whisker_base_dir = 'F:\tracked\';
-whisker_base_dir = 'E:\WhiskerVideo\';
+whisker_base_dir = 'J:\WhiskerVideo\';
 mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
 %%%%%%%%%%%%%%%%%%%%%% manual selection
 % steps = {[10:70],[20:80],[140:200],[140:200]};
@@ -20,7 +20,7 @@ optionsFin.WindowStyle = 'normal';
 optionsFin.Units = 'normalized';
 optionsFin.Position = [0.3 0.3 0.2 0.2];
 % for mi = 4 : length(mice)
-for mi = 3
+for mi = 7
     mouseName = mice{mi};
     sessionNum = sessions{mi};
     %%
@@ -133,11 +133,13 @@ for mi = 3
         apPositionPolyfits = cell(length(servo_values),length(distance_values)); % linear fitting parameters for anterior-posterior motor position in each types    
         
         thflist = dir([whisker_d, '*touch_hp.mat']);
-        load(thflist(1).name);
+        if ~isempty(thflist)
+            load(thflist(1).name);
+        end
         
         %%
-        for iservo = 1 : length(servo_values)
-%         for iservo = 7 : length(servo_values)
+%         for iservo = 1 : length(servo_values)
+        for iservo = 4 
             for idist = 1 : length(distance_values)
 %             for idist = 4 : length(distance_values)                
                 tt_ind = intersect(find(cellfun(@(x) (x.servoAngle == servo_values(iservo)),bSession.trials)), find(cellfun(@(x) (x.motorDistance == distance_values(idist)),bSession.trials)));
