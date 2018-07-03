@@ -16,6 +16,7 @@ end
 %     d = ([videoloc filesep mouseName sessionName filesep optional filesep])
 % else
     d = ([videoloc filesep mouseName sessionName filesep])
+    currD = pwd;
 % end
 % load(['Z:\Users\Jon\DATA\BehaviorArrays\solo_' mouseName '_' sessionName '.mat'])
 
@@ -159,3 +160,4 @@ end
 %% save mask
 
 save(maskfn,'maskx','masky','width', 'height', 'follicle_first')
+cd(currD)

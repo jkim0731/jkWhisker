@@ -142,27 +142,18 @@ if ~isempty(fnall)
 
                 ws = pctload([fn '_WST.mat']);
                 
-                b_ind = find(cellfun(@(x) x.trialNum,p.Results.behavior.trials)==str2double(fn));
-                pole_pos = p.Results.behavior.trials{b_ind}.motorApPosition;
-                
-                if isempty(p.Results.touch_hp) || isempty(p.Results.hp_peaks) || strcmp(p.Results.behavior.trials{b_ind}.trialType, 'oo')
+                if isempty(p.Results.touch_hp) || isempty(p.Results.hp_peaks) || strcmp(p.Results.behavior.trials{b_ind}.trialType, 'oo') || isempty(p.Results.behavior)
                     wl = Whisker.WhiskerTrialLite_2pad(ws,'calc_forces',p.Results.calc_forces,...
                         'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
                         'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
                         'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
                         'proximity_threshold',p.Results.proximity_threshold,'mirrorAngle', mirrorAngle, 'rInMm', p.Results.rInMm);
-                else
+                else                    
+                    b_ind = find(cellfun(@(x) x.trialNum,p.Results.behavior.trials)==str2double(fn));
                     angle = p.Results.behavior.trials{b_ind}.servoAngle;
                     distance = p.Results.behavior.trials{b_ind}.motorDistance;
 
                     th_ind = find(cellfun(@(x) isequal(x, [angle, distance]), p.Results.servo_distance_pair));
-                    
-%                     touch_plane_ind = abs(p.Results.touch_hp{th_ind}(3,:) - pole_pos) < 0.5;
-%                     touch_plane = p.Results.touch_hp{th_ind}(1:2,touch_plane_ind);                                        
-%                     touch_polygon = [touch_plane(1,:) + p.Results.hp_peaks{th_ind}(1) - p.Results.touch_boundary_thickness, ...
-%                         touch_plane(1,:) + p.Results.hp_peaks{th_ind}(2) + p.Results.touch_boundary_thickness; ...
-%                         touch_plane(2,:), touch_plane(2,:)];
-                    
                     A = viewmtx(p.Results.psi1(th_ind),90-p.Results.psi2(th_ind));
                     tempTouchHP = p.Results.touch_hp{th_ind};                    
                     touch4d = [tempTouchHP(1,:) + p.Results.hp_peaks{th_ind}(1) - p.Results.touch_boundary_thickness, ...
@@ -190,27 +181,18 @@ if ~isempty(fnall)
                 disp(['Processing ''_WST.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
 
                 load([fn '_WST.mat'],'ws');
-                b_ind = find(cellfun(@(x) x.trialNum,p.Results.behavior.trials)==str2double(fn));
-                pole_pos = p.Results.behavior.trials{b_ind}.motorApPosition;
-                
-                if isempty(p.Results.touch_hp) || isempty(p.Results.hp_peaks)  
+                if isempty(p.Results.touch_hp) || isempty(p.Results.hp_peaks) || strcmp(p.Results.behavior.trials{b_ind}.trialType, 'oo') || isempty(p.Results.behavior)
                     wl = Whisker.WhiskerTrialLite_2pad(ws,'calc_forces',p.Results.calc_forces,...
                         'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
                         'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
                         'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
-                        'proximity_threshold',p.Results.proximity_threshold,'pole_pos',pole_pos, 'mirrorAngle', mirrorAngle, 'rInMm', p.Results.rInMm);
+                        'proximity_threshold',p.Results.proximity_threshold, 'mirrorAngle', mirrorAngle, 'rInMm', p.Results.rInMm);
                 else
+                    b_ind = find(cellfun(@(x) x.trialNum,p.Results.behavior.trials)==str2double(fn));
                     angle = p.Results.behavior.trials{b_ind}.servoAngle;
                     distance = p.Results.behavior.trials{b_ind}.motorDistance;
 
                     th_ind = find(cellfun(@(x) isequal(x, [angle, distance]), p.Results.servo_distance_pair));
-                    
-                   %                     touch_plane_ind = abs(p.Results.touch_hp{th_ind}(3,:) - pole_pos) < 0.5;
-%                     touch_plane = p.Results.touch_hp{th_ind}(1:2,touch_plane_ind);                                        
-%                     touch_polygon = [touch_plane(1,:) + p.Results.hp_peaks{th_ind}(1) - p.Results.touch_boundary_thickness, ...
-%                         touch_plane(1,:) + p.Results.hp_peaks{th_ind}(2) + p.Results.touch_boundary_thickness; ...
-%                         touch_plane(2,:), touch_plane(2,:)];
-                    
                     A = viewmtx(p.Results.psi1(th_ind),90-p.Results.psi2(th_ind));
                     tempTouchHP = p.Results.touch_hp{th_ind};                    
                     touch4d = [tempTouchHP(1,:) + p.Results.hp_peaks{th_ind}(1) - p.Results.touch_boundary_thickness, ...

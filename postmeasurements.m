@@ -22,6 +22,7 @@ else
 end
 % load(['Z:\Users\Jon\DATA\BehaviorArrays\solo_' mouseName '_' sessionName '.mat'])
 
+currD = pwd;
 cd(d)
 
 
@@ -66,3 +67,4 @@ loadfn2 = dir('remeasure*.mat');
 load(loadfn1.name)
 load(loadfn2.name)
 save(savefn,'maskx','masky', 'includef', 'errorlist', 'width', 'height')
+cd(currD)

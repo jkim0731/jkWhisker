@@ -145,7 +145,6 @@ classdef WhiskerTrialLite_2pad < handle
             
             p.addParameter('behavior',[], @(x) isa(x,'Solo.BehavTrial2padArray'));
             
-            p.addParameter('motorPos',[], @isnumeric);
             p.addParameter('trial_type',{}, @ischar);
             p.addParameter('thPolygon',[], @isnumeric);
             p.addParameter('kappaTouchThreshold',[],@(x) isnumeric(x) && numel(x)==2); % 2 values for top-view and front-view kappa
