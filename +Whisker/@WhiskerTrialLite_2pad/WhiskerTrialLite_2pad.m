@@ -18,7 +18,7 @@ classdef WhiskerTrialLite_2pad < handle
         trialType = '';
         whiskerNames = {};  % whiskerNames and trajectoryIDs must be of same length
         trajectoryIDs = []; % with matching elements.
-        framePeriodInSec = 1/310; % 310 Hz
+        framePeriodInSec = 1/311; % 311 Hz
         pxPerMm = []; %  Inherited from WhiskerSignalTrial.
         mouseName = '';
         sessionName = '';
@@ -206,6 +206,11 @@ classdef WhiskerTrialLite_2pad < handle
             obj.nof = ws.nof;
             obj.frontRInMm = ws.get_frontRInMm(obj.rInMm);
             
+            
+%             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%             obj.time = (0:obj.nof-1)*obj.framePeriodInSec;
+%             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Change this to using 'timestamp'
+%             
             for k=1:ntraj
                 tid = obj.trajectoryIDs(k);
                 
@@ -234,14 +239,22 @@ classdef WhiskerTrialLite_2pad < handle
                 else
                     % Should consolidate into single function to optimize the following: 
                     if k == 1
-                        [obj.deltaKappa{k},~,~,~] = ws.get_kappa_at_roi_point(tid,p.Results.rInMm);
-                        [obj.thetaAtBase{k},~] = ws.get_theta_at_base(tid);
-                        obj.thetaAtBase{k} = obj.thetaAtBase{k} + p.Results.mirrorAngle;
+                        [dk,~,~,~] = ws.get_kappa_at_roi_point(tid,p.Results.rInMm);
+                        [tab,~] = ws.get_theta_at_base(tid);                        
+                        inds = round(obj.time{k}/obj.framePeriodInSec) + 1;
+                        obj.deltaKappa{k} = nan(obj.nof,1);
+                        obj.deltaKappa{k}(inds) = dk;
+                        obj.thetaAtBase{k} = nan(obj.nof,1);
+                        obj.thetaAtBase{k}(inds) = tab + p.Results.mirrorAngle;
                     else % k == 2
-                        [obj.deltaKappa{k},~,~,~] = ws.get_kappa_at_roi_point(tid,obj.frontRInMm);
-                        [obj.thetaAtBase{k},~] = ws.get_theta_at_base(tid);
-                    end
-                    
+                        [dk,~,~,~] = ws.get_kappa_at_roi_point(tid,obj.frontRInMm);
+                        [tab,~] = ws.get_theta_at_base(tid);
+                        inds = round(obj.time{k}/obj.framePeriodInSec) + 1;
+                        obj.deltaKappa{k} = nan(obj.nof,1);
+                        obj.deltaKappa{k}(inds) = dk;
+                        obj.thetaAtBase{k} = nan(obj.nof,1);
+                        obj.thetaAtBase{k}(inds) = tab;
+                    end                    
                 end
             end
 
