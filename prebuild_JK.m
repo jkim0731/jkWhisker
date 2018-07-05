@@ -1,14 +1,14 @@
 %% basic information
 % mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
-mice = {'JK025'};
+mice = {'JK052', 'JK053', 'JK054', 'JK056'};
 
-videoloc = 'J:\WhiskerVideo\';
+videoloc = 'L:\tracked\';
 if strcmp(videoloc(end),filesep)
     whisker_d = videoloc;
 else
     whisker_d = ([videoloc filesep]);
 end
-behavior_base_dir = 'J:\SoloData\';
+behavior_base_dir = 'Y:\Whiskernas\JK\SoloData\';
 
 ppm = 17.81/2;
             % 'pxPerMm': 17.81002608 for telecentric lens
@@ -28,12 +28,12 @@ sessions_pre = {[],[],[],[],[],[],[],[]};
 sessions_piezo = {[],[],[],[],[],[],[],[]};
 sessions_spont = {[],[],[],[],[],[],[],[]};
 
-all_session = 0; % 1 if using all sessions, 0 if using selected sessions
+all_session = 1; % 1 if using all sessions, 0 if using selected sessions
 
 DoFollicle = 0;
 DoRemeasure = 0;
-DoWTandWST = 0;
-DoWL = 1;
+DoWTandWST = 1;
+DoWL = 0;
 
 %% Define follicle points and masks
 % saves follicle_n_mask.mat file consists of variables 'maskx','masky','width', 'height', and 'follicle_first'
@@ -275,17 +275,34 @@ if DoWTandWST
             end
             
             cd(whisker_d)
-            sn_piezo = dir([mice{i},'piezo*']);
+            sn_piezo = dir([mice{mi},'piezo*']);
             for si = 1 : length(sn_piezo)
                 cd(whisker_d)
                 if sn_piezo(si).isdir
                     [mouseName, sessionName] = strtok(sn_piezo(si).name,'piezo');
-                    buildWTandWST(mouseName, sessionName, whisker_d, [], ppm)
+                    behavior_d = [behavior_base_dir mouseName '\'];
+                    if exist('b','var')
+                        if strcmp(b{1}.mouseName, mouseName)
+                            disp('using the same behavior file')
+                        else
+                            disp('loading a new behavior file')
+                            load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+                        end
+                    else
+                        load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+                    end
+                    b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
+                    if ~isempty(b_ind)
+                        b_session = b{b_ind};
+                        buildWTandWST(mouseName, sessionName, whisker_d, b_session, ppm)
+                    else
+                        buildWTandWST(mouseName, sessionName, whisker_d, [], ppm)
+                    end
                 end
             end
             
             cd(whisker_d)
-            sn_spont = dir([mice{i},'spont*']);
+            sn_spont = dir([mice{mi},'spont*']);
             for si = 1 : length(sn_spont)
                 cd(whisker_d)
                 if sn_spont(si).isdir
@@ -356,7 +373,25 @@ if DoWTandWST
                     sessionName = sprintf('piezo%d',sessions_piezo{mi}(j));
                     cd(whisker_d)
                     if exist([mouseName, sessionName],'dir')
-                        buildWTandWST(mouseName, sessionName, whisker_d, [], ppm)
+                        behavior_d = [behavior_base_dir mouseName '\'];
+
+                        if exist('b','var')
+                            if strcmp(b{1}.mouseName, mouseName)
+                                disp('using the same behavior file')
+                            else
+                                disp('loading a new behavior file')
+                                load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+                            end
+                        else
+                            load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+                        end
+                        if strcmp(sessionName, 'S91')
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
+                        else
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
+                        end
+                        b_session = b{b_ind};
+                        buildWTandWST(mouseName, sessionName, whisker_d, b_session, ppm)
                     end
                 end
             end

@@ -30,7 +30,13 @@ elseif exist(maskfn,'file') && strcmp(optional, 'noskip')
     disp([maskfn ' already exists. Overriding.'])    
 end
 
-number_of_random_trials = 10; % for averaging for mask detection
+if contains(sessionName, 'spont')
+    number_of_random_trials = 1; % for averaging for mask detection
+elseif contains(sessionName, 'piezo')
+    number_of_random_trials = 3; % for averaging for mask detection
+else
+    number_of_random_trials = 10; % for averaging for mask detection
+end
 inflate_rate = 1.04;
 
 %% Follicle
@@ -127,7 +133,6 @@ while (i < 3)
     obj_h = scatter(mask_j,mask_i,3,'bo');
     
     qnum = length(mask_j);
-%             polyDegree = min([qnum-1,6]);
     polyDegree = 2;
     mask_j = mask_j'; mask_i = mask_i';
     q = (0:(qnum-1))./(qnum-1);
@@ -147,13 +152,61 @@ while (i < 3)
     switch button
         case 'Yes'
             i = i + 1;
-        case 'No' 
-            delete(obj_h);
-            delete(plot_h);
-            continue
+        case 'No'         
+            answer = questdlg('Do you want manual point selection?', 'Manual selection', 'Yes', 'No', 'Cancel', 'Yes');
+            switch answer
+                case 'Yes'
+                    delete(obj_h);
+                    delete(plot_h);
+                    maskPoints = []; % points of the polygon                    
+                    temp_point = ginput(1);
+                    j = 1;
+                    while(~isempty(temp_point)) % finish drawing polygon by pressing "enter"
+                        maskPoints = [maskPoints; temp_point];
+                        plot(maskPoints(j,1), maskPoints(j,2), 'bo', 'MarkerSize', 3)                        
+                        temp_point = ginput(1);
+                        j = j + 1;
+                    end
+                    mask_i = maskPoints(:,1); mask_j = maskPoints(:,2);
+                    qnum = length(mask_j);
+                    polyDegree = 2;
+                    mask_j = mask_j'; mask_i = mask_i';
+                    q = (0:(qnum-1))./(qnum-1);
+                    px = Whisker.polyfit(q,mask_i,polyDegree);
+                    py = Whisker.polyfit(q,mask_j,polyDegree);
+                    q = linspace(-0.3,1.3);
+                    maskx{i} = polyval(px,q);
+                    masky{i} = polyval(py,q);
+                    plot_h = plot(maskx{i},masky{i},'g-','LineWidth',2);
+
+                    drawnow;
+                    if i == 1
+                        answer2 = questdlg('is this correct?', 'Top-view mask', 'Yes', 'No', 'Cancel', 'Yes');
+                    else
+                        answer2 = questdlg('is this correct?', 'Front-view mask', 'Yes', 'No', 'Cancel', 'Yes');
+                    end
+                    switch answer2
+                        case 'Yes'
+                            i = i + 1;
+                        case 'No' 
+                            delete(obj_h);
+                            delete(plot_h);
+                            continue
+                        case 'Cancel'
+                            disp('measurements adjustment aborted')
+                        return
+                    end
+                case 'No'
+                    delete(obj_h);
+                    delete(plot_h);
+                    continue
+                case 'Cancel'
+                    disp('measurements adjustment aborted')
+                    return
+            end
         case 'Cancel'
             disp('measurements adjustment aborted')
-            return
+                    return
     end
 end
 

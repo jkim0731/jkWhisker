@@ -35,15 +35,16 @@ errorlist = zeros(size(flist,1),1); % List of files having error(s) in whisker t
 % 03/31/2017 JK
 
 %% Listing error files
-
-parfor i = 1 : size(flist,1)
-    error_flag = jkmeasurements(flist(i).name(1:end-13), w, h, f, follicle_threshold, length_threshold);
-    if error_flag == 1
-%         errorlist = [errorlist; str2double(flist(i).name(1:end-13))];
-        errorlist(i) = str2double(flist(i).name(1:end-13));
+    
+if ~contains(pwd,'spont')   
+    parfor i = 1 : size(flist,1)
+        error_flag = jkmeasurements(flist(i).name(1:end-13), w, h, f, follicle_threshold, length_threshold);
+        if error_flag == 1
+    %         errorlist = [errorlist; str2double(flist(i).name(1:end-13))];
+            errorlist(i) = str2double(flist(i).name(1:end-13));
+        end
     end
 end
-
 %%
 prev_result = ls('remeasure_*.mat');
 if ~isempty(prev_result)

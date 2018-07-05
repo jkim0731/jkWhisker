@@ -164,6 +164,7 @@ if ~isempty(fnall)
             fn = fnall{k};
             disp(['Processing .whiskers file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
 %             try % An error found during building .whiskers file. Whisker tracker error, so having a way out of using that trial
+            if ~isempty(p.Results.behavior)
                 bInd = find(cellfun(@(x) x.trialNum == str2double(fn),p.Results.behavior.trials));
                 %%
                 %%
@@ -192,6 +193,26 @@ if ~isempty(fnall)
                         w.set_mask_from_points(w.trajectoryIDs,p.Results.mask(1,:),p.Results.mask(2,:));
                     end
                 end
+            else
+                w = Whisker.WhiskerTrial_2pad(fn, str2double(fn), p.Results.trajectory_nums, 'mouseName', p.Results.mouseName, 'sessionName', p.Results.sessionName);
+
+                w.faceSideInImage = p.Results.faceSideInImage;
+                w.protractionDirection = p.Results.protractionDirection;
+                w.imagePixelDimsXY = p.Results.imagePixelDimsXY;
+                w.pxPerMm = p.Results.pxPerMm;
+                w.framePeriodInSec = p.Results.framePeriodInSec;
+                if ~isempty(p.Results.mask)
+                    if iscell(p.Results.mask)
+                        for q=1:numel(w.trajectoryIDs)
+                            w.set_mask_from_points(w.trajectoryIDs(q),p.Results.mask{q}(1,:),p.Results.mask{q}(2,:));
+                        end
+                    else
+    %                     for q = 1 : size(p.Results.mask,1)
+    %                         w.set_mask_from_points(w.trajectoryIDs(q),p.Results.mask(q,:),p.Results.mask(q,:));
+                        w.set_mask_from_points(w.trajectoryIDs,p.Results.mask(1,:),p.Results.mask(2,:));
+                    end
+                end
+            end
 
                 outfn = [fn '_WT.mat'];
                 pctsave(outfn,w)
@@ -200,14 +221,26 @@ if ~isempty(fnall)
 %                 outfn = [fn '_errorWT.mat'];
 %                 pctsave(outfn,k)
 %             end
+            
+
+                
+
         end
     else
         for k=1:nfiles
             fn = fnall{k};
             disp(['Processing .whiskers file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
-%             try
-                w = Whisker.WhiskerTrial_2pad(fn, trial_nums(k), p.Results.trajectory_nums, 'mouseName', p.Results.mouseName, 'sessionName',...
-                    p.Results.sessionName, 'trialType', p.Results.behavior.trials{bInd}.trialType, 'angle', p.Results.behavior.trials{bInd}.servoAngle, 'apUpPosition', p.Results.behavior.trials{bInd}.motorApPosition);
+%             try % An error found during building .whiskers file. Whisker tracker error, so having a way out of using that trial
+            if ~isempty(p.Results.behavior)
+                bInd = find(cellfun(@(x) x.trialNum == str2double(fn),p.Results.behavior.trials));
+                %%
+                %%
+                bInd = bInd(1); % Temporary solution because of same trialNum of 'oo' trialType trials with one trial before
+                %%
+                %%
+                w = Whisker.WhiskerTrial_2pad(fn, p.Results.behavior.trials{bInd}.trialNum, p.Results.trajectory_nums, 'mouseName', p.Results.mouseName, 'sessionName',...
+                    p.Results.sessionName, 'trialType', p.Results.behavior.trials{bInd}.trialType, 'angle', p.Results.behavior.trials{bInd}.servoAngle, ...
+                    'apUpPosition', p.Results.behavior.trials{bInd}.motorApPosition, 'radialDistance', p.Results.behavior.trials{bInd}.motorDistance);
 
                 w.barRadius = p.Results.barRadius;
                 w.barPosOffset = p.Results.barPosOffset;
@@ -222,9 +255,31 @@ if ~isempty(fnall)
                             w.set_mask_from_points(w.trajectoryIDs(q),p.Results.mask{q}(1,:),p.Results.mask{q}(2,:));
                         end
                     else
+    %                     for q = 1 : size(p.Results.mask,1)
+    %                         w.set_mask_from_points(w.trajectoryIDs(q),p.Results.mask(q,:),p.Results.mask(q,:));
                         w.set_mask_from_points(w.trajectoryIDs,p.Results.mask(1,:),p.Results.mask(2,:));
                     end
                 end
+            else
+                w = Whisker.WhiskerTrial_2pad(fn, str2double(fn), p.Results.trajectory_nums, 'mouseName', p.Results.mouseName, 'sessionName', p.Results.sessionName);
+
+                w.faceSideInImage = p.Results.faceSideInImage;
+                w.protractionDirection = p.Results.protractionDirection;
+                w.imagePixelDimsXY = p.Results.imagePixelDimsXY;
+                w.pxPerMm = p.Results.pxPerMm;
+                w.framePeriodInSec = p.Results.framePeriodInSec;
+                if ~isempty(p.Results.mask)
+                    if iscell(p.Results.mask)
+                        for q=1:numel(w.trajectoryIDs)
+                            w.set_mask_from_points(w.trajectoryIDs(q),p.Results.mask{q}(1,:),p.Results.mask{q}(2,:));
+                        end
+                    else
+    %                     for q = 1 : size(p.Results.mask,1)
+    %                         w.set_mask_from_points(w.trajectoryIDs(q),p.Results.mask(q,:),p.Results.mask(q,:));
+                        w.set_mask_from_points(w.trajectoryIDs,p.Results.mask(1,:),p.Results.mask(2,:));
+                    end
+                end
+            end
 
                 outfn = [fn '_WT.mat'];
                 save(outfn,'w');
