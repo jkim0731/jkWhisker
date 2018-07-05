@@ -130,7 +130,8 @@ for mi = 7
         touch_hp = cell(length(servo_values),length(distance_values)); % touch hyperplanes
         hp_peaks = cell(length(servo_values),length(distance_values)); % touch hyperplane peak points. 2 points for each hyperplane
         trial_nums = cell(length(servo_values),length(distance_values));
-        apPositionPolyfits = cell(length(servo_values),length(distance_values)); % linear fitting parameters for anterior-posterior motor position in each types    
+        apPositionPolyfits = cell(length(servo_values),length(distance_values)); % linear fitting parameters for anterior-posterior motor position in each types
+        thPolygon = cell(length(servo_values),length(distance_values));
         
         thflist = dir([whisker_d, '*touch_hp.mat']);
         if ~isempty(thflist)
@@ -641,12 +642,16 @@ for mi = 7
                 close all
                 steps_hp{iservo, idist} = steps;
                 num_points_in_hp{iservo, idist} = num_points;
-                touch_hp{iservo, idist} = xyz_psi2; % Don't round them! (at least at this saving process)
+                touch_hp{iservo, idist} = xyz_psi2; % Don't round them! (at least at this saving process)                
+                    th_2d = [th_2d1; th_2d2];
+                    cvh = convhull(th_2d);
+                thPolygon{iservo, idist} = th_2d(cvh,:);
+
                 fprintf('%s %s trial type #%d/%d processed\n',mouseName, sessionName, (iservo-1)*(idist-1) + iservo + idist -1, length(servo_values) * length(distance_values))        
             end
         end
         %%
-        save([whisker_d mouseName sessionName '_touch_hp.mat'],'touch_hp','num_points_in_hp','steps_hp','hp_peaks', 'psi1', 'psi2', 'servo_distance_pair')
+        save([whisker_d mouseName sessionName '_touch_hp.mat'],'touch_hp','num_points_in_hp','steps_hp','hp_peaks', 'psi1', 'psi2', 'servo_distance_pair', 'thPolygon')
         fprintf('%s %s hp_peaks saved\n', mouseName, sessionName)
     end
 end

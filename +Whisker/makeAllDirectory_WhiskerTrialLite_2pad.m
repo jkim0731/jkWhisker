@@ -82,6 +82,7 @@ p.addParameter('proximity_threshold', -1, @isnumeric);
 p.addParameter('behavior',[], @(x) isa(x,'Solo.BehavTrial2padArray')); % adding behavior 2017/04/12 JK
 p.addParameter('hp_peaks',{}, @iscell);
 p.addParameter('touch_hp',{}, @iscell);
+p.addParameter('thPolygon',{}, @iscell);
 p.addParameter('psi1',{}, @isnumeric);
 p.addParameter('psi2',{}, @isnumeric);
 
@@ -105,7 +106,7 @@ cd(d)
 
 ws = Whisker.WhiskerSignalTrialArray_2pad(d);
 
-mirrorAngle = mean(cellfun(@(x) x.mirrorAngle, ws.trials));
+mirrorAngle = nanmean(cellfun(@(x) x.mirrorAngle, ws.trials));
 
 fnall = arrayfun(@(x) x.name(1:(end-8)), dir([d '*_WST.mat']),'UniformOutput',false);
 
@@ -129,86 +130,106 @@ if ~isempty(inBoth)
     disp(inBoth)
 end
 
-% fnall = {'2','3','4','5','6','7','8','9','10','100','200','300'};
+% fnall = {'2'};
 
 nfiles = length(fnall);
 
+% Calculating hyperplane first
+if isempty(p.Results.thPolygon) && ~isempty(p.Results.touch_hp)
+    thPolygon = cell(length(p.Results.touch_hp),1);
+    for ti = 1 : length(p.Results.touch_hp)
+        A = viewmtx(p.Results.psi1(ti), 90 - p.Results.psi2(ti));
+        touch4d = [p.Results.touch_hp{ti}(1,:) + p.Results.hp_peaks{ti}(1), p.Results.touch_hp{ti}(1,:) + p.Results.hp_peaks{ti}(2); 
+            p.Results.touch_hp{ti}(2:3,:), p.Results.touch_hp{ti}(2:3,:);
+            ones( 1, size(p.Results.touch_hp{ti},2)*2 ) ];
+        touch2d = A * touch4d;
+        touch2d = round(touch2d * 10000) / 10000;
+        touch2d = unique(touch2d(1:2,:)','rows');
+        cvh = convhull(touch2d);
+        thPolygon{ti} = touch2d(cvh,:);
+    end
+else
+    thPolygon = p.Results.thPolygon;
+end
+
 if ~isempty(fnall)
     if exist('parfor','builtin') % Parallel Computing Toolbox is installed.
-        for k=1:nfiles
-%         parfor k=1:nfiles
-                fn = fnall{k};
-                disp(['Processing ''_WST.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
+%         for k=1:nfiles
+        parfor k=1:nfiles
+            fn = fnall{k};
+            disp(['Processing ''_WST.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
 
-                ws = pctload([fn '_WST.mat']);
-                
-                if isempty(p.Results.touch_hp) || isempty(p.Results.hp_peaks) || strcmp(p.Results.behavior.trials{b_ind}.trialType, 'oo') || isempty(p.Results.behavior)
+            ws = pctload([fn '_WST.mat']);
+
+            if isempty(p.Results.touch_hp) || isempty(p.Results.hp_peaks) || isempty(p.Results.behavior)
+                wl = Whisker.WhiskerTrialLite_2pad(ws,'calc_forces',p.Results.calc_forces,...
+                    'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
+                    'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
+                    'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
+                    'proximity_threshold',p.Results.proximity_threshold,'mirrorAngle', mirrorAngle, 'rInMm', p.Results.rInMm);
+            else                    
+                b_ind = find(cellfun(@(x) x.trialNum,p.Results.behavior.trials)==str2double(fn));
+                if strcmp(p.Results.behavior.trials{b_ind}.trialType, 'oo')
                     wl = Whisker.WhiskerTrialLite_2pad(ws,'calc_forces',p.Results.calc_forces,...
                         'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
                         'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
                         'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
                         'proximity_threshold',p.Results.proximity_threshold,'mirrorAngle', mirrorAngle, 'rInMm', p.Results.rInMm);
-                else                    
-                    b_ind = find(cellfun(@(x) x.trialNum,p.Results.behavior.trials)==str2double(fn));
+                else
+
                     angle = p.Results.behavior.trials{b_ind}.servoAngle;
                     distance = p.Results.behavior.trials{b_ind}.motorDistance;
 
                     th_ind = find(cellfun(@(x) isequal(x, [angle, distance]), p.Results.servo_distance_pair));
-                    A = viewmtx(p.Results.psi1(th_ind),90-p.Results.psi2(th_ind));
-                    tempTouchHP = p.Results.touch_hp{th_ind};                    
-                    touch4d = [tempTouchHP(1,:) + p.Results.hp_peaks{th_ind}(1) - p.Results.touch_boundary_thickness, ...
-                        tempTouchHP(1,:) + p.Results.hp_peaks{th_ind}(2) + p.Results.touch_boundary_thickness; ...
-                        tempTouchHP(2:3,:), tempTouchHP(2:3,:);     ones(1,size(tempTouchHP,2)*2) ];
-                    thPolygon = A*touch4d;
-                    thPolygon = round(thPolygon*10000)/10000;
-                    thPolygon = unique(thPolygon(1:2,:)','rows');
-                    cvh = convhull(thPolygon);
-                    thPolygon = thPolygon(cvh,:);
                     wl = Whisker.WhiskerTrialLite_2pad(ws,'calc_forces',p.Results.calc_forces,...
                         'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
                         'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
-                        'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
-                        'proximity_threshold',p.Results.proximity_threshold,'thPolygon',thPolygon', ...
-                        'mirrorAngle', mirrorAngle, 'projMat', A, 'rInMm', p.Results.rInMm, 'touchBoundaryThickness', p.Results.touch_boundary_thickness);
+                        'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value, 'proximity_threshold',p.Results.proximity_threshold, ...
+                        'mirrorAngle', mirrorAngle, 'thPolygon', thPolygon{th_ind}, 'touchPsi1', p.Results.psi1(th_ind), 'touchPsi2', p.Results.psi2(th_ind), ...
+                        'rInMm', p.Results.rInMm, 'touchBoundaryThickness', p.Results.touch_boundary_thickness);
                 end
-                outfn = [fn '_WL_2pad.mat'];
+            end
+            outfn = [fn '_WL_2pad.mat'];
 
-                pctsave(outfn,wl);
+            pctsave(outfn,wl);
         end
     else
         for k=1:nfiles
-                fn = fnall{k};
-                disp(['Processing ''_WST.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
+            fn = fnall{k};
+            disp(['Processing ''_WST.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
 
-                load([fn '_WST.mat'],'ws');
-                if isempty(p.Results.touch_hp) || isempty(p.Results.hp_peaks) || strcmp(p.Results.behavior.trials{b_ind}.trialType, 'oo') || isempty(p.Results.behavior)
+            load([fn '_WST.mat'],'ws');
+            if isempty(p.Results.touch_hp) || isempty(p.Results.hp_peaks) || isempty(p.Results.behavior)
+                wl = Whisker.WhiskerTrialLite_2pad(ws,'calc_forces',p.Results.calc_forces,...
+                    'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
+                    'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
+                    'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
+                    'proximity_threshold',p.Results.proximity_threshold,'mirrorAngle', mirrorAngle, 'rInMm', p.Results.rInMm);
+            else                    
+                b_ind = find(cellfun(@(x) x.trialNum,p.Results.behavior.trials)==str2double(fn));
+                if strcmp(p.Results.behavior.trials{b_ind}.trialType, 'oo')
                     wl = Whisker.WhiskerTrialLite_2pad(ws,'calc_forces',p.Results.calc_forces,...
                         'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
                         'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
                         'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
-                        'proximity_threshold',p.Results.proximity_threshold, 'mirrorAngle', mirrorAngle, 'rInMm', p.Results.rInMm);
+                        'proximity_threshold',p.Results.proximity_threshold,'mirrorAngle', mirrorAngle, 'rInMm', p.Results.rInMm);
                 else
-                    b_ind = find(cellfun(@(x) x.trialNum,p.Results.behavior.trials)==str2double(fn));
+
                     angle = p.Results.behavior.trials{b_ind}.servoAngle;
                     distance = p.Results.behavior.trials{b_ind}.motorDistance;
 
                     th_ind = find(cellfun(@(x) isequal(x, [angle, distance]), p.Results.servo_distance_pair));
-                    A = viewmtx(p.Results.psi1(th_ind),90-p.Results.psi2(th_ind));
-                    tempTouchHP = p.Results.touch_hp{th_ind};                    
-                    touch4d = [tempTouchHP(1,:) + p.Results.hp_peaks{th_ind}(1) - p.Results.touch_boundary_thickness, ...
-                        tempTouchHP(1,:) + p.Results.hp_peaks{th_ind}(2) + p.Results.touch_boundary_thickness; ...
-                        tempTouchHP(2:3,:), tempTouchHP(2:3,:);     ones(1,size(xyz_psi2,2)*2) ];
-                    thPolygon = A*touch4d;
-                    thPolygon = unique(thPolygon(1:2,:)','rows');
                     wl = Whisker.WhiskerTrialLite_2pad(ws,'calc_forces',p.Results.calc_forces,...
                         'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
                         'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
-                        'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
-                        'proximity_threshold',p.Results.proximity_threshold,'thPolygon',thPolygon', 'mirrorAngle', mirrorAngle, 'projMat', A, 'rInMm', p.Results.rInMm);
+                        'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value, 'proximity_threshold',p.Results.proximity_threshold, ...
+                        'mirrorAngle', mirrorAngle, 'thPolygon', thPolygon{th_ind}, 'touchPsi1', p.Results.psi1(th_ind), 'touchPsi2', p.Results.psi2(th_ind), ...
+                        'rInMm', p.Results.rInMm, 'touchBoundaryThickness', p.Results.touch_boundary_thickness);
                 end
-                outfn = [fn '_WL_2pad.mat'];
+            end
+            outfn = [fn '_WL_2pad.mat'];
 
-                save(outfn,'wl');
+            save(outfn,'wl');
         end
     end
 end

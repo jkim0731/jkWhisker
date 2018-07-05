@@ -1,15 +1,16 @@
 %% basic information
-mice = {'JK052','JK053','JK054','JK056'};
+% mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
+mice = {'JK025'};
 
-videoloc = 'L:\tracked\';
+videoloc = 'J:\WhiskerVideo\';
 if strcmp(videoloc(end),filesep)
     whisker_d = videoloc;
 else
     whisker_d = ([videoloc filesep]);
 end
-behavior_base_dir = 'Y:\Whiskernas\JK\SoloData\';
+behavior_base_dir = 'J:\SoloData\';
 
-ppm = 17.81;
+ppm = 17.81/2;
             % 'pxPerMm': 17.81002608 for telecentric lens
 % comment out when doing for all of the sessions in the mouse directory
 
@@ -21,18 +22,18 @@ rInMm = 3; % mm from the mask along the whisker to calculate delta kappa
 %%
 %%
 %%
-sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[22:25],[3]};  
-% sessions = {[23]};
+% sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[22:25],[3]};  
+sessions = {[4]};
 sessions_pre = {[],[],[],[],[],[],[],[]};
 sessions_piezo = {[],[],[],[],[],[],[],[]};
 sessions_spont = {[],[],[],[],[],[],[],[]};
 
-all_session = 1; % 1 if using all sessions, 0 if using selected sessions
+all_session = 0; % 1 if using all sessions, 0 if using selected sessions
 
-DoFollicle = 1;
-DoRemeasure = 1;
-DoWTandWST = 1;
-DoWL = 0;
+DoFollicle = 0;
+DoRemeasure = 0;
+DoWTandWST = 0;
+DoWL = 1;
 
 %% Define follicle points and masks
 % saves follicle_n_mask.mat file consists of variables 'maskx','masky','width', 'height', and 'follicle_first'

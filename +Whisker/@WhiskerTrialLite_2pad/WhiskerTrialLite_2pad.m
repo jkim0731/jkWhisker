@@ -36,7 +36,7 @@ classdef WhiskerTrialLite_2pad < handle
         
         % The following require pole tracking:
         thetaAtContact = {};
-        distanceToPoleCenter = {};
+        distanceToPole = [];
         Fnorm = {};
         Faxial = {};
         Flateral = {};
@@ -63,6 +63,9 @@ classdef WhiskerTrialLite_2pad < handle
         
         thPolygon = []; % convex hull of the touch hyperplane at this specific pole position
         touchBoundaryThickness = [];
+        touchPsi1 = [];
+        touchPsi2 = [];
+        dist2HP = [];
         thTouchFrames = []; % touch frames derived from the touch hyperplane.
         thTouchChunks = {}; % divide thTouchFrames into chunks based on the continuity
         
@@ -146,13 +149,14 @@ classdef WhiskerTrialLite_2pad < handle
             p.addParameter('behavior',[], @(x) isa(x,'Solo.BehavTrial2padArray'));
             
             p.addParameter('trial_type',{}, @ischar);
-            p.addParameter('thPolygon',[], @isnumeric);
             p.addParameter('kappaTouchThreshold',[],@(x) isnumeric(x) && numel(x)==2); % 2 values for top-view and front-view kappa
             p.addParameter('durationThreshold',[], @isnumeric);
             p.addParameter('mirrorAngle', [], @isnumeric); % averaged from all the trials in the session
-            p.addParameter('projMat', [], @(x) isnumeric(x) && length(size(x))==2);
             p.addParameter('rInMm',{}, @isnumeric);
+            p.addParameter('thPolygon',[], @isnumeric);
             p.addParameter('touchBoundaryThickness', [], @isnumeric);
+            p.addParameter('touchPsi1', [], @isnumeric);
+            p.addParameter('touchPsi2', [], @isnumeric);
             
             p.parse(ws,varargin{:});
             
@@ -175,8 +179,7 @@ classdef WhiskerTrialLite_2pad < handle
             obj.time = cell(1,ntraj);
             obj.deltaKappa = cell(1,ntraj);  
             obj.thetaAtBase = cell(1,ntraj);     
-            obj.thetaAtContact = cell(1,ntraj);
-            obj.distanceToPoleCenter = cell(1,ntraj);
+            obj.thetaAtContact = cell(1,ntraj);            
             obj.Fnorm = cell(1,ntraj);
             obj.Faxial = cell(1,ntraj);
             obj.Flateral = cell(1,ntraj);
@@ -194,6 +197,8 @@ classdef WhiskerTrialLite_2pad < handle
     
             obj.thPolygon = p.Results.thPolygon;
             obj.touchBoundaryThickness = p.Results.touchBoundaryThickness;
+            obj.touchPsi1 = p.Results.touchPsi1;
+            obj.touchPsi2 = p.Results.touchPsi2;            
                     
             obj.poleAxesUp = ws.poleAxesUp;
             obj.poleAxesMoving = ws.poleAxesMoving;
@@ -201,6 +206,7 @@ classdef WhiskerTrialLite_2pad < handle
             obj.whiskerEdgeCoord = ws.whiskerEdgeCoord;
             obj.poleUpFrames = ws.poleUpFrames;
             obj.poleMovingFrames = ws.poleMovingFrames;
+            obj.distanceToPole = ws.dist2pole;
             
             obj.nof = ws.nof;
             obj.frontRInMm = ws.get_frontRInMm(obj.rInMm);
@@ -272,22 +278,26 @@ classdef WhiskerTrialLite_2pad < handle
                 apPositionInd = find(~isnan(ws.apPosition));
                 noNaNInd = intersect(intersect(topInd, frontInd), apPositionInd);
                 intersect_3d_total = [ws.whiskerEdgeCoord(noNaNInd,1), ws.whiskerEdgeCoord(noNaNInd,2), ws.apPosition(noNaNInd)];
-
+                
                 intersect_4d = [intersect_3d_total, ones(size(intersect_3d_total,1),1)]';
-                intersect_2d = p.Results.projMat*intersect_4d;
-
-    %             obj.thTouchFrames = find(inpolygon(obj.whiskerEdgeCoord(:,1),obj.whiskerEdgeCoord(:,2), ...
-    %                 obj.thPolygon(:,1), obj.thPolygon(:,2)));
-                touchInd = inpolygon(intersect_2d(1,:)', intersect_2d(2,:)',    obj.thPolygon(1,:), obj.thPolygon(2,:));
-                obj.thTouchFrames = noNaNInd(touchInd);
+                projMat = viewmtx(obj.touchPsi1, 90 - obj.touchPsi2);
+                intersect_2d = projMat*intersect_4d;
+                
+                dist2HP = p_poly_dist(intersect_2d(1,:), intersect_2d(2,:), obj.thPolygon(:,1)', obj.thPolygon(:,2)');
+                if size(dist2HP,1) > size(dist2HP,2)
+                    dist2HP = dist2HP';
+                end
+                obj.dist2HP = nan(obj.nof,1);
+                obj.dist2HP(noNaNInd) = dist2HP;
+                obj.thTouchFrames = noNaNInd(dist2HP < obj.touchBoundaryThickness);
             end
             %
             %
             % for debugging
 %             figure, 
-%             plot(intersect_2d(1,:), intersect_2d(2,:), 'k.'), hold on            
-%             plot(obj.thPolygon(1,:), obj.thPolygon(2,:), 'r-')
-%             plot(intersect_2d(1,touchInd), intersect_2d(2,touchInd), 'b.')
+%             plot(intersect_2d(1, dist2HP >= obj.touchBoundaryThickness), intersect_2d(2, dist2HP >= obj.touchBoundaryThickness), 'k.'), hold on
+%             plot(obj.thPolygon(:,1), obj.thPolygon(:,2), 'r-')
+%             plot(intersect_2d(1, dist2HP < obj.touchBoundaryThickness ), intersect_2d(2, dist2HP < obj.touchBoundaryThickness ), 'b.')
             %
             %
             %

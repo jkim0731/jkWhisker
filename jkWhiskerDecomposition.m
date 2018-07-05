@@ -1,7 +1,6 @@
 function [hh, amplitude, filteredSignal, midpoint, amplitudeS, midpointS, phase, phaseS] =  jkWhiskerDecomposition(theta)
 %% calculate whisker amplitude and midpoint
 
-
 sampleRate = 311;
 
 % make any nan thetaAtBase = mean of the surrounding points (10 on each side)
@@ -11,7 +10,6 @@ catch
     theta(isnan(theta)) = nanmean(theta);
 end
 
-
 BandPassCutOffsInHz = [8 30];  %%check filter parameters!!!
 % From Sofroniew 2014, which sites Hill 2011
 W1 = BandPassCutOffsInHz(1) / (sampleRate/2);
@@ -19,7 +17,7 @@ W2 = BandPassCutOffsInHz(2) / (sampleRate/2);
 [b,a]=butter(2,[W1 W2]);
 filteredSignal = filtfilt(b, a, theta);
 
-[b,a]=butter(2, BandPassCutOffsInHz(1)/ (sampleRate/2),'low');
+[b,a] = butter(2, BandPassCutOffsInHz(1) / (sampleRate/2),'low');
 new_midpoint = filtfilt(b,a,theta-filteredSignal);
 hh=hilbert(filteredSignal);
 
