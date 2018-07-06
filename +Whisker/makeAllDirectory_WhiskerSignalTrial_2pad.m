@@ -64,12 +64,12 @@ function makeAllDirectory_WhiskerSignalTrial_2pad(d,varargin)
 p = inputParser;
 
 p.addRequired('d', @ischar);
-p.addParamValue('include_files', {}, @(x) all(cellfun(@ischar,x)));
-p.addParamValue('ignore_files', {}, @(x) all(cellfun(@ischar,x)));
-p.addParamValue('polyRoiInPix', [0 200], @(x) numel(x)==2 && x(1)>=0);
-p.addParamValue('barPosOffset', [0 0], @(x) numel(x)==2);
-p.addParamValue('follicleExtrapDistInPix', NaN, @isnumeric);
-p.addParamValue('polyFitsMask', [], @isnumeric);
+p.addParameter('include_files', {}, @(x) all(cellfun(@ischar,x)));
+p.addParameter('ignore_files', {}, @(x) all(cellfun(@ischar,x)));
+p.addParameter('polyRoiInPix', [0 200], @(x) numel(x)==2 && x(1)>=0);
+p.addParameter('barPosOffset', [0 0], @(x) numel(x)==2);
+p.addParameter('follicleExtrapDistInPix', NaN, @isnumeric);
+p.addParameter('polyFitsMask', [], @isnumeric);
 
 p.parse(d,varargin{:});
 

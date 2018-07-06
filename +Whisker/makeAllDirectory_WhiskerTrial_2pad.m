@@ -143,27 +143,26 @@ end
 
 nfiles = numel(fnall);
 
-if ~all(isnan(p.Results.trial_nums)) && isempty(p.Results.include_files)
-    disp('WARNING: Argument ''trial_nums'' was given without specifying files in ''include_list''; order depends on operating system.')
-end
-if numel(p.Results.trial_nums)==1
-    trial_nums = repmat(p.Results.trial_nums,1,nfiles);
-elseif numel(p.Results.trial_nums) ~= nfiles
-    error('Length of argument ''trial_nums'' does not match number of files specified.')
-else
-    trial_nums = p.Results.trial_nums;
-end
+% % % % if ~all(isnan(p.Results.trial_nums)) && isempty(p.Results.include_files)
+% % % %     disp('WARNING: Argument ''trial_nums'' was given without specifying files in ''include_list''; order depends on operating system.')
+% % % % end
+% % % % if numel(p.Results.trial_nums)==1
+% % % %     trial_nums = repmat(p.Results.trial_nums,1,nfiles);
+% % % % elseif numel(p.Results.trial_nums) ~= nfiles
+% % % %     error('Length of argument ''trial_nums'' does not match number of files specified.')
+% % % % else
+% % % %     trial_nums = p.Results.trial_nums;
+% % % % end
 
 % fnall = {'143'};
 nfiles = length(fnall);
 
 if ~isempty(fnall)
-    if exist('parfor','builtin') % Parallel Computing Toolbox is installed.
+    if exist('parfor','builtin') && ~contains(p.Results.sessionName, 'spont') % Parallel Computing Toolbox is installed.
         parfor k=1:nfiles
 %         for k=1:nfiles
             fn = fnall{k};
             disp(['Processing .whiskers file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
-%             try % An error found during building .whiskers file. Whisker tracker error, so having a way out of using that trial
             if ~isempty(p.Results.behavior)
                 bInd = find(cellfun(@(x) x.trialNum == str2double(fn),p.Results.behavior.trials));
                 %%
@@ -188,8 +187,6 @@ if ~isempty(fnall)
                             w.set_mask_from_points(w.trajectoryIDs(q),p.Results.mask{q}(1,:),p.Results.mask{q}(2,:));
                         end
                     else
-    %                     for q = 1 : size(p.Results.mask,1)
-    %                         w.set_mask_from_points(w.trajectoryIDs(q),p.Results.mask(q,:),p.Results.mask(q,:));
                         w.set_mask_from_points(w.trajectoryIDs,p.Results.mask(1,:),p.Results.mask(2,:));
                     end
                 end
@@ -207,30 +204,18 @@ if ~isempty(fnall)
                             w.set_mask_from_points(w.trajectoryIDs(q),p.Results.mask{q}(1,:),p.Results.mask{q}(2,:));
                         end
                     else
-    %                     for q = 1 : size(p.Results.mask,1)
-    %                         w.set_mask_from_points(w.trajectoryIDs(q),p.Results.mask(q,:),p.Results.mask(q,:));
                         w.set_mask_from_points(w.trajectoryIDs,p.Results.mask(1,:),p.Results.mask(2,:));
                     end
                 end
             end
 
-                outfn = [fn '_WT.mat'];
-                pctsave(outfn,w)
-%             catch
-%                 disp(['Error on .whiskers file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
-%                 outfn = [fn '_errorWT.mat'];
-%                 pctsave(outfn,k)
-%             end
-            
-
-                
-
+            outfn = [fn '_WT.mat'];
+            pctsave(outfn,w)
         end
     else
         for k=1:nfiles
             fn = fnall{k};
             disp(['Processing .whiskers file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
-%             try % An error found during building .whiskers file. Whisker tracker error, so having a way out of using that trial
             if ~isempty(p.Results.behavior)
                 bInd = find(cellfun(@(x) x.trialNum == str2double(fn),p.Results.behavior.trials));
                 %%
@@ -255,8 +240,6 @@ if ~isempty(fnall)
                             w.set_mask_from_points(w.trajectoryIDs(q),p.Results.mask{q}(1,:),p.Results.mask{q}(2,:));
                         end
                     else
-    %                     for q = 1 : size(p.Results.mask,1)
-    %                         w.set_mask_from_points(w.trajectoryIDs(q),p.Results.mask(q,:),p.Results.mask(q,:));
                         w.set_mask_from_points(w.trajectoryIDs,p.Results.mask(1,:),p.Results.mask(2,:));
                     end
                 end
@@ -274,20 +257,13 @@ if ~isempty(fnall)
                             w.set_mask_from_points(w.trajectoryIDs(q),p.Results.mask{q}(1,:),p.Results.mask{q}(2,:));
                         end
                     else
-    %                     for q = 1 : size(p.Results.mask,1)
-    %                         w.set_mask_from_points(w.trajectoryIDs(q),p.Results.mask(q,:),p.Results.mask(q,:));
                         w.set_mask_from_points(w.trajectoryIDs,p.Results.mask(1,:),p.Results.mask(2,:));
                     end
                 end
             end
 
-                outfn = [fn '_WT.mat'];
-                save(outfn,'w');
-%             catch
-%                 disp(['Error on .whiskers file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
-%                 outfn = [fn '_errorWT.mat'];
-%                 save(outfn,'k')
-%             end
+            outfn = [fn '_WT.mat'];
+            save(outfn,'w');
         end
     end
 end

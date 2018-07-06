@@ -54,20 +54,27 @@ function nft = buildWTandWST(mouseName, sessionName, d, bSession, ppm)
     % corresponding to trial number in string positions 1:end-13 of the file
     % name. These index numbers may need to be changed to match up to the
     % numerical code of the trial number.  (2016/09/05 JK)
-
-    for i=1:length(filelist)
-        dirTrialNums(i)=str2double(filelist(i).name(1:end-13)); % extract out the trial number from each measurements file present in directory
-    end
-    trialNums = sort(dirTrialNums);
-    trialNums = trialNums(~isnan(trialNums));
-    if ~isempty(bSession) % try only the ones with behavior session
-        trialNums = intersect(trialNums,bSession.trialNums); % try only the ones with behavior trials
-    end
-    includef=cell(size(trialNums,1),1);
-    for i = 1: length(trialNums)
-        includef{i} = num2str(trialNums(i));
-    end
     
+    if contains(sessionName, 'spont')
+        includef = cell(size(filelist,1),1);
+        for i = 1 : length(includef)
+            includef{i} = filelist(i).name(1:end-13);
+        end
+        trialNums = [];
+    else
+        for i=1:length(filelist)
+            dirTrialNums(i)=str2double(filelist(i).name(1:end-13)); % extract out the trial number from each measurements file present in directory
+        end
+        trialNums = sort(dirTrialNums);
+        trialNums = trialNums(~isnan(trialNums));
+        if ~isempty(bSession) % try only the ones with behavior session
+            trialNums = intersect(trialNums,bSession.trialNums); % try only the ones with behavior trials
+        end
+        includef=cell(size(trialNums,1),1);
+        for i = 1: length(trialNums)
+            includef{i} = num2str(trialNums(i));
+        end
+    end
 %%
 if ~isempty(bSession)
     if size(maskx{1},1) > size(maskx{1},2)
