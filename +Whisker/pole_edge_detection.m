@@ -65,7 +65,7 @@ rowSub = rowSub(:);
 colSub = repmat(excludeWidth,[1,length(excludeHeight)]);
 excludeHInd = sub2ind([v.Height, v.Width], rowSub, colSub');
 
-nof = fix(v.FrameRate*v.Duration);
+nof = round(v.FrameRate*v.Duration);
 
 topPix = NaN(nof,2); % bottom-right of top-view pole
 topPixforcheck = NaN(nof,2); % right-bottom of top-view pole to check if the pole was in the FOV

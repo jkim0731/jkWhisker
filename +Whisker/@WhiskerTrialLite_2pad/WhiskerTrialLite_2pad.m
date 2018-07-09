@@ -62,10 +62,12 @@ classdef WhiskerTrialLite_2pad < handle
         poleMovingFrames = [];
         
         thPolygon = []; % convex hull of the touch hyperplane at this specific pole position
+        touchHP = []; % middle of protraction and retraction boundary
         touchBoundaryThickness = [];
         touchPsi1 = [];
         touchPsi2 = [];
-        dist2HP = [];
+        dist2thPolygon = [];
+        dist2touchHP = []; % distance to the touch hyperplane (middle of protraction and retraction boundary)
         thTouchFrames = []; % touch frames derived from the touch hyperplane.
         thTouchChunks = {}; % divide thTouchFrames into chunks based on the continuity
         
@@ -154,6 +156,7 @@ classdef WhiskerTrialLite_2pad < handle
             p.addParameter('mirrorAngle', [], @isnumeric); % averaged from all the trials in the session
             p.addParameter('rInMm',{}, @isnumeric);
             p.addParameter('thPolygon',[], @isnumeric);
+            p.addParameter('touchHP',[], @isnumeric);
             p.addParameter('touchBoundaryThickness', [], @isnumeric);
             p.addParameter('touchPsi1', [], @isnumeric);
             p.addParameter('touchPsi2', [], @isnumeric);
@@ -196,6 +199,7 @@ classdef WhiskerTrialLite_2pad < handle
             obj.trialType = ws.trialType;
     
             obj.thPolygon = p.Results.thPolygon;
+            obj.touchHP = p.Results.touchHP;
             obj.touchBoundaryThickness = p.Results.touchBoundaryThickness;
             obj.touchPsi1 = p.Results.touchPsi1;
             obj.touchPsi2 = p.Results.touchPsi2;            
@@ -282,14 +286,41 @@ classdef WhiskerTrialLite_2pad < handle
                 intersect_4d = [intersect_3d_total, ones(size(intersect_3d_total,1),1)]';
                 projMat = viewmtx(obj.touchPsi1, 90 - obj.touchPsi2);
                 intersect_2d = projMat*intersect_4d;
-                
-                dist2HP = p_poly_dist(intersect_2d(1,:), intersect_2d(2,:), obj.thPolygon(:,1)', obj.thPolygon(:,2)');
-                if size(dist2HP,1) > size(dist2HP,2)
-                    dist2HP = dist2HP';
+                if size(intersect_2d,1) < size(intersect_2d,2)
+                    intersect_2d = intersect_2d';
                 end
-                obj.dist2HP = nan(obj.nof,1);
-                obj.dist2HP(noNaNInd) = dist2HP;
-                obj.thTouchFrames = noNaNInd(dist2HP < obj.touchBoundaryThickness);
+                intersect_2d = intersect_2d(:,1:2);
+                dist2thPolygon = p_poly_dist(intersect_2d(:,1)', intersect_2d(:,2)', obj.thPolygon(:,1)', obj.thPolygon(:,2)');
+                if size(dist2thPolygon,2) > size(dist2thPolygon,1)
+                    dist2thPolygon = dist2thPolygon';
+                end
+                obj.dist2thPolygon = nan(obj.nof,1);
+                obj.dist2thPolygon(noNaNInd) = dist2thPolygon;
+                obj.thTouchFrames = noNaNInd(dist2thPolygon < obj.touchBoundaryThickness);
+                
+                [~, maxind] = max(obj.touchHP(:,1));
+                v2 = obj.touchHP(maxind,:);
+                [~, minind] = min(obj.touchHP(:,1));
+                v1temp = obj.touchHP(minind,:);
+                hpSlope = (v2(2) - v1temp(2)) / (v2(1) - v1temp(1));
+                [~, minind] = min(intersect_2d(:,1));
+                v1 = [intersect_2d(minind,1), v2(2) - (v2(1) - intersect_2d(minind,1)) * hpSlope];
+                
+                v1_ = repmat([v1,0], [size(intersect_2d,1),1]);
+                v2_ = repmat([v2,0], [size(intersect_2d,1),1]);
+                intersect_2d = [intersect_2d, zeros(size(intersect_2d,1),1)];
+                a = v1_ - v2_;
+                b = intersect_2d - v2_;
+%                 dist2touchHP = p_poly_dist(intersect_2d(1,:), intersect_2d(2,:), obj.touchHP(:,1)', obj.touchHP(:,2)');
+                dist2touchHP =  sqrt(sum(cross(a,b,2).^2,2)) ./ sqrt(sum(a.^2,2));
+                if size(dist2touchHP,2) > size(dist2touchHP,1)
+                    dist2touchHP = dist2touchHP';
+                end
+                intersectSlopes = (intersect_2d(:,2) - v1(2)) ./ (intersect_2d(:,1) - v1(1));
+                negind = find(intersectSlopes > hpSlope);
+                dist2touchHP(negind) = -dist2touchHP(negind);
+                obj.dist2touchHP = nan(obj.nof,1);
+                obj.dist2touchHP(noNaNInd) = dist2touchHP;
             end
             %
             %

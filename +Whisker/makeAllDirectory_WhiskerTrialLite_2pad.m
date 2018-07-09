@@ -130,23 +130,33 @@ if ~isempty(inBoth)
     disp(inBoth)
 end
 
-% fnall = {'2'};
+% fnall = {'50'};
 
 nfiles = length(fnall);
 
 % Calculating hyperplane first
 if isempty(p.Results.thPolygon) && ~isempty(p.Results.touch_hp)
-    thPolygon = cell(length(p.Results.touch_hp),1);
-    for ti = 1 : length(p.Results.touch_hp)
-        A = viewmtx(p.Results.psi1(ti), 90 - p.Results.psi2(ti));
-        touch4d = [p.Results.touch_hp{ti}(1,:) + p.Results.hp_peaks{ti}(1), p.Results.touch_hp{ti}(1,:) + p.Results.hp_peaks{ti}(2); 
-            p.Results.touch_hp{ti}(2:3,:), p.Results.touch_hp{ti}(2:3,:);
-            ones( 1, size(p.Results.touch_hp{ti},2)*2 ) ];
-        touch2d = A * touch4d;
-        touch2d = round(touch2d * 10000) / 10000;
-        touch2d = unique(touch2d(1:2,:)','rows');
-        cvh = convhull(touch2d);
-        thPolygon{ti} = touch2d(cvh,:);
+    thPolygon = cell(size(p.Results.touch_hp));
+    touchHP = cell(size(p.Results.touch_hp));
+    for ti = 1 : size(p.Results.touch_hp,1)
+        for tj = 1 : size(p.Results.touch_hp,2)
+            A = viewmtx(p.Results.psi1(ti,tj), 90 - p.Results.psi2(ti,tj));
+            touch4d = [p.Results.touch_hp{ti,tj}(1,:) + p.Results.hp_peaks{ti,tj}(1), p.Results.touch_hp{ti,tj}(1,:) + p.Results.hp_peaks{ti,tj}(2); 
+                p.Results.touch_hp{ti,tj}(2:3,:), p.Results.touch_hp{ti,tj}(2:3,:);
+                ones( 1, size(p.Results.touch_hp{ti,tj},2)*2 ) ];
+            touch2d = A * touch4d;
+            touch2d = round(touch2d * 10000) / 10000;
+            touch2d = unique(touch2d(1:2,:)','rows');
+            cvh = convhull(touch2d);
+            thPolygon{ti,tj} = touch2d(cvh,:);
+            
+            touch4d = [p.Results.touch_hp{ti,tj}(1,:) + mean(p.Results.hp_peaks{ti,tj}(:));
+                p.Results.touch_hp{ti,tj}(2:3,:);
+                ones(1, size(p.Results.touch_hp{ti,tj},2)) ];
+            touch2d = A * touch4d;
+            touch2d = round(touch2d * 10000) / 10000;
+            touchHP{ti, tj} = unique(touch2d(1:2,:)','rows'); 
+        end
     end
 else
     thPolygon = p.Results.thPolygon;
@@ -185,7 +195,7 @@ if ~isempty(fnall)
                         'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
                         'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
                         'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value, 'proximity_threshold',p.Results.proximity_threshold, ...
-                        'mirrorAngle', mirrorAngle, 'thPolygon', thPolygon{th_ind}, 'touchPsi1', p.Results.psi1(th_ind), 'touchPsi2', p.Results.psi2(th_ind), ...
+                        'mirrorAngle', mirrorAngle, 'thPolygon', thPolygon{th_ind}, 'touchHP', touchHP{th_ind}, 'touchPsi1', p.Results.psi1(th_ind), 'touchPsi2', p.Results.psi2(th_ind), ...
                         'rInMm', p.Results.rInMm, 'touchBoundaryThickness', p.Results.touch_boundary_thickness);
                 end
             end
