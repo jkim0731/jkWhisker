@@ -13,19 +13,20 @@ mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
 % presession = 1:2;
 % sessionNum = [7];
 
-sessions = {[3,16,17],[16,17],[3],[],[],[],[23],[3]};  % Need to add JK039 S01 as soon as Y NAS is recovered.
+% sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};  
+sessions = {[4,19,22],[3,16,17],[16,17],[3],[],[],[],[23],[3]};  % Need to add JK039 S01 as soon as Y NAS is recovered.
 useGPU = 0;
 options.WindowStyle = 'normal';
 optionsFin.WindowStyle = 'normal';
 optionsFin.Units = 'normalized';
 optionsFin.Position = [0.3 0.3 0.2 0.2];
 % for mi = 4 : length(mice)
-for mi = 7
+for mi = 1
     mouseName = mice{mi};
     sessionNum = sessions{mi};
     %%
-    % for sessionInd = 4
-    for sessionInd = 1 : length(sessionNum)
+    for sessionInd = 1
+%     for sessionInd = 1 : length(sessionNum)
         sessionName = sprintf('S%02d',sessionNum(sessionInd));
 
     % for sessionInd = 1 : length(presession)
@@ -139,8 +140,8 @@ for mi = 7
         end
         
         %%
-%         for iservo = 1 : length(servo_values)
-        for iservo = 4 
+        for iservo = 1 : length(servo_values)
+%         for iservo = 4 
             for idist = 1 : length(distance_values)
 %             for idist = 4 : length(distance_values)                
                 tt_ind = intersect(find(cellfun(@(x) (x.servoAngle == servo_values(iservo)),bSession.trials)), find(cellfun(@(x) (x.motorDistance == distance_values(idist)),bSession.trials)));

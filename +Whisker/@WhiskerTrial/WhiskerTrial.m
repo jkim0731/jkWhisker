@@ -475,7 +475,7 @@ classdef WhiskerTrial < handle
                 fn = [obj.trackerFileName, '.avi'];
                 v = VideoReader(fn);                    
             end
-            f = fix(v.Duration*v.FrameRate);
+            f = round(v.Duration*v.FrameRate);
         end
         
         function set_face_coords_all(obj, x, y)
@@ -1266,7 +1266,7 @@ classdef WhiskerTrial < handle
                                     %
                                     % for debugging
                                     %                                    
-                                    disp(num2str(k))
+%                                     disp(num2str(k))
                                     %
                                     %
                                     %

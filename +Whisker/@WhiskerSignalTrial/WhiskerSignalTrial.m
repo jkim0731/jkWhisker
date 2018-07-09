@@ -167,8 +167,30 @@ classdef WhiskerSignalTrial < handle
                 tidList = w.trajectoryIDs;
                 roiAll = cell(1,length(tidList));
                 % Copy ROI for each trajectory:
-                for k=1:length(roiAll)
-                    roiAll{k} = p.Results.polyRoiInPix;
+                if isprop(w, 'whiskerPoleIntersection')
+                    for k=1:length(roiAll)
+                        roiAll{k} = p.Results.polyRoiInPix;
+                        frameNum = w.trackerFrames{1}(k) + 1;
+                        if ~isempty(w.whiskerPoleIntersection{frameNum})
+                            interx = w.whiskerPoleIntersection{frameNum}{1}(1);
+                            intery = w.whiskerPoleIntersection{frameNum}{1}(2);
+                            x = w.trackerData{1}{k}{4};
+                            y = w.trackerData{1}{k}{5};
+                            if sqrt(sum((wpo-[x(end) y(end)]).^2)) < sqrt(sum((wpo-[x(1) y(1)]).^2))
+                                % c(q_max) is closest to whisker pad origin, so reverse the (x,y) sequence
+                                x = x(end:-1:1);
+                                y = y(end:-1:1);
+                            end                            
+                            s = cumsum((x - interx).^2 + (y - intery).^2);
+                            ind = find(s==min(s),1,'first');
+                            s = cumsum(sqrt([0, diff(x)].^2 + [0, diff(y)].^2));                            
+                            roiAll{k}(2) = s(ind);
+                        end
+                    end                    
+                else
+                    for k=1:length(roiAll)
+                        roiAll{k} = p.Results.polyRoiInPix;
+                    end
                 end
             else
                 tidList = p.Results.polyRoiInPix{1};

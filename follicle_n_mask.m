@@ -1,16 +1,19 @@
-function follicle_n_mask(mouseName,sessionName,videoloc,varargin)
+function follicle_n_mask(mouseName,sessionName,videoloc, ppm, transmm, facePosition, varargin)
 
 %% Setup whisker array builder 
 % mouseName = 'AH0653'
 % sessionName ='S03'
 % videoloc = 'JK'
+% facePosition = 'bottom'
 % optional = 'noskip'
 optional = 'skip';
-if nargin > 3
+if nargin > 6
     optional = varargin{1};
-elseif nargin > 4
+elseif nargin > 7
     error('Too many input arguments')
 end
+
+transpix = round(ppm * transmm);
 
 % if exist('optional','var')
 %     d = ([videoloc filesep mouseName sessionName filesep optional filesep])
@@ -37,7 +40,6 @@ elseif contains(sessionName, 'piezo')
 else
     number_of_random_trials = 10; % for averaging for mask detection
 end
-inflate_rate = 1.04;
 
 %% Follicle
 flist = dir('*.mp4');
@@ -102,8 +104,18 @@ vavg_filt = imgaussfilt(vavg,3);
 maskx = {[],[]};
 masky = {[],[]};
 
-vavg_inflate = imresize(vavg_filt,inflate_rate);
-BW = edge(vavg_inflate);
+BW = edge(vavg_filt);
+switch facePosition
+    case 'bottom'
+        BW = circshift(BW, -transpix, 1);
+    case 'top'
+        BW = circshift(BW, transpix, 1);
+    case 'right'
+        BW = circshift(BW, -transpix, 2);
+    case 'left'
+        BW = circshift(BW, transpix, 2);
+end
+
 [edge_i,edge_j] = ind2sub(size(BW),find(BW));
 top_ind = find(edge_j >= size(BW,2)/2);
 edge_i = edge_i - size(BW,2) + size(vavg,2);
