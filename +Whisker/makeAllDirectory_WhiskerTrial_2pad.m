@@ -154,13 +154,13 @@ nfiles = numel(fnall);
 % % % %     trial_nums = p.Results.trial_nums;
 % % % % end
 
-% fnall = {'143'};
+% fnall = {'392'};
 nfiles = length(fnall);
 
 if ~isempty(fnall)
     if exist('parfor','builtin') && ~contains(p.Results.sessionName, 'spont') % Parallel Computing Toolbox is installed.
-%         parfor k=1:nfiles
-        for k=1:nfiles
+        parfor k=1:nfiles
+%         for k=1:nfiles
             fn = fnall{k};
             disp(['Processing .whiskers file ' fn ', ' int2str(k) ' of ' int2str(nfiles)])
             if ~isempty(p.Results.behavior)

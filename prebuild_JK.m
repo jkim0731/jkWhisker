@@ -1,14 +1,14 @@
 %% basic information
-% mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
-mice = {'JK025'};
+mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
+% mice = {'JK030','JK036','JK037','JK038','JK039','JK041'};
 
-videoloc = 'J:\WhiskerVideo\';
+videoloc = 'E:\WhiskerVideo\';
 if strcmp(videoloc(end),filesep)
     whisker_d = videoloc;
 else
     whisker_d = ([videoloc filesep]);
 end
-behavior_base_dir = 'J:\SoloData\';
+behavior_base_dir = 'E:\SoloData\';
 
 ppm = 17.81/2;
             % 'pxPerMm': 17.81002608 for telecentric lens
@@ -25,8 +25,8 @@ remeasureSkip = 'skip';
 %%
 %%
 %%
-% sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};  
-sessions = {[4]};
+% sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
+sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
 sessions_pre = {[],[],[],[],[],[],[],[]};
 sessions_piezo = {[],[],[],[],[],[],[],[]};
 sessions_spont = {[],[],[],[],[],[],[],[]};

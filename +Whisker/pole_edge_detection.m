@@ -18,20 +18,20 @@ function [nof, poleUpFrames, poleMovingFrames, poleAxesUp, poleAxesMoving, topPi
 % pole_position estimation and calculating pole available timepoints
 %% Fixed parameters
 % targeting right top 1/4 of the whole FOV for top-view pole tracking
-wFactorTop = 0.5;
-hFactorTop = 0.6;
+wFactorTop = 0.6;
+hFactorTop = 0.65;
 % targeting left top ~1/5.6 of the whole FOV for front-view pole tracking
 wFactorFront = 0.35;
 hFactorFront = 0.7;
 
-excludeHFactor = 0.7; % anything has pixel value under 0.8 height should be ignored (because it is the face)
+excludeHFactor = 0.8; % anything has pixel value under 0.8 height should be ignored (because it is the face)
 
 % hard-coded padding for some front pole image error
 topKinkPad = 7;
 topTipPad = 2;
 frontTipPad = 2;
-frontLinkPad = 40;
-% topLinkPad = 10;
+frontLinkPad = 20;
+topLinkPad = 20;
 % topExPad = 40; % sometimes top pole is divided into two, and linker gets chosen because of bulky body. To solve this, pad 0 at the top (only for top pole part)
 % Instead, choose the lower one when there are multiple objects on the top view
 %% Initialization
@@ -58,13 +58,6 @@ rowSub = rowSub(:);
 colSub = repmat(targetWidth,[1,length(targetHeight)]);
 frontTargetInd = sub2ind([v.Height, v.Width], rowSub, colSub');
 
-excludeHeight = round(v.Height * excludeHFactor):v.Height;
-excludeWidth = 1:v.Width;
-rowSub = ones(length(excludeWidth),1)*excludeHeight;
-rowSub = rowSub(:);
-colSub = repmat(excludeWidth,[1,length(excludeHeight)]);
-excludeHInd = sub2ind([v.Height, v.Width], rowSub, colSub');
-
 nof = round(v.FrameRate*v.Duration);
 
 topPix = NaN(nof,2); % bottom-right of top-view pole
@@ -76,7 +69,7 @@ for i = 1 : nof
 %     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     % For debugging
 %     %%
-%     i=400;
+%     i=1210;
 %     v.CurrentTime = i/v.FrameRate;
 %     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     temp = readFrame(v);
@@ -85,11 +78,13 @@ for i = 1 : nof
     end
     btemp = 1 - imbinarize(uint8(temp), 'adaptive','ForegroundPolarity','dark','Sensitivity',0.1);
     btemp(:,1:frontLinkPad) = deal(0);
-%     btemp(:,end-topLinkPad:end) = deal(0);
+    btemp(round(size(btemp,1)*excludeHFactor):end, :) = deal(0);
+    btemp(1:topLinkPad, :) = deal(0);
+    btemp(:,end-topLinkPad:end) = deal(0);
     bcc = bwconncomp(btemp);
     candid = find(cellfun(@(x) length(intersect(x,topTargetInd)), bcc.PixelIdxList));
 
-%     % for debuggin
+    % for debuggin
 %     [topi,topj] = ind2sub(size(btemp),topTargetInd);
 %     topTargetArea = zeros(size(btemp),'logical');
 %     for iii = 1:length(topi)
@@ -100,7 +95,7 @@ for i = 1 : nof
     if ~isempty(candid) 
         btempTop = zeros(size(btemp),'logical');
         for j = 1 : length(candid)
-            if isempty(intersect(bcc.PixelIdxList{candid(j)},excludeHInd))
+            if length(bcc.PixelIdxList{candid(j)}) > pi*radius^2
                 btempTop(bcc.PixelIdxList{candid(j)}) = 1;
             end
         end
@@ -129,12 +124,12 @@ for i = 1 : nof
 %         end
         end
     end    
-    
+    %%
     candid = find(cellfun(@(x) length(intersect(x,frontTargetInd)), bcc.PixelIdxList));
     if ~isempty(candid) 
         btempFront = zeros(size(btemp),'logical');
         for j = 1 : length(candid)
-            if isempty(intersect(bcc.PixelIdxList{candid(j)},excludeHInd))
+            if length(bcc.PixelIdxList{candid(j)}) > pi*radius^2
                 btempFront(bcc.PixelIdxList{candid(j)}) = 1;
             end
         end
@@ -203,15 +198,15 @@ end
 btemp = 1 - imbinarize(uint8(vavg), 'adaptive','ForegroundPolarity','dark','Sensitivity',0.1);
 binvavg = btemp;
 btemp(:,1:frontLinkPad) = deal(0);
-% btemp(:,end-topLinkPad:end) = deal(0);
+btemp(round(size(btemp,1)*excludeHFactor):end, :) = deal(0);
+btemp(1:topLinkPad, :) = deal(0);
+btemp(:,end-topLinkPad:end) = deal(0);
 bcc = bwconncomp(btemp);
 
 candid = find(cellfun(@(x) length(intersect(x,topTargetInd)), bcc.PixelIdxList));
 topPole = zeros(size(btemp),'logical');
 for j = 1 : length(candid)
-    if isempty(intersect(bcc.PixelIdxList{candid(j)},excludeHInd))
-        topPole(bcc.PixelIdxList{candid(j)}) = 1;
-    end
+    topPole(bcc.PixelIdxList{candid(j)}) = 1;
 end
 topPole(:,1:round(size(topPole,2)*wFactorTop)) = deal(0);
 % topPole(1:topExPad,:) = deal(0);
@@ -220,16 +215,14 @@ if bccTop.NumObjects
     [~,bccind] = max(cellfun(@(x) length(x), bccTop.PixelIdxList));
 else
     btempToptemp = btemp;
-    btempToptemp(floor(v.Height*0.7):end,:) = deal(0);
+    btempToptemp(floor(v.Height*excludeHFactor):end,:) = deal(0);
     btempToptemp(:,1:100) = deal(0);
     bccToptemp = bwconncomp(btempToptemp);
 
     candid = find(cellfun(@(x) length(intersect(x,topTargetInd)), bccToptemp.PixelIdxList));
     topPole = zeros(size(btempToptemp),'logical');
     for j = 1 : length(candid)
-        if isempty(intersect(bccToptemp.PixelIdxList{candid(j)},excludeHInd))
-            topPole(bccToptemp.PixelIdxList{candid(j)}) = 1;
-        end
+        topPole(bccToptemp.PixelIdxList{candid(j)}) = 1;
     end
     bccTop = bwconncomp(topPole);
     if bccTop.NumObjects 
@@ -287,7 +280,7 @@ if bccTop.NumObjects % Sometimes there can be no pole because of paw movements a
     candid = find(cellfun(@(x) length(intersect(x,frontTargetInd)), bcc.PixelIdxList));
     frontPole = zeros(size(btemp),'logical');
     for j = 1 : length(candid)
-        if isempty(intersect(bcc.PixelIdxList{candid(j)},excludeHInd))
+        if length(bcc.PixelIdxList{candid(j)}) > pi*radius^2
             frontPole(bcc.PixelIdxList{candid(j)}) = 1;
         end
     end
@@ -297,14 +290,13 @@ if bccTop.NumObjects % Sometimes there can be no pole because of paw movements a
         [~,bccind] = max(cellfun(@(x) length(x), bccFront.PixelIdxList));
     else 
         btempFronttemp = btemp;
-        btempFronttemp(floor(v.Height*0.7):end,:) = deal(0);
-        btempFronttemp(:,100:end) = deal(0);
+        btempFronttemp(round(v.Height*excludeHFactor):end,:) = deal(0);
         bccFronttemp = bwconncomp(btempFronttemp);
 
         candid = find(cellfun(@(x) length(intersect(x,frontTargetInd)), bccFronttemp.PixelIdxList));
         frontPole = zeros(size(btemp),'logical');
         for j = 1 : length(candid)
-            if isempty(intersect(bccFronttemp.PixelIdxList{candid(j)},excludeHInd))
+            if length(bcc.PixelIdxList{candid(j)}) > pi*radius^2
                 frontPole(bccFronttemp.PixelIdxList{candid(j)}) = 1;
             end
         end
