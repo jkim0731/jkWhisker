@@ -154,7 +154,7 @@ nfiles = numel(fnall);
 % % % %     trial_nums = p.Results.trial_nums;
 % % % % end
 
-% fnall = {'392'};
+% fnall = {'112'};
 nfiles = length(fnall);
 
 if ~isempty(fnall)

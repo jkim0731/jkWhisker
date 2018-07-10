@@ -19,18 +19,18 @@ function [nof, poleUpFrames, poleMovingFrames, poleAxesUp, poleAxesMoving, topPi
 %% Fixed parameters
 % targeting right top 1/4 of the whole FOV for top-view pole tracking
 wFactorTop = 0.6;
-hFactorTop = 0.65;
+hFactorTop = 0.6;
 % targeting left top ~1/5.6 of the whole FOV for front-view pole tracking
 wFactorFront = 0.35;
 hFactorFront = 0.7;
 
-excludeHFactor = 0.8; % anything has pixel value under 0.8 height should be ignored (because it is the face)
+excludeHFactor = 0.66; % anything has pixel value under 0.8 height should be ignored (because it is the face)
 
 % hard-coded padding for some front pole image error
 topKinkPad = 7;
 topTipPad = 2;
 frontTipPad = 2;
-frontLinkPad = 20;
+frontLinkPad = 45;
 topLinkPad = 20;
 % topExPad = 40; % sometimes top pole is divided into two, and linker gets chosen because of bulky body. To solve this, pad 0 at the top (only for top pole part)
 % Instead, choose the lower one when there are multiple objects on the top view
@@ -123,10 +123,10 @@ for i = 1 : nof
             topPixforcheck(i,:) = floor(s.Extrema(4,:));
 %         end
         end
-    end    
+    end
     %%
     candid = find(cellfun(@(x) length(intersect(x,frontTargetInd)), bcc.PixelIdxList));
-    if ~isempty(candid) 
+    if ~isempty(candid)
         btempFront = zeros(size(btemp),'logical');
         for j = 1 : length(candid)
             if length(bcc.PixelIdxList{candid(j)}) > pi*radius^2
@@ -165,14 +165,20 @@ end
 %%
 poleFrames = find(~isnan(topPix(:,1)));
 if ~isempty(find(diff(poleFrames)-1,1))
-    chunks = [1; find(diff(poleFrames)-1)+1; length(poleFrames)];
-    [~,chunkInd] = max(diff(chunks));      
+    chunks = [1; find(diff(poleFrames)-1)+1];
+    if chunks(end) ==  length(poleFrames)
+        chunks = [chunks; length(poleFrames)+1];
+    else
+        chunks = [chunks; length(poleFrames)];
+    end
+    [~,chunkInd] = max(diff(chunks));
     for i = 1 : length(chunks)-1
         if i ~= chunkInd
             topPix(poleFrames(chunks(i):chunks(i+1)-1),:) = deal(NaN);
         end
     end
 end
+
 %%        
 [n, edges] = histcounts(topPix(:,1), floor(min(topPix(:,1))):ceil(max(topPix(:,1))));
 edgeInd = find(n > max(n)/2, 1, 'last');
