@@ -167,7 +167,8 @@ classdef WhiskerSignalTrial < handle
                 tidList = w.trajectoryIDs;
                 roiAll = cell(1,length(tidList));
                 % Copy ROI for each trajectory:
-                if isprop(w, 'whiskerPoleIntersection')
+                if isprop(w, 'whiskerPoleIntersection') && ~isempty(w.whiskerPoleIntersection) ...
+                        && ~strcmp(w.trialType,'oo') % just in case
                     for k=1:length(roiAll)
                         roiAll{k} = p.Results.polyRoiInPix;
                         frameNum = w.trackerFrames{1}(k) + 1;

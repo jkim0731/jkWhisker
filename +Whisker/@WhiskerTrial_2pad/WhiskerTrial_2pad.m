@@ -50,6 +50,7 @@ classdef WhiskerTrial_2pad < Whisker.WhiskerTrial
             obj = obj@Whisker.WhiskerTrial(p.Results.tracker_file_name, p.Results.trial_num, p.Results.trajectory_nums, 'mouseName', p.Results.mouseName, 'sessionName', p.Results.sessionName, 'trialType', p.Results.trialType);
             obj.angle = p.Results.angle;
             obj.apUpPosition = p.Results.apUpPosition;
+            obj.radialDistance = p.Results.radialDistance;
             if ~strcmp(p.Results.trialType, 'oo') && ~contains(p.Results.sessionName, 'piezo') && ~contains(p.Results.sessionName, 'spont') && ~isempty(obj.angle)
                 [obj.nof, obj.poleUpFrames, obj.poleMovingFrames, obj.poleAxesUp, obj.poleAxesMoving, obj.topPix, obj.barPos, obj.binvavg] = Whisker.pole_edge_detection(obj.trackerFileName, obj.angle, obj.barRadius);
             end
