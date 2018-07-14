@@ -1,13 +1,18 @@
 close all
 % sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
-mouse = 'JK025';
-session = 'S19';
+mouse = 'JK041';
+session = 'S03';
 dirBase = 'E:\WhiskerVideo\';
 dirName = [dirBase, mouse, session];
 cd(dirName)
 flist = dir('*_touch_hp.mat');
 load(flist(1).name)
 wsArray = Whisker.WhiskerSignalTrialArray_2pad(dirName);
+wtArray = cell(length(wsArray.trials),1);
+for i = 1 : length(wtArray)
+    disp(['Loading ', wsArray.trials{i}.trackerFileName, '_WT, ', num2str(i) , '/', num2str(length(wtArray))])
+    wtArray{i} = load([wsArray.trials{i}.trackerFileName, '_WT.mat']);
+end
 poleUpLength = cellfun(@(x) length(x.poleUpFrames), wsArray.trials);
 poleMovingLength = cellfun(@(x) length(x.poleMovingFrames), wsArray.trials);
 noPoleLength = cellfun(@(x) x.nof - length(x.poleUpFrames) - length(x.poleMovingFrames), wsArray.trials);
@@ -17,17 +22,49 @@ oonum = find(cellfun(@(x) strcmp(x.trialType,'oo'), wsArray.trials));
 subplot(311), plot(poleUpLength), hold on, plot(oonum,poleUpLength(oonum), 'r.')
 subplot(312), plot(poleMovingLength), hold on, plot(oonum,poleMovingLength(oonum), 'r.')
 subplot(313), plot(noPoleLength), hold on, plot(oonum,noPoleLength(oonum), 'r.')
-%%
+%
 figure,
+poleAxesUpX = [];
+poleAxesUpY = [];
+poleAxesUpX90 = [];
+poleAxesUpY90 = [];
 for i = 1 : size(servo_distance_pair,1)*size(servo_distance_pair,2)
 % for i = 1
     tn = find(cellfun(@(x) sum([x.angle, x.radialDistance] == servo_distance_pair{i}) == 2, wsArray.trials));
-    imshow(wsArray.trials{tn(1)}.binvavg), hold on, 
+    imshow(wsArray.trials{tn(10)}.binvavg), hold on, 
     for j = 1 : length(tn)
         plot(wsArray.trials{tn(j)}.poleAxesUp{1}(1,:), wsArray.trials{tn(j)}.poleAxesUp{1}(2,:), 'r.'), 
         plot(wsArray.trials{tn(j)}.poleAxesUp{2}(1,:), wsArray.trials{tn(j)}.poleAxesUp{2}(2,:), 'b.')
     end
-    waitforbuttonpress    
+    if wsArray.trials{tn(j)}.angle == 90
+        poleAxesUpX90 = wsArray.trials{tn(1)}.poleAxesUp{1}(1,:);
+        poleAxesUpY90 = wsArray.trials{tn(1)}.poleAxesUp{1}(2,:);
+    else
+        poleAxesUpX = [poleAxesUpX; wsArray.trials{tn(1)}.poleAxesUp{1}(1,:)];
+        poleAxesUpY = [poleAxesUpY; wsArray.trials{tn(1)}.poleAxesUp{1}(2,:)];
+    end
+    waitforbuttonpress
+    hold off, imshow(wsArray.trials{tn(10)}.binvavg), hold on, 
+    for j = 1 : length(tn)
+        plot(wtArray{tn(j)}.w.poleAxesUp{1}(1,:), wtArray{tn(j)}.w.poleAxesUp{1}(2,:), 'r.'), 
+        plot(wtArray{tn(j)}.w.poleAxesUp{2}(1,:), wtArray{tn(j)}.w.poleAxesUp{2}(2,:), 'b.')
+    end
+    waitforbuttonpress
+    hold off
+end
+figure, hold on
+for i = 1 : size(poleAxesUpX,1)
+    plot(poleAxesUpX(i,:), poleAxesUpY(i,:), 'k-')
+end
+plot(poleAxesUpX90, poleAxesUpY90, 'r-')
+%%
+
+for i = 1 : length(wsArray.trials)
+    for j = 1 : length(wsArray.trials{i}.poleMovingFrames)
+        if sum(wsArray.trials{i}.poleAxesUp{1}(1,:) - wsArray.trials{i}.poleAxesMoving{1}(1,:)) + sum(wsArray.trials{i}.poleAxesUp{1}(2,:) - wsArray.trials{i}.poleAxesMoving{1}(2,:)) == 0
+            disp('right')
+        end
+    end
 end
 
 %%
@@ -41,7 +78,7 @@ subplot(313), plot(noPoleLength(plotnum))
 
 %%
 
-olnum = 624; % outlier number
+olnum = 18; % outlier number
 
 figure, 
 if ~isempty(wsArray.trials{olnum}.topPix)

@@ -141,8 +141,6 @@ if ~isempty(inBoth)
     disp(inBoth)
 end
 
-nfiles = numel(fnall);
-
 % % % % if ~all(isnan(p.Results.trial_nums)) && isempty(p.Results.include_files)
 % % % %     disp('WARNING: Argument ''trial_nums'' was given without specifying files in ''include_list''; order depends on operating system.')
 % % % % end
@@ -154,8 +152,9 @@ nfiles = numel(fnall);
 % % % %     trial_nums = p.Results.trial_nums;
 % % % % end
 
-% fnall = {'112'};
-nfiles = length(fnall);
+% fnall = {'19'};
+nfiles = numel(fnall);
+
 
 if ~isempty(fnall)
     if exist('parfor','builtin') && ~contains(p.Results.sessionName, 'spont') % Parallel Computing Toolbox is installed.

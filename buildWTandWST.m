@@ -69,6 +69,22 @@ function nft = buildWTandWST(mouseName, sessionName, d, bSession, ppm)
         trialNums = trialNums(~isnan(trialNums));
         if ~isempty(bSession) % try only the ones with behavior session
             trialNums = intersect(trialNums,bSession.trialNums); % try only the ones with behavior trials
+            %             
+            %             
+            %             
+            %
+%             tinds = (cellfun(@(x) (x.servoAngle == 90) * x.trialNum, bSession.trials));
+%             trialNums = tinds(find(tinds));
+            %             
+            %             
+            %             
+            %             
+            %             
+            %             
+            %             
+            %             
+            %             
+            %             
         end
         includef=cell(size(trialNums,1),1);
         for i = 1: length(trialNums)

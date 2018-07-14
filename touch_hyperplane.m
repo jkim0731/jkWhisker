@@ -2,9 +2,9 @@
 
 %% Setup whisker array builder 
 % behavior_base_dir = 'F:\SoloData\';
-behavior_base_dir = 'J:\SoloData\';
+behavior_base_dir = 'E:\SoloData\';
 % whisker_base_dir = 'F:\tracked\';
-whisker_base_dir = 'J:\WhiskerVideo\';
+whisker_base_dir = 'E:\WhiskerVideo\';
 mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
 %%%%%%%%%%%%%%%%%%%%%% manual selection
 % steps = {[10:70],[20:80],[140:200],[140:200]};
@@ -14,19 +14,19 @@ mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
 % sessionNum = [7];
 
 % sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};  
-sessions = {[4,19,22],[3,16,17],[16,17],[3],[],[],[],[23],[3]};  % Need to add JK039 S01 as soon as Y NAS is recovered.
+sessions = {[22],[16,17],[21,22],[17,18,91],[],[],[22:25],[]};
 useGPU = 0;
 options.WindowStyle = 'normal';
 optionsFin.WindowStyle = 'normal';
 optionsFin.Units = 'normalized';
 optionsFin.Position = [0.3 0.3 0.2 0.2];
-% for mi = 4 : length(mice)
-for mi = 1
+for mi = 1 : length(mice)
+% for mi = 1
     mouseName = mice{mi};
     sessionNum = sessions{mi};
     %%
-    for sessionInd = 1
-%     for sessionInd = 1 : length(sessionNum)
+%     for sessionInd = 1
+    for sessionInd = 1 : length(sessionNum)
         sessionName = sprintf('S%02d',sessionNum(sessionInd));
 
     % for sessionInd = 1 : length(presession)
@@ -211,7 +211,7 @@ for mi = 1
                             plot([pre_poly(end,1);pre_poly(1,1)], [pre_poly(end,2);pre_poly(1,2)], 'b-')
     %                         questTitle='Polygon pre-selection'; 
     %                         start(timer('StartDelay',1,'TimerFcn',@(o,e)set(findall(0,'Tag',questTitle),'WindowStyle','normal')));         
-                            psi1_polygon_answer = MFquestdlg([0.5,0.3], 'Is the polygon right?', 'Polygon pre-selection', 'Yes', 'No', 'Yes');
+                            psi1_polygon_answer = MFquestdlg([0.5,0.3], 'Is the drawing correct?', 'Region pre-selection', 'Yes', 'No', 'Yes');
                             switch psi1_polygon_answer
                                 case 'Yes'
                                     close all
@@ -416,7 +416,7 @@ for mi = 1
                             case 'Yes'
                                 close all
                             case 'No'                 
-                                answer3 = MFquestdlg([0.5, 0.3], 'Do you want to select the polygon again?', 'Re-selecting the polygon', 'Yes', 'No', 'Yes');
+                                answer3 = MFquestdlg([0.5, 0.3], 'Do you want to draw a region again?', 'Re-drawing the region', 'Yes', 'No', 'Yes');
                                 close all
                                 switch answer3
                                     case 'Yes'
@@ -583,7 +583,7 @@ for mi = 1
                                                     if strcmp(peak_answer,'Yes')                                        
                                                         close(h2);
                                                     else
-                                                        psi1_return_answer = MFquestdlg([0.5, 0.3], 'Do you want to select polygon for psi1?', 'Return to psi1 polygon', 'Yes', 'No', 'Yes');
+                                                        psi1_return_answer = MFquestdlg([0.5, 0.3], 'Do you want to draw region for psi1?', 'Return to psi1 region selection', 'Yes', 'No', 'Yes');
                                                         if strcmp(psi1_return_answer, 'Yes')
                                                             close all
                                                             psi1_polygon_answer = 'No';
@@ -618,7 +618,7 @@ for mi = 1
                                                 case 'No'
                 %                                     questTitle = 'Return to psi1 polygon'; 
                 %                                     start(timer('StartDelay',1,'TimerFcn',@(o,e)set(findall(0,'Tag',questTitle),'WindowStyle','normal')));
-                                                    psi1_return_answer = MFquestdlg([0.5, 0.3], 'Do you want to select polygon for psi1?', 'Return to psi1 polygon', 'Yes', 'No', 'Yes');
+                                                    psi1_return_answer = MFquestdlg([0.5, 0.3], 'Do you want to draw a region for psi1?', 'Return to psi1 region selection', 'Yes', 'No', 'Yes');
                                                     if strcmp(psi1_return_answer, 'Yes')
                                                         close all
                                                         psi1_polygon_answer = 'No';
@@ -648,7 +648,7 @@ for mi = 1
                     cvh = convhull(th_2d);
                 thPolygon{iservo, idist} = th_2d(cvh,:);
 
-                fprintf('%s %s trial type #%d/%d processed\n',mouseName, sessionName, (iservo-1)*(idist-1) + iservo + idist -1, length(servo_values) * length(distance_values))        
+                fprintf('%s %s trial type #%d/%d processed\n',mouseName, sessionName, (iservo-1)*length(distance_values) + idist, length(servo_values) * length(distance_values))        
             end
         end
         %%

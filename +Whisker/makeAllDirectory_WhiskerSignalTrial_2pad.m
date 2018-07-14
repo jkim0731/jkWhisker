@@ -107,6 +107,62 @@ if ~isempty(inBoth)
 end
 
 
+
+nfiles = length(fnall);
+
+
+% Calculating the mean slope and origin for pole axis top
+% From the same radial distance
+% Except for 90 degrees pole angle (calculate its slope from grand average
+% of all other angles)
+
+wta = {};
+for fi = 1 : nfiles
+    load([fnall{fi}, '_WT.mat']);
+    if ~strcmp(w.trialType, 'oo')
+        wta{end+1} = w;
+    end
+end
+if size(wta,1) < size(wta,2)
+    wta = wta';
+end
+
+angles = unique(cellfun(@(x) x.angle, wta));
+rds = unique(cellfun(@(x) x.radialDistance, wta)); % radial distances
+rds = rds(find(rds));
+meanAxisTop = cell(length(angles), length(rds));
+for ai = 1 : length(angles)
+    for ri = 1 : length(rds)        
+        axesUpX = cellfun(@(x) (x.angle == angles(ai) && x.radialDistance == rds(ri)) * x.poleAxesUp{1}(1,:), wta, 'uniformoutput', false);
+        axesUpY = cellfun(@(x) (x.angle == angles(ai) && x.radialDistance == rds(ri)) * x.poleAxesUp{1}(2,:), wta, 'uniformoutput', false);
+        axesUpX = cell2mat(axesUpX);
+        axesUpY = cell2mat(axesUpY);
+        inds = find(mean(axesUpX,2));
+        axesUpX = axesUpX(inds,:);
+        axesUpY = axesUpY(inds,:);
+        meanAxisTop{ai, ri} = [mean(axesUpX);mean(axesUpY)];
+    end    
+end
+if ismember(90, angles) && length(unique(angles)) > 1 % when there is 90 degrees pole and also there are other angles in the same session (for example, pre sessions have only 90 degrees)    
+    ind = find(angles == 90);
+    rds90 = unique(cellfun(@(x) (x.angle == 90) * x.radialDistance, wta));
+    rds90 = rds90(find(rds90));
+    for ri = 1 : length(rds90)
+        rdi = find(rds == rds90(ri));
+        axesUpX = [];
+        axesUpY = [];
+        for ai = 1 : length(angles)
+            if angles(ai) ~= 90
+                axesUpX = [axesUpX; meanAxisTop{ai,rdi}(1,:)];
+                axesUpY = [axesUpY; meanAxisTop{ai,rdi}(2,:)];
+            end
+        end
+        if ~isempty(axesUpX) && ~isempty(axesUpY)
+            meanAxisTop{ind,ri} = [mean(axesUpX); mean(axesUpY)];
+        end
+    end
+end
+
 % fnall = {'353'};
 nfiles = length(fnall);
 
@@ -123,7 +179,13 @@ if ~isempty(fnall)
 %                 puf_ind = find(puf_fn_list == str2double(fn)); % ?? What
 %                 is this?? 2018/03/17 JK
                 
-                ws = Whisker.WhiskerSignalTrial_2pad(w,'polyRoiInPix',p.Results.polyRoiInPix);
+                ai = find(angles == w.angle);
+                ri = find(rds == w.radialDistance);
+                if ~isempty(ai) && ~isempty(ri)
+                    ws = Whisker.WhiskerSignalTrial_2pad(w,meanAxisTop{ai,ri},'polyRoiInPix',p.Results.polyRoiInPix);
+                else
+                    ws = Whisker.WhiskerSignalTrial_2pad(w,[],'polyRoiInPix',p.Results.polyRoiInPix);
+                end
                 if ~isempty(p.Results.polyFitsMask)
                     x = p.Results.polyFitsMask(1,:);
                     y = p.Results.polyFitsMask(2,:);

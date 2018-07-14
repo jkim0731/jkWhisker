@@ -21,8 +21,8 @@ function [nof, poleUpFrames, poleMovingFrames, poleAxesUp, poleAxesMoving, topPi
 wFactorTop = 0.6;
 hFactorTop = 0.6;
 % targeting left top ~1/5.6 of the whole FOV for front-view pole tracking
-wFactorFront = 0.35;
-hFactorFront = 0.7;
+wFactorFront = 0.3;
+hFactorFront = 0.6;
 
 excludeHFactor = 0.66; % anything has pixel value under 0.8 height should be ignored (because it is the face)
 
@@ -30,7 +30,7 @@ excludeHFactor = 0.66; % anything has pixel value under 0.8 height should be ign
 topKinkPad = 7;
 topTipPad = 2;
 frontTipPad = 2;
-frontLinkPad = 45;
+frontLinkPad = 60;
 topLinkPad = 20;
 % topExPad = 40; % sometimes top pole is divided into two, and linker gets chosen because of bulky body. To solve this, pad 0 at the top (only for top pole part)
 % Instead, choose the lower one when there are multiple objects on the top view
@@ -79,7 +79,7 @@ for i = 1 : nof
     btemp = 1 - imbinarize(uint8(temp), 'adaptive','ForegroundPolarity','dark','Sensitivity',0.1);
     btemp(:,1:frontLinkPad) = deal(0);
     btemp(round(size(btemp,1)*excludeHFactor):end, :) = deal(0);
-    btemp(1:topLinkPad, :) = deal(0);
+    btemp(1:topLinkPad, round(v.width*wFactorTop) : end) = deal(0);
     btemp(:,end-topLinkPad:end) = deal(0);
     bcc = bwconncomp(btemp);
     candid = find(cellfun(@(x) length(intersect(x,topTargetInd)), bcc.PixelIdxList));
@@ -133,6 +133,7 @@ for i = 1 : nof
                 btempFront(bcc.PixelIdxList{candid(j)}) = 1;
             end
         end
+        btempFront(:,round(v.width*wFactorTop):end) = deal(0);
         bccFront = bwconncomp(btempFront);
 
         if bccFront.NumObjects
@@ -205,7 +206,7 @@ btemp = 1 - imbinarize(uint8(vavg), 'adaptive','ForegroundPolarity','dark','Sens
 binvavg = btemp;
 btemp(:,1:frontLinkPad) = deal(0);
 btemp(round(size(btemp,1)*excludeHFactor):end, :) = deal(0);
-btemp(1:topLinkPad, :) = deal(0);
+btemp(1:topLinkPad, round(v.width * wFactorTop):end) = deal(0);
 btemp(:,end-topLinkPad:end) = deal(0);
 bcc = bwconncomp(btemp);
 
@@ -273,14 +274,15 @@ if bccTop.NumObjects % Sometimes there can be no pole because of paw movements a
     else % if it's 90 degrees, calculate slope based on the pole movement
         % 5 frames before and after pole up       
         try
-            frames = [poleUpFrames(1)-5:poleUpFrames(3),poleUpFrames(end-2):poleUpFrames(end)+5];
+%             frames = [poleUpFrames(1)-3:poleUpFrames(1)-1,poleUpFrames(end-2):poleUpFrames(end)+5]; % exclude pole up starting frames because of jittering induced by pole stop
+            frames = [poleUpFrames(1) - 3 : poleUpFrames(1)-1, poleUpFrames(round(length(poleUpFrames)/2)),poleUpFrames(end)+1:poleUpFrames(end) + 3];
             p = polyfit(topPix(frames,1),topPix(frames,2),1); % linear fitting. p(1) is going to be the slope
             topSlope = p(1);
         catch
             error(['topPix error in ', videoFn])
         end
     end   
-    topExtrema = (floor(s.Extrema(5,:)) + floor(s.Extrema(6,:)))/2;    
+    topTip = (floor(s.Extrema(5,:)) + floor(s.Extrema(6,:)))/2;    
 
     %%
     candid = find(cellfun(@(x) length(intersect(x,frontTargetInd)), bcc.PixelIdxList));
@@ -290,7 +292,7 @@ if bccTop.NumObjects % Sometimes there can be no pole because of paw movements a
             frontPole(bcc.PixelIdxList{candid(j)}) = 1;
         end
     end
-    frontPole(:,round(size(frontPole,2)*wFactorFront):end) = deal(0);
+    frontPole(:,round(v.width*wFactorFront):end) = deal(0);
     bccFront = bwconncomp(frontPole);
     if bccFront.NumObjects > 0
         [~,bccind] = max(cellfun(@(x) length(x), bccFront.PixelIdxList));
@@ -329,18 +331,18 @@ if bccTop.NumObjects % Sometimes there can be no pole because of paw movements a
         bccFront = bwconncomp(frontPole);
         if bccFront.NumObjects             
             frontSlope = (s.Extrema(4,2) - s.Extrema(7,2))/(s.Extrema(4,1) - s.Extrema(7,1));    
-            frontExtrema = floor(s.Extrema(7,:));
-
+            frontTip = floor(s.Extrema(7,:));
+            originY = frontTip(1,2) - frontTip(1,1) * frontSlope;
             %% Calculte pole Up axes and adjust topPix, frontPix, and moving frames
             % Based on pixel values (left-bottom for front-view and bottom-right for top-view) and the slopes calculated above
 
             % for front
-            q = linspace(-frontLinkPad,v.width*0.4-frontLinkPad);
-            poleAxesUp{2} = [q + frontLinkPad; frontExtrema(1,2) + q * frontSlope]; % order is changed from [y;x] to [x;y] 2018/06/13 JK
-%             poleAxesUp{2} = [frontExtrema(1,2) + q * frontSlope; q + frontLinkPad;];
+            q = linspace(1,v.width*0.5);            
+            poleAxesUp{2} = [q; originY + q * frontSlope]; % order is changed from [y;x] to [x;y] 2018/06/13 JK
+%             poleAxesUp{2} = [frontTip(1,2) + q * frontSlope; q + frontLinkPad;];
             % for top
             q = linspace(v.width,v.width*0.4);
-            originY = topExtrema(1,2) + (v.width - topExtrema(1,1)) * topSlope; % originX is at v.width
+            originY = topTip(1,2) + (v.width - topTip(1,1)) * topSlope; % originX is at v.width
             % if angle ~= 90
             %     ind = find(topPixforcheck(:,2) < originY);
             % else
@@ -379,7 +381,7 @@ if bccTop.NumObjects % Sometimes there can be no pole because of paw movements a
 
             %% Calculte axes during pole movement
             % for front
-            q = linspace(1,v.width*0.4);
+            q = linspace(1,v.width*0.5);
             for i = 1 : length(poleMovingFrames)
                 poleAxesMoving{i,2} = [q; frontPix(poleMovingFrames(i),2)+ q * frontSlope]; % order is changed from [y;x] to [x;y] 2018/06/13 JK
             end
