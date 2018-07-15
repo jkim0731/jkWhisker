@@ -414,6 +414,10 @@ for mi = 1 : length(mice)
                         answer1 = MFquestdlg([0.5, 0.3], 'Is psi2 correct?', 'whisker-pole intersection coordinate side-view', 'Yes', 'No', 'Yes');
                         switch answer1
                             case 'Yes'
+                                if psi1(iservo,idist) > 90
+                                    psi2(iservo,idist) = -psi2(iservo,idist);
+                                    psi2Flip = 1;
+                                end
                                 close all
                             case 'No'                 
                                 answer3 = MFquestdlg([0.5, 0.3], 'Do you want to draw a region again?', 'Re-drawing the region', 'Yes', 'No', 'Yes');
@@ -517,7 +521,7 @@ for mi = 1 : length(mice)
                             intersect_pix = round(intersect_3d_total);
 
                             if isempty(steps{iservo, idist})
-                                steps{iservo, idist} = -50 : 0;
+                                steps{iservo, idist} = -30 : 5;
                             end
                             num_points = zeros(length(steps{iservo, idist}),1);
                             parfor i = 1:length(steps{iservo, idist}) % this is time consuming...
