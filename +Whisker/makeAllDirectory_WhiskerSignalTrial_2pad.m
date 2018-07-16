@@ -164,7 +164,7 @@ if ~isempty(wta)
         end
     end
 else
-    angles = []; rds = [];
+    angles = []; rds = []; meanAxisTop = {};
 end
 % fnall = {'353'};
 nfiles = length(fnall);
