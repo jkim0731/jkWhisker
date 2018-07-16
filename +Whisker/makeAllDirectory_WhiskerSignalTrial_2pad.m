@@ -119,7 +119,7 @@ nfiles = length(fnall);
 wta = {};
 for fi = 1 : nfiles
     load([fnall{fi}, '_WT.mat']);
-    if ~strcmp(w.trialType, 'oo')
+    if ~strcmp(w.trialType, 'oo') && ~isempty(w.trialtype) % trial type is empty when it's piezo stimulation.
         wta{end+1} = w;
     end
 end
@@ -127,42 +127,45 @@ if size(wta,1) < size(wta,2)
     wta = wta';
 end
 
-angles = unique(cellfun(@(x) x.angle, wta));
-rds = unique(cellfun(@(x) x.radialDistance, wta)); % radial distances
-rds = rds(find(rds));
-meanAxisTop = cell(length(angles), length(rds));
-for ai = 1 : length(angles)
-    for ri = 1 : length(rds)        
-        axesUpX = cellfun(@(x) (x.angle == angles(ai) && x.radialDistance == rds(ri)) * x.poleAxesUp{1}(1,:), wta, 'uniformoutput', false);
-        axesUpY = cellfun(@(x) (x.angle == angles(ai) && x.radialDistance == rds(ri)) * x.poleAxesUp{1}(2,:), wta, 'uniformoutput', false);
-        axesUpX = cell2mat(axesUpX);
-        axesUpY = cell2mat(axesUpY);
-        inds = find(mean(axesUpX,2));
-        axesUpX = axesUpX(inds,:);
-        axesUpY = axesUpY(inds,:);
-        meanAxisTop{ai, ri} = [mean(axesUpX);mean(axesUpY)];
-    end    
-end
-if ismember(90, angles) && length(unique(angles)) > 1 % when there is 90 degrees pole and also there are other angles in the same session (for example, pre sessions have only 90 degrees)    
-    ind = find(angles == 90);
-    rds90 = unique(cellfun(@(x) (x.angle == 90) * x.radialDistance, wta));
-    rds90 = rds90(find(rds90));
-    for ri = 1 : length(rds90)
-        rdi = find(rds == rds90(ri));
-        axesUpX = [];
-        axesUpY = [];
-        for ai = 1 : length(angles)
-            if angles(ai) ~= 90
-                axesUpX = [axesUpX; meanAxisTop{ai,rdi}(1,:)];
-                axesUpY = [axesUpY; meanAxisTop{ai,rdi}(2,:)];
+if ~isempty(wta)
+    angles = unique(cellfun(@(x) x.angle, wta));
+    rds = unique(cellfun(@(x) x.radialDistance, wta)); % radial distances
+    rds = rds(find(rds));
+    meanAxisTop = cell(length(angles), length(rds));
+    for ai = 1 : length(angles)
+        for ri = 1 : length(rds)        
+            axesUpX = cellfun(@(x) (x.angle == angles(ai) && x.radialDistance == rds(ri)) * x.poleAxesUp{1}(1,:), wta, 'uniformoutput', false);
+            axesUpY = cellfun(@(x) (x.angle == angles(ai) && x.radialDistance == rds(ri)) * x.poleAxesUp{1}(2,:), wta, 'uniformoutput', false);
+            axesUpX = cell2mat(axesUpX);
+            axesUpY = cell2mat(axesUpY);
+            inds = find(mean(axesUpX,2));
+            axesUpX = axesUpX(inds,:);
+            axesUpY = axesUpY(inds,:);
+            meanAxisTop{ai, ri} = [mean(axesUpX);mean(axesUpY)];
+        end    
+    end
+    if ismember(90, angles) && length(unique(angles)) > 1 % when there is 90 degrees pole and also there are other angles in the same session (for example, pre sessions have only 90 degrees)    
+        ind = find(angles == 90);
+        rds90 = unique(cellfun(@(x) (x.angle == 90) * x.radialDistance, wta));
+        rds90 = rds90(find(rds90));
+        for ri = 1 : length(rds90)
+            rdi = find(rds == rds90(ri));
+            axesUpX = [];
+            axesUpY = [];
+            for ai = 1 : length(angles)
+                if angles(ai) ~= 90
+                    axesUpX = [axesUpX; meanAxisTop{ai,rdi}(1,:)];
+                    axesUpY = [axesUpY; meanAxisTop{ai,rdi}(2,:)];
+                end
+            end
+            if ~isempty(axesUpX) && ~isempty(axesUpY)
+                meanAxisTop{ind,ri} = [mean(axesUpX); mean(axesUpY)];
             end
         end
-        if ~isempty(axesUpX) && ~isempty(axesUpY)
-            meanAxisTop{ind,ri} = [mean(axesUpX); mean(axesUpY)];
-        end
     end
+else
+    angles = []; rds = [];
 end
-
 % fnall = {'353'};
 nfiles = length(fnall);
 
