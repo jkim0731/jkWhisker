@@ -119,7 +119,7 @@ nfiles = length(fnall);
 wta = {};
 for fi = 1 : nfiles
     load([fnall{fi}, '_WT.mat']);
-    if ~strcmp(w.trialType, 'oo') && ~isempty(w.trialtype) % trial type is empty when it's piezo stimulation.
+    if ~strcmp(w.trialType, 'oo') && ~isempty(w.trialType) % trial type is empty when it's piezo stimulation.
         wta{end+1} = w;
     end
 end
