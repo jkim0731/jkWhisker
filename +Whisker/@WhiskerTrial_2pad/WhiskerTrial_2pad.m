@@ -10,12 +10,15 @@ classdef WhiskerTrial_2pad < Whisker.WhiskerTrial
         poleAxesUp = cell(1,2); % {1} for top-view, {2} for front-view
         poleAxesMoving = {}; % axes for poles during moving. cell(nframes,2). only from poleMovingFrames
         topPix = []; % frame-by-frame bottom-right pixel value in width (x-axis of the video) of the top-view pole. NaN if the pole is out of sight. 
+        frontPix = []; % Need for axes confirmation
         angle = [];
         apUpPosition = [];
         radialDistance = [];
         nof = []; % number of frames (video, not tracker)
         dist2pole = [];
         binvavg = []; % binary average image of the video during pole up frames
+        barRadius = [];
+        pxPerMm = [];
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % Follows normal image coordinates!! Different from whisker 
@@ -41,15 +44,19 @@ classdef WhiskerTrial_2pad < Whisker.WhiskerTrial
             p.addParameter('angle', [], @isnumeric);
             p.addParameter('apUpPosition', [], @isnumeric);
             p.addParameter('radialDistance', [], @isnumeric);
-
+            p.addParameter('barRadius', [], @isnumeric);
+            p.addParameter('pxPerMm', [], @isnumeric);
+            
             p.parse(tracker_file_name, trial_num, trajectory_nums, varargin{:});
             
-            obj = obj@Whisker.WhiskerTrial(p.Results.tracker_file_name, p.Results.trial_num, p.Results.trajectory_nums, 'mouseName', p.Results.mouseName, 'sessionName', p.Results.sessionName, 'trialType', p.Results.trialType);
+            obj = obj@Whisker.WhiskerTrial(p.Results.tracker_file_name, p.Results.trial_num, p.Results.trajectory_nums, 'mouseName', p.Results.mouseName, 'sessionName', p.Results.sessionName, 'trialType', p.Results.trialType);            
             obj.angle = p.Results.angle;
             obj.apUpPosition = p.Results.apUpPosition;
             obj.radialDistance = p.Results.radialDistance;
+            obj.barRadius = p.Results.barRadius; % in mm
+            obj.pxPerMm = p.Results.pxPerMm; 
             if ~strcmp(p.Results.trialType, 'oo') && ~contains(p.Results.sessionName, 'piezo') && ~contains(p.Results.sessionName, 'spont') && ~isempty(obj.angle)
-                [obj.nof, obj.poleUpFrames, obj.poleMovingFrames, obj.poleAxesUp, obj.poleAxesMoving, obj.topPix, obj.barPos, obj.binvavg] = Whisker.pole_edge_detection(obj.trackerFileName, obj.angle, obj.barRadius);
+                [obj.nof, obj.poleUpFrames, obj.poleMovingFrames, obj.poleAxesUp, obj.poleAxesMoving, obj.topPix, obj.frontPix, obj.barPos, obj.binvavg] = Whisker.pole_edge_detection(obj.trackerFileName, obj.angle, obj.barRadius * obj.pxPerMm); % bar radius in # of pixels
             else
                 try
                     v = VideoReader([obj.trackerFileName, '.mp4']);
@@ -71,7 +78,7 @@ classdef WhiskerTrial_2pad < Whisker.WhiskerTrial
             end
             if ~isempty(obj.barPos) % only for 90 degrees
                 obj.dist2pole = obj.distance_to_pole;
-            end            
+            end
         end
         
                 

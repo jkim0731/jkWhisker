@@ -94,13 +94,13 @@ p.addRequired('trajectory_nums', @isnumeric);
 p.addParameter('include_files', {}, @(x) all(cellfun(@ischar,x)));
 p.addParameter('ignore_files', {}, @(x) all(cellfun(@ischar,x)));
 p.addParameter('trial_nums', NaN, @isnumeric);
-p.addParameter('barRadius', 3, @(x) x>0);
+p.addParameter('barRadius', 0.3, @(x) x>0);
 p.addParameter('barPosOffset', [0 0], @(x) isnumeric(x) && numel(x)==2);
 p.addParameter('faceSideInImage', 'bottom', @(x) any(strcmpi(x,{'right','left','top','bottom'})));
 p.addParameter('protractionDirection', 'rightward', @(x) any(strcmpi(x,{'downward','upward','leftward','rightward'})));
 p.addParameter('imagePixelDimsXY', [150 200], @(x) isnumeric(x) && numel(x)==2 );
-p.addParameter('pxPerMm', 17.81/2, @(x) x>0);
-p.addParameter('framePeriodInSec',1/310,@isnumeric);
+p.addParameter('pxPerMm', 17.81, @(x) x>0);
+p.addParameter('framePeriodInSec',1/311.24,@isnumeric);
 p.addParameter('mask',[],@(x) isnumeric(x) | iscell(x));
 p.addParameter('mouseName', '', @ischar);
 p.addParameter('sessionName', '', @ischar);
@@ -152,7 +152,7 @@ end
 % % % %     trial_nums = p.Results.trial_nums;
 % % % % end
 
-% fnall = {'19'};
+% fnall = {'86'};
 nfiles = numel(fnall);
 
 
@@ -171,14 +171,12 @@ if ~isempty(fnall)
                 %%
                 w = Whisker.WhiskerTrial_2pad(fn, p.Results.behavior.trials{bInd}.trialNum, p.Results.trajectory_nums, 'mouseName', p.Results.mouseName, 'sessionName',...
                     p.Results.sessionName, 'trialType', p.Results.behavior.trials{bInd}.trialType, 'angle', p.Results.behavior.trials{bInd}.servoAngle, ...
-                    'apUpPosition', p.Results.behavior.trials{bInd}.motorApPosition, 'radialDistance', p.Results.behavior.trials{bInd}.motorDistance);
+                    'apUpPosition', p.Results.behavior.trials{bInd}.motorApPosition, 'radialDistance', p.Results.behavior.trials{bInd}.motorDistance, 'barRadius', p.Results.barRadius, 'pxPerMm', p.Results.pxPerMm);
 
-                w.barRadius = p.Results.barRadius;
                 w.barPosOffset = p.Results.barPosOffset;
                 w.faceSideInImage = p.Results.faceSideInImage;
                 w.protractionDirection = p.Results.protractionDirection;
-                w.imagePixelDimsXY = p.Results.imagePixelDimsXY;
-                w.pxPerMm = p.Results.pxPerMm;
+                w.imagePixelDimsXY = p.Results.imagePixelDimsXY;                
                 w.framePeriodInSec = p.Results.framePeriodInSec;
                 if ~isempty(p.Results.mask)
                     if iscell(p.Results.mask)

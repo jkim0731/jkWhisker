@@ -17,8 +17,9 @@ classdef WhiskerTrial < handle
         trackerData = {};
         trackerFrames = {}; % contains information about which frames are at which index of trackerData (becaue quite many times tracker fails) 2018/03/22 JK
         barPos = []; % [frameNum XPosition YPosition]
-        barRadius = 3; % In pixels. Must be radius of bar tracked by the bar tracker. 
-        % 3 on 4/11/2018 (JK025~)
+%         barRadius = 3; % In pixels. Must be radius of bar tracked by the bar tracker. 
+%         % 3 on 4/11/2018 (JK025~) 
+%         % Defined in WT_2pad, instead of WT. 2018/07/19 JK
         barPosOffset = [0 0]; % In pixels. Displacement from the center of the large pole to the 'contact point'
         % (either on the edge of the large pole or small pole).
         
@@ -50,8 +51,9 @@ classdef WhiskerTrial < handle
         protractionDirection = 'rightward'; % 'downward', 'upward', 'rightward','leftward'
         imagePixelDimsXY = [320 150]; % [NumberOfXPixels NumberOfYPixels]
         
-        pxPerMm = 17.81/2;
-        
+%         pxPerMm = 17.81/2;
+%         % Defined in WT_2pad, instead of WT. 2018/07/19 JK
+
         % polyFitsMask:
         % Cell array of length length(trajectoryIDs), of format:
         %

@@ -1,4 +1,4 @@
-function [nof, poleUpFrames, poleMovingFrames, poleAxesUp, poleAxesMoving, topPix, barPos, binvavg] = pole_edge_detection(videoFn, angle, radius)
+function [nof, poleUpFrames, poleMovingFrames, poleAxesUp, poleAxesMoving, topPix, frontPix, barPos, binvavg] = pole_edge_detection(videoFn, angle, radius)
 
 % Automatic detection of pole_edge from video. Both front and top view.
 % Currently only for 2pad 2017 JK
@@ -18,18 +18,19 @@ function [nof, poleUpFrames, poleMovingFrames, poleAxesUp, poleAxesMoving, topPi
 % pole_position estimation and calculating pole available timepoints
 %% Fixed parameters
 % targeting right top 1/4 of the whole FOV for top-view pole tracking
-wFactorTop = 0.6;
+wFactorTop = 0.5;
 hFactorTop = 0.6;
 % targeting left top ~1/5.6 of the whole FOV for front-view pole tracking
-wFactorFront = 0.3;
+% (after frontLinkPad)
+wFactorFront = 0.1;
 hFactorFront = 0.6;
 
-excludeHFactor = 0.66; % anything has pixel value under 0.8 height should be ignored (because it is the face)
+excludeHFactor = 0.7; % anything has pixel value under 0.8 height should be ignored (because it is the face)
 
 % hard-coded padding for some front pole image error
-topKinkPad = 7;
-topTipPad = 2;
-frontTipPad = 2;
+topKinkPad = 20;
+topTipPad = 3;
+frontTipPad = 3;
 frontLinkPad = 60;
 topLinkPad = 20;
 % topExPad = 40; % sometimes top pole is divided into two, and linker gets chosen because of bulky body. To solve this, pad 0 at the top (only for top pole part)
@@ -44,14 +45,14 @@ else
         v = VideoReader([videoFn,'.mp4']);
     end
 end
-targetWidth = round(v.Width*wFactorTop):v.Width-10;
+targetWidth = round(v.Width*(1-wFactorTop)):v.Width-10;
 targetHeight = 10:round(v.Height*hFactorTop);
 rowSub = ones(length(targetWidth),1)*targetHeight;
 rowSub = rowSub(:);
 colSub = repmat(targetWidth,[1,length(targetHeight)]);
 topTargetInd = sub2ind([v.Height, v.Width], rowSub, colSub');
 
-targetWidth = 10:round(v.Width*wFactorFront);
+targetWidth = frontLinkPad:frontLinkPad+round(v.width*wFactorFront);
 targetHeight = 10:round(v.Height*hFactorFront);
 rowSub = ones(length(targetWidth),1)*targetHeight;
 rowSub = rowSub(:);
@@ -69,20 +70,20 @@ for i = 1 : nof
 %     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     % For debugging
 %     %%
-%     i=1210;
+%     i=930;
 %     v.CurrentTime = i/v.FrameRate;
 %     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     temp = readFrame(v);
     if  length(size(temp)) > 2 % temporary solution for having RGB-like mp4 file 2018/03/16 JK
         temp = temp(:,:,1);
     end
-    btemp = 1 - imbinarize(uint8(temp), 'adaptive','ForegroundPolarity','dark','Sensitivity',0.1);
+    btemp = 1 - imbinarize(uint8(temp), 'adaptive','ForegroundPolarity','dark','Sensitivity',0.1);    
     btemp(:,1:frontLinkPad) = deal(0);
-    btemp(round(size(btemp,1)*excludeHFactor):end, :) = deal(0);
-    btemp(1:topLinkPad, round(v.width*wFactorTop) : end) = deal(0);
+    btemp(round(v.height*excludeHFactor):end, :) = deal(0);
+    btemp(1:topLinkPad, round(v.width * (1-wFactorTop)):end) = deal(0);
     btemp(:,end-topLinkPad:end) = deal(0);
-    bcc = bwconncomp(btemp);
-    candid = find(cellfun(@(x) length(intersect(x,topTargetInd)), bcc.PixelIdxList));
+    bccTop = bwconncomp(btemp);
+    candid = find(cellfun(@(x) length(intersect(x,topTargetInd)), bccTop.PixelIdxList));
 
     % for debuggin
 %     [topi,topj] = ind2sub(size(btemp),topTargetInd);
@@ -95,8 +96,8 @@ for i = 1 : nof
     if ~isempty(candid) 
         btempTop = zeros(size(btemp),'logical');
         for j = 1 : length(candid)
-            if length(bcc.PixelIdxList{candid(j)}) > pi*radius^2
-                btempTop(bcc.PixelIdxList{candid(j)}) = 1;
+            if length(bccTop.PixelIdxList{candid(j)}) > 3*pi*radius^2 % at least 3 times of cross-section area of 90 degrees pole tip
+                btempTop(bccTop.PixelIdxList{candid(j)}) = 1;
             end
         end
 %         btempTop(1:topExPad,:) = deal(0);
@@ -125,15 +126,16 @@ for i = 1 : nof
         end
     end
     %%
-    candid = find(cellfun(@(x) length(intersect(x,frontTargetInd)), bcc.PixelIdxList));
+    btemp(:, round(v.width * wFactorFront)+frontLinkPad:end) = deal(0); % Safe to remove everything at the top view since pole tip is moving downwards.
+    bccFront = bwconncomp(btemp);
+    candid = find(cellfun(@(x) length(intersect(x,frontTargetInd)), bccFront.PixelIdxList));
     if ~isempty(candid)
         btempFront = zeros(size(btemp),'logical');
         for j = 1 : length(candid)
-            if length(bcc.PixelIdxList{candid(j)}) > pi*radius^2
-                btempFront(bcc.PixelIdxList{candid(j)}) = 1;
+            if length(bccFront.PixelIdxList{candid(j)}) > 3*pi*radius^2
+                btempFront(bccFront.PixelIdxList{candid(j)}) = 1;
             end
         end
-        btempFront(:,round(v.width*wFactorTop):end) = deal(0);
         bccFront = bwconncomp(btempFront);
 
         if bccFront.NumObjects
@@ -160,7 +162,7 @@ for i = 1 : nof
     end 
     
 %     % for debugging
-%     figure, imshow(btempTop)
+%     figure, imshow(btempFront)
     
 end
 %%
@@ -203,70 +205,86 @@ for i = 1 : length(frames)
 end
 
 btemp = 1 - imbinarize(uint8(vavg), 'adaptive','ForegroundPolarity','dark','Sensitivity',0.1);
-binvavg = btemp;
-btemp(:,1:frontLinkPad) = deal(0);
-btemp(round(size(btemp,1)*excludeHFactor):end, :) = deal(0);
-btemp(1:topLinkPad, round(v.width * wFactorTop):end) = deal(0);
-btemp(:,end-topLinkPad:end) = deal(0);
-bcc = bwconncomp(btemp);
 
-candid = find(cellfun(@(x) length(intersect(x,topTargetInd)), bcc.PixelIdxList));
+binvavg = btemp;
+
+btempTop = btemp;
+btempTop(:,1:round(v.width * (1-wFactorTop))) = deal(0);
+btempTop(round(v.height*excludeHFactor):end, :) = deal(0);
+btempTop(1:topLinkPad, round(v.width * (1-wFactorTop)):end) = deal(0);
+btempTop(:,end-topLinkPad:end) = deal(0);
+bccTop = bwconncomp(btempTop);
+
+candid = find(cellfun(@(x) length(intersect(x,topTargetInd)), bccTop.PixelIdxList));
 topPole = zeros(size(btemp),'logical');
 for j = 1 : length(candid)
-    topPole(bcc.PixelIdxList{candid(j)}) = 1;
+    if length(bccTop.PixelIdxList{candid(j)}) > 3*pi*radius^2
+        topPole(bccTop.PixelIdxList{candid(j)}) = 1;
+    end
 end
-topPole(:,1:round(size(topPole,2)*wFactorTop)) = deal(0);
-% topPole(1:topExPad,:) = deal(0);
 bccTop = bwconncomp(topPole);
 if bccTop.NumObjects 
     [~,bccind] = max(cellfun(@(x) length(x), bccTop.PixelIdxList));
-else
-    btempToptemp = btemp;
-    btempToptemp(floor(v.Height*excludeHFactor):end,:) = deal(0);
-    btempToptemp(:,1:100) = deal(0);
-    bccToptemp = bwconncomp(btempToptemp);
-
-    candid = find(cellfun(@(x) length(intersect(x,topTargetInd)), bccToptemp.PixelIdxList));
-    topPole = zeros(size(btempToptemp),'logical');
-    for j = 1 : length(candid)
-        topPole(bccToptemp.PixelIdxList{candid(j)}) = 1;
+    topPole = zeros(size(btemp),'logical');
+    topPole(bccTop.PixelIdxList{bccind}) = 1;
+    s = regionprops(topPole,'Extrema');
+    if angle < 90
+        topPole(:,1:floor(s.Extrema(6,1))+topTipPad) = 0; % to remove dirty pole tip
+        topPole(:,floor(s.Extrema(4,1))-topKinkPad:end) = 0; % to remove kink region of the pole
+    elseif angle > 90
+        topPole(:,floor(s.Extrema(4,1))-topTipPad:end) = 0; % to remove dirty pole tip
+        topPole(:,1:floor(s.Extrema(6,1))+topKinkPad) = 0; % to remove kink region of the pole
     end
+    % the above will help better estimate the pole edge, but might split
+    % the topPole into 2
     bccTop = bwconncomp(topPole);
-    if bccTop.NumObjects 
-        [~,bccind] = max(cellfun(@(x) length(x), bccTop.PixelIdxList));
-    else
-        figure, imshow(btemp), axis image, axis off, title(['Video ', videoFn])
-        error(['Error in ', videoFn])
-    end
-end
-topPole = zeros(size(btemp),'logical');
-topPole(bccTop.PixelIdxList{bccind}) = 1;
-s = regionprops(topPole,'Extrema');
-if angle < 90
-    topPole(:,1:floor(s.Extrema(6,1))+topTipPad) = 0; % to remove dirty pole tip
-    topPole(:,floor(s.Extrema(4,1))-topKinkPad:end) = 0; % to remove kink region of the pole
-elseif angle > 90
-    topPole(:,floor(s.Extrema(4,1))-topTipPad:end) = 0; % to remove dirty pole tip
-    topPole(:,1:floor(s.Extrema(6,1))+topKinkPad) = 0; % to remove kink region of the pole
-end
-% the above will help better estimate the pole edge
-bccTop = bwconncomp(topPole);
-
-if bccTop.NumObjects % Sometimes there can be no pole because of paw movements and other reasons
     if bccTop.NumObjects > 1
         lowestPix = zeros(bccTop.NumObjects,1);
         for lpi = 1 : bccTop.NumObjects
             [yval,~] = ind2sub(size(btempTop),bccTop.PixelIdxList{lpi});
             lowestPix(lpi) = max(yval);
         end
-%         [~,bccind] = max(cellfun(@(x) length(x), bccTop.PixelIdxList));
         [~,bccind] = max(lowestPix);
     else
         bccind = 1;
     end
-
-    topPole = zeros(size(topPole),'logical');
+    topPole = zeros(size(btemp),'logical');
     topPole(bccTop.PixelIdxList{bccind}) = 1;
+% else
+% %     btempToptemp = btemp;
+% %     btempToptemp(floor(v.Height*excludeHFactor):end,:) = deal(0);
+% %     btempToptemp(:,1:100) = deal(0);
+% %     bccToptemp = bwconncomp(btempToptemp);
+% % 
+% %     candid = find(cellfun(@(x) length(intersect(x,topTargetInd)), bccToptemp.PixelIdxList));
+% %     topPole = zeros(size(btempToptemp),'logical');
+% %     for j = 1 : length(candid)
+% %         topPole(bccToptemp.PixelIdxList{candid(j)}) = 1;
+% %     end
+% %     bccTop = bwconncomp(topPole);
+% %     if bccTop.NumObjects 
+% %         [~,bccind] = max(cellfun(@(x) length(x), bccTop.PixelIdxList));
+% %     else
+%         figure, imshow(btemp), axis image, axis off, title(['Video ', videoFn])
+%         error(['Error in top-view edge slope detection for trial # ', videoFn])
+% %     end
+% end
+
+% % if bccTop.NumObjects % Sometimes there can be no pole because of paw movements and other reasons
+%     if bccTop.NumObjects > 1
+%         lowestPix = zeros(bccTop.NumObjects,1);
+%         for lpi = 1 : bccTop.NumObjects
+%             [yval,~] = ind2sub(size(btempTop),bccTop.PixelIdxList{lpi});
+%             lowestPix(lpi) = max(yval);
+%         end
+% %         [~,bccind] = max(cellfun(@(x) length(x), bccTop.PixelIdxList));
+%         [~,bccind] = max(lowestPix);
+%     else
+%         bccind = 1;
+%     end
+
+%     topPole = zeros(size(topPole),'logical');
+%     topPole(bccTop.PixelIdxList{bccind}) = 1;
     s = regionprops(topPole,'Extrema');
     if angle~=90 % if it's NOT 90 degrees
 %         topSlope = (s.Extrema(4,2) - mean([s.Extrema(5,2), s.Extrema(6,2)]))/(s.Extrema(4,1) - mean([s.Extrema(5,1),s.Extrema(6,1)]));
@@ -285,51 +303,55 @@ if bccTop.NumObjects % Sometimes there can be no pole because of paw movements a
     topTip = (floor(s.Extrema(5,:)) + floor(s.Extrema(6,:)))/2;    
 
     %%
-    candid = find(cellfun(@(x) length(intersect(x,frontTargetInd)), bcc.PixelIdxList));
+    btempFront = btemp;
+    btempFront(:,round(v.width * wFactorFront)+frontLinkPad:end) = deal(0);
+    btempFront(round(v.height*excludeHFactor):end, :) = deal(0);
+    btempFront(:,1:frontLinkPad) = deal(0);
+    bccFront = bwconncomp(btempFront);
+    candid = find(cellfun(@(x) length(intersect(x,frontTargetInd)), bccFront.PixelIdxList));
     frontPole = zeros(size(btemp),'logical');
     for j = 1 : length(candid)
-        if length(bcc.PixelIdxList{candid(j)}) > pi*radius^2
-            frontPole(bcc.PixelIdxList{candid(j)}) = 1;
+        if length(bccFront.PixelIdxList{candid(j)}) > 3*pi*radius^2
+            frontPole(bccFront.PixelIdxList{candid(j)}) = 1;
         end
     end
-    frontPole(:,round(v.width*wFactorFront):end) = deal(0);
     bccFront = bwconncomp(frontPole);
     if bccFront.NumObjects > 0
         [~,bccind] = max(cellfun(@(x) length(x), bccFront.PixelIdxList));
-    else 
-        btempFronttemp = btemp;
-        btempFronttemp(round(v.Height*excludeHFactor):end,:) = deal(0);
-        bccFronttemp = bwconncomp(btempFronttemp);
-
-        candid = find(cellfun(@(x) length(intersect(x,frontTargetInd)), bccFronttemp.PixelIdxList));
         frontPole = zeros(size(btemp),'logical');
-        for j = 1 : length(candid)
-            if length(bcc.PixelIdxList{candid(j)}) > pi*radius^2
-                frontPole(bccFronttemp.PixelIdxList{candid(j)}) = 1;
-            end
-        end
-        bccFront = bwconncomp(frontPole);
-        if bccFront.NumObjects > 0
-            [~,bccind] = max(cellfun(@(x) length(x), bccFront.PixelIdxList));
-        else
-            figure, imshow(btemp), axis image, axis off, title(videoFn)
-            error(['No front pole from video ', videoFn])
-        end
-    end
-    frontPole = zeros(size(btemp),'logical');
-    frontPole(bccFront.PixelIdxList{bccind}) = 1;
-    s = regionprops(frontPole,'Extrema'); 
-    frontPole(:,floor(s.Extrema(4,1))-frontTipPad:end) = 0; % Remove right-most 3 columns of the image from the pole.   
-    bccFront = bwconncomp(frontPole);
-
-    if bccFront.NumObjects
-        [~,bccind] = max(cellfun(@(x) length(x), bccFront.PixelIdxList));
-   
-        frontPole = zeros(size(frontPole),'logical');
-        frontPole(bccFront.PixelIdxList{bccind}) = 1;
+        frontPole(bccFront.PixelIdxList{bccind}) = 1;        
+        frontPole(:,floor(s.Extrema(4,1))-frontTipPad:end) = 0; % Remove right-most 3 columns of the image from the pole.   
         s = regionprops(frontPole,'Extrema'); 
-        bccFront = bwconncomp(frontPole);
-        if bccFront.NumObjects             
+%     else 
+%         btempFronttemp = btemp;
+%         btempFronttemp(round(v.Height*excludeHFactor):end,:) = deal(0);
+%         bccFronttemp = bwconncomp(btempFronttemp);
+% 
+%         candid = find(cellfun(@(x) length(intersect(x,frontTargetInd)), bccFronttemp.PixelIdxList));
+%         frontPole = zeros(size(btemp),'logical');
+%         for j = 1 : length(candid)
+%             if length(bcc.PixelIdxList{candid(j)}) > 3*pi*radius^2
+%                 frontPole(bccFronttemp.PixelIdxList{candid(j)}) = 1;
+%             end
+%         end
+%         bccFront = bwconncomp(frontPole);
+%         if bccFront.NumObjects > 0
+%             [~,bccind] = max(cellfun(@(x) length(x), bccFront.PixelIdxList));
+%         else
+%             figure, imshow(btemp), axis image, axis off, title(videoFn)
+%             error(['No front pole from video ', videoFn])
+%         end
+%     end
+    
+
+%     if bccFront.NumObjects
+%         [~,bccind] = max(cellfun(@(x) length(x), bccFront.PixelIdxList));
+%    
+%         frontPole = zeros(size(frontPole),'logical');
+%         frontPole(bccFront.PixelIdxList{bccind}) = 1;
+%         s = regionprops(frontPole,'Extrema'); 
+%         bccFront = bwconncomp(frontPole);
+%         if bccFront.NumObjects             
             frontSlope = (s.Extrema(4,2) - s.Extrema(7,2))/(s.Extrema(4,1) - s.Extrema(7,1));    
             frontTip = floor(s.Extrema(7,:));
             originY = frontTip(1,2) - frontTip(1,1) * frontSlope;
@@ -392,23 +414,25 @@ if bccTop.NumObjects % Sometimes there can be no pole because of paw movements a
                 originY = topPix(poleMovingFrames(i),2) + (v.width - topPix(poleMovingFrames(i),1)) * topSlope;
                 poleAxesMoving{i,1} = [q; originY + (q-q(1)) * topSlope]; % order is changed from [y;x] to [x;y] 2018/06/13 JK
             end
-        else
-            barPos = [];
-            poleAxesUp{2} = [];
-            poleAxesUp{1} = [];
-            poleAxesMoving = [];
-            poleUpFrames = [];
-            poleMovingFrames = [];
-            topPix = [];
-        end
+%         else
+%             barPos = [];
+%             poleAxesUp{2} = [];
+%             poleAxesUp{1} = [];
+%             poleAxesMoving = [];
+%             poleUpFrames = [];
+%             poleMovingFrames = [];
+%             topPix = [];
+%         end
     else
-        barPos = [];
-        poleAxesUp{2} = [];
-        poleAxesUp{1} = [];
-        poleAxesMoving = [];
-        poleUpFrames = [];
-        poleMovingFrames = [];
-        topPix = [];
+            figure, imshow(btemp), axis image, axis off, title(videoFn)
+            error(['No front pole from video ', videoFn])
+%         barPos = [];
+%         poleAxesUp{2} = [];
+%         poleAxesUp{1} = [];
+%         poleAxesMoving = [];
+%         poleUpFrames = [];
+%         poleMovingFrames = [];
+%         topPix = [];
     end
 else
     barPos = [];

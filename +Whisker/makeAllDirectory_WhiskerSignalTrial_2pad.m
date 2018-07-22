@@ -176,69 +176,66 @@ if ~isempty(fnall)
             fn = fnall{k};
             disp(['Processing ''_WT.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
             
-%             try
-                w = pctload([fn '_WT.mat']);
-                
+            w = pctload([fn '_WT.mat']);
+
 %                 puf_ind = find(puf_fn_list == str2double(fn)); % ?? What
 %                 is this?? 2018/03/17 JK
-                
-                ai = find(angles == w.angle);
-                ri = find(rds == w.radialDistance);
-                if ~isempty(ai) && ~isempty(ri)
-                    ws = Whisker.WhiskerSignalTrial_2pad(w,meanAxisTop{ai,ri},'polyRoiInPix',p.Results.polyRoiInPix);
-                else
-                    ws = Whisker.WhiskerSignalTrial_2pad(w,[],'polyRoiInPix',p.Results.polyRoiInPix);
-                end
-                if ~isempty(p.Results.polyFitsMask)
-                    x = p.Results.polyFitsMask(1,:);
-                    y = p.Results.polyFitsMask(2,:);
-                    tidList = ws.trajectoryIDs;
-                    for tid=tidList
-                        ws.set_mask_from_points(tid,x,y);
-                    end
-                end
 
-                if ~isnan(p.Results.follicleExtrapDistInPix)
-                    ws.recompute_cached_follicle_coords(p.Results.follicleExtrapDistInPix,ws.trajectoryIDs); % Right now fits even "contact detection" tids, need to change format***
+            ai = find(angles == w.angle);
+            ri = find(rds == w.radialDistance);
+            if ~isempty(ai) && ~isempty(ri)
+                ws = Whisker.WhiskerSignalTrial_2pad(w,meanAxisTop{ai,ri},'polyRoiInPix',p.Results.polyRoiInPix);
+            else
+                ws = Whisker.WhiskerSignalTrial_2pad(w,[],'polyRoiInPix',p.Results.polyRoiInPix);
+            end
+            if ~isempty(p.Results.polyFitsMask)
+                x = p.Results.polyFitsMask(1,:);
+                y = p.Results.polyFitsMask(2,:);
+                tidList = ws.trajectoryIDs;
+                for tid=tidList
+                    ws.set_mask_from_points(tid,x,y);
                 end
+            end
 
-                outfn = [fn '_WST.mat'];
+            if ~isnan(p.Results.follicleExtrapDistInPix)
+                ws.recompute_cached_follicle_coords(p.Results.follicleExtrapDistInPix,ws.trajectoryIDs); % Right now fits even "contact detection" tids, need to change format***
+            end
 
-                pctsave(outfn,ws)
-%             catch
-%                 outfn = [fn '_errorWST.mat'];
-%                 pctsave(outfn,k)
-%             end
+            outfn = [fn '_WST.mat'];
+
+            pctsave(outfn,ws)
         end
     else
         for k=1:nfiles
             fn = fnall{k};
             disp(['Processing ''_WT.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
             
-%             try
-                load([fn '_WT.mat'],'w');
-                ws = Whisker.WhiskerSignalTrial_2pad(w,'polyRoiInPix',p.Results.polyRoiInPix);
-                if ~isempty(p.Results.polyFitsMask)
-                    x = p.Results.polyFitsMask(1,:);
-                    y = p.Results.polyFitsMask(2,:);
-                    tidList = ws.trajectoryIDs;
-                    for tid=tidList
-                        ws.set_mask_from_points(tid,x,y);
-                    end
+            load([fn '_WT.mat'],'w');
+
+            ai = find(angles == w.angle);
+            ri = find(rds == w.radialDistance);
+            if ~isempty(ai) && ~isempty(ri)
+                ws = Whisker.WhiskerSignalTrial_2pad(w,meanAxisTop{ai,ri},'polyRoiInPix',p.Results.polyRoiInPix);
+            else
+                ws = Whisker.WhiskerSignalTrial_2pad(w,[],'polyRoiInPix',p.Results.polyRoiInPix);
+            end
+
+            if ~isempty(p.Results.polyFitsMask)
+                x = p.Results.polyFitsMask(1,:);
+                y = p.Results.polyFitsMask(2,:);
+                tidList = ws.trajectoryIDs;
+                for tid=tidList
+                    ws.set_mask_from_points(tid,x,y);
                 end
+            end
 
-                if ~isnan(p.Results.follicleExtrapDistInPix)
-                    ws.recompute_cached_follicle_coords(p.Results.follicleExtrapDistInPix,ws.trajectoryIDs); % Right now fits even "contact detection" tids, need to change format***
-                end
+            if ~isnan(p.Results.follicleExtrapDistInPix)
+                ws.recompute_cached_follicle_coords(p.Results.follicleExtrapDistInPix,ws.trajectoryIDs); % Right now fits even "contact detection" tids, need to change format***
+            end
 
-                outfn = [fn '_WST.mat'];
+            outfn = [fn '_WST.mat'];
 
-                save(outfn,'ws');
-%             catch
-%                 outfn = [fn '_errorWST.mat'];
-%                 save(outfn,'k')
-%             end
-
+            save(outfn,'ws');
         end
     end
 end
