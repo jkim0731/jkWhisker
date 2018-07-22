@@ -23,7 +23,12 @@ transpix = round(ppm * transmm);
 % end
 % load(['Z:\Users\Jon\DATA\BehaviorArrays\solo_' mouseName '_' sessionName '.mat'])
 
-cd(d)
+try
+    cd(d)
+catch
+    disp(['No directory named as ', mouseName, sessionName])
+    return
+end
 
 maskfn = [mouseName sessionName 'follicle_n_mask.mat'];
 if exist(maskfn,'file') && strcmp(optional, 'skip')

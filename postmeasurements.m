@@ -23,7 +23,12 @@ end
 % load(['Z:\Users\Jon\DATA\BehaviorArrays\solo_' mouseName '_' sessionName '.mat'])
 
 currD = pwd;
-cd(d)
+try
+    cd(d)
+catch
+    disp(['Directory ', mouseName, sessionName, ' does not exist. Skipping'])
+    return
+end
 
 
 savefn = [mouseName sessionName '_post.mat'];
