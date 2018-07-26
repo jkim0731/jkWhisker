@@ -1,8 +1,8 @@
 close all
 % sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
-mouse = 'JK053';
-session = 'S01';
-dirBase = 'L:\tracked\';
+mouse = 'JK025';
+session = 'S18';
+dirBase = 'E:\WhiskerVideo\';
 dirName = [dirBase, mouse, session];
 cd(dirName)
 flist = dir('*_WT.mat');
@@ -35,6 +35,7 @@ poleAxesUpX90 = [];
 poleAxesUpY90 = [];
 angles = unique(cellfun(@(x) x.angle, wtArray));
 rds = unique(cellfun(@(x) x.radialDistance, wtArray));
+rds = rds(find(rds));
 for ai = 1 : length(angles)
     for ri = 1 : length(rds)
         tn = find(cellfun(@(x) x.angle == angles(ai) && x.radialDistance == rds(ri), wtArray));
@@ -51,13 +52,13 @@ for ai = 1 : length(angles)
             poleAxesUpY = [poleAxesUpY; wtArray{tn(1)}.poleAxesUp{1}(2,:)];
         end
         waitforbuttonpress
-        hold off, imshow(wtArray{tn(10)}.binvavg), hold on, 
-        for j = 1 : length(tn)
-            plot(wtArray{tn(j)}.poleAxesUp{1}(1,:), wtArray{tn(j)}.poleAxesUp{1}(2,:), 'r.'), 
-            plot(wtArray{tn(j)}.poleAxesUp{2}(1,:), wtArray{tn(j)}.poleAxesUp{2}(2,:), 'b.')
-        end
-        waitforbuttonpress
-        hold off
+%         hold off, imshow(wtArray{tn(10)}.binvavg), hold on, 
+%         for j = 1 : length(tn)
+%             plot(wtArray{tn(j)}.poleAxesUp{1}(1,:), wtArray{tn(j)}.poleAxesUp{1}(2,:), 'r.'), 
+%             plot(wtArray{tn(j)}.poleAxesUp{2}(1,:), wtArray{tn(j)}.poleAxesUp{2}(2,:), 'b.')
+%         end
+%         waitforbuttonpress
+%         hold off
     end
 end
 figure, hold on
@@ -103,7 +104,7 @@ subplot(313), imshow(wtArray{olnum}.binvavg), hold on,
 plot(wtArray{olnum}.poleAxesUp{1}(1,:), wtArray{olnum}.poleAxesUp{1}(2,:), 'r.'), 
 plot(wtArray{olnum}.poleAxesUp{2}(1,:), wtArray{olnum}.poleAxesUp{2}(2,:), 'b.')
 %%
-wtArray{olnum}.
+% wtArray{olnum}.
 %%
 figure, plot(wsArray.trials{olnum}.topPix(:,2)), title(wsArray.trials{olnum}.trackerFileName)
 %%

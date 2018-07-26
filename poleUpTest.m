@@ -5,7 +5,12 @@ close all
 % session = 'S04';
 % dirBase = 'L:\tracked\';
 dirName = [dirBase, mouse, session];
-cd(dirName)
+if exist(dirName, 'dir')
+    cd(dirName)
+else
+    disp(['No directory named as ', dirName])
+    return
+end
 flist = dir('*_WT.mat');
 fnums = zeros(length(flist),1);
 for i = 1 : length(flist)

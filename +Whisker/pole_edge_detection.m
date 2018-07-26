@@ -31,7 +31,7 @@ excludeHFactor = 0.7; % anything has pixel value under 0.8 height should be igno
 topKinkPad = 20;
 topTipPad = 3;
 frontTipPad = 3;
-frontLinkPad = 60;
+frontLinkPad = 50;
 topLinkPad = 20;
 % topExPad = 40; % sometimes top pole is divided into two, and linker gets chosen because of bulky body. To solve this, pad 0 at the top (only for top pole part)
 % Instead, choose the lower one when there are multiple objects on the top view
