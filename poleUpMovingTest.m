@@ -1,8 +1,8 @@
 close all
 % sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
-mouse = 'JK025';
-session = 'S18';
-dirBase = 'E:\WhiskerVideo\';
+mouse = 'JK054';
+session = 'S02';
+dirBase = 'L:\tracked\';
 dirName = [dirBase, mouse, session];
 cd(dirName)
 flist = dir('*_WT.mat');
@@ -66,6 +66,49 @@ for i = 1 : size(poleAxesUpX,1)
     plot(poleAxesUpX(i,:), poleAxesUpY(i,:), 'k-')
 end
 plot(poleAxesUpX90, poleAxesUpY90, 'r-')
+%% Searching for individual trials
+figure,
+poleAxesUpX = [];
+poleAxesUpY = [];
+poleAxesUpX90 = [];
+poleAxesUpY90 = [];
+angles = unique(cellfun(@(x) x.angle, wtArray));
+rds = unique(cellfun(@(x) x.radialDistance, wtArray));
+rds = rds(find(rds));
+for ai = 2
+    for ri = 1
+        tn = find(cellfun(@(x) x.angle == angles(ai) && x.radialDistance == rds(ri), wtArray));
+        if ~isempty(tn)
+            j = 1;
+            while true
+                imshow(wtArray{tn(j)}.binvavg), hold on, 
+                plot(wtArray{tn(j)}.poleAxesUp{1}(1,:), wtArray{tn(j)}.poleAxesUp{1}(2,:), 'r.'), 
+                plot(wtArray{tn(j)}.poleAxesUp{2}(1,:), wtArray{tn(j)}.poleAxesUp{2}(2,:), 'b.')
+                title(['trial # ', num2str(wtArray{tn(j)}.trialNum)])
+                hold off
+                if waitforbuttonpress
+                    value = double(get(gcf,'Currentcharacter'));
+                    switch value
+                        case 28 % <-
+                            if j == 1
+                                j = length(tn);
+                            else
+                                j = j - 1;
+                            end
+                        case 29 % ->
+                            if j == length(tn)
+                                j = 1;
+                            else
+                                j = j + 1;
+                            end
+                        case 27 % esc
+                            break
+                    end
+                end
+            end
+        end
+    end
+end
 %%
 
 for i = 1 : length(wsArray.trials)
@@ -87,7 +130,7 @@ subplot(313), plot(noPoleLength(plotnum))
 
 %%
 
-olnum = 85; % outlier number
+olnum = 373; % outlier number
 
 figure, 
 if ~isempty(wtArray{olnum}.topPix)

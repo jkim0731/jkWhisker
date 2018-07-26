@@ -1,23 +1,23 @@
 %% basic information
-mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
-% mice = {'JK030','JK036','JK037','JK038','JK039','JK041'};
-
-videoloc = 'E:\WhiskerVideo\';
+% mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
+% mice = {'JK052','JK053','JK054','JK056'};
+mice = {'JK053'};
+videoloc = 'L:\tracked\';
 if strcmp(videoloc(end),filesep)
     whisker_d = videoloc;
 else
     whisker_d = ([videoloc filesep]);
 end
-behavior_base_dir = 'E:\SoloData\';
+behavior_base_dir = 'Y:\Whiskernas\JK\SoloData\';
 
-ppm = 17.81/2;
+ppm = 17.81;
             % 'pxPerMm': 17.81002608 for telecentric lens
 % comment out when doing for all of the sessions in the mouse directory
 maskmm = 1; % mm from the face to draw the mask
 facePosition = 'bottom';
 rInMm = 2; % mm from the mask along the whisker to calculate delta kappa
-follicleSkip = 'skip';
-remeasureSkip = 'skip'; 
+follicleSkip = 'noskip';
+remeasureSkip = 'noskip'; 
 %%
 %%
 %% re-do these
@@ -26,15 +26,16 @@ remeasureSkip = 'skip';
 %%
 %%
 % sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
-sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
+% sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
+sessions = {[4]};
 sessions_pre = {[],[],[],[],[],[],[],[]};
 sessions_piezo = {[],[],[],[],[],[],[],[]};
-sessions_spont = {[],[],[],[],[],[],[],[]};
+sessions_spont = {[1,2],[],[],[],[],[],[],[]};
 
 all_session = 0; % 1 if using all sessions, 0 if using selected sessions
 
-DoFollicle = 1;
-DoRemeasure = 1;
+DoFollicle = 0;
+DoRemeasure = 0;
 DoWTandWST = 1;
 DoWL = 0;
 

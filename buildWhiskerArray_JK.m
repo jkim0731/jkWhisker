@@ -1,16 +1,16 @@
 %% basic information
-mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
-% mice = {'JK052','JK053','JK054','JK056'};
-% mice = {'JK025'};
-videoloc = 'E:\WhiskerVideo\';
+% mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
+mice = {'JK052','JK053','JK054','JK056'};
+% mice = {'JK052','JK053'};
+videoloc = 'L:\Tracked\';
 if strcmp(videoloc(end),filesep)
     whisker_d = videoloc;
 else
     whisker_d = ([videoloc filesep]);
 end
-behavior_base_dir = 'E:\SoloData\';
+behavior_base_dir = 'Y:\Whiskernas\JK\SoloData\';
 
-ppm = 17.81/2;
+ppm = 17.81;
             % 'pxPerMm': 17.81002608 for telecentric lens
 % comment out when doing for all of the sessions in the mouse directory
 maskmm = 1; % mm from the face to draw the mask
@@ -18,7 +18,6 @@ facePosition = 'bottom';
 rInMm = 2; % mm from the mask along the whisker to calculate delta kappa
 follicleSkip = 'noskip'; % 'skip' or 'noskip'
 remeasureSkip = 'noskip'; % 'skip' or 'noskip'
-poleUpTestSkip = 'noskip'; % 'skip' or 'noskip'
 videoFreq = 311.24; % frequency of whisker video imaging. If 0, then use timestamp file (calculated from .seq file)
 barRadius = 0.3; % in mm
 %%
@@ -29,14 +28,15 @@ barRadius = 0.3; % in mm
 %%
 %%
 % sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
-sessions = {[],[],[],[2:16],[1:6,8:24],[1,3:31],[2:21],[1,2,4:30]};
+% sessions = {[],[9],[],[2:16],[1:6,8:24],[1,3:31],[2:21],[1,2,4:30]};
+sessions = {[],[],[3:10],[1:9]};
 % sessions = {[2:10], [1:10], [1:9]};
 
-sessions_pre = {[],[],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3]};
-sessions_piezo = {[],[],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3]};
-sessions_spont = {[],[],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3]};
+sessions_pre = {[],[],[1],[1]};
+sessions_piezo = {[],[1],[1],[1]};
+sessions_spont = {[],[1:2],[1:2],[1:2]};
 
-all_session = 1; % 1 if using all sessions, 0 if using selected sessions
+all_session = 0; % 1 if using all sessions, 0 if using selected sessions
 
 DoFollicle = 0;
 DoRemeasure = 0;
@@ -429,8 +429,6 @@ if testPoleUp
             cd(whisker_d)
             sn = dir([mice{i},'S*']);
             sn_pre = dir([mice{i}, 'pre*']);
-            sn_piezo = dir([mice{i},'piezo*']);
-            sn_spont = dir([mice{i},'spont*']);
             if ~isempty(sn)
                 for j = 1 : length(sn)
                     if sn(j).isdir
@@ -449,22 +447,6 @@ if testPoleUp
                     end
                 end
             end
-%             if ~isempty(sn_piezo)
-%                 for j = 1 : length(sn_piezo)
-%                     if sn_piezo(j).isdir
-%                         [mouseName, sessionName] = strtok(sn_piezo(j).name,'pizeo');
-%                         poleUpTest(mouseName,sessionName,videoloc)
-%                     end
-%                 end
-%             end
-%             if ~isempty(sn_spont)
-%                 for j = 1 : length(sn_spont)
-%                     if sn_spont(j).isdir
-%                         [mouseName, sessionName] = strtok(sn_spont(j).name,'spont');
-%                         poleUpTest(mouseName,sessionName,videoloc)
-%                     end
-%                 end
-%             end            
         end
     else
         %% use this code when doing for selected sessions in each mouse directory
@@ -484,20 +466,6 @@ if testPoleUp
                     poleUpTest(mouseName,sessionName,videoloc)
                 end
             end
-%             if ~isempty(sessions_piezo{i})
-%                 for j = 1 : length(sessions_piezo{i})
-%                     mouseName = mice{i};
-%                     sessionName = sprintf('piezo%d',sessions_piezo{i}(j));
-%                     poleUpTest(mouseName,sessionName,videoloc)
-%                 end
-%             end
-%             if ~isempty(sessions_spont{i})
-%                 for j = 1 : length(sessions_spont{i})
-%                     mouseName = mice{i};
-%                     sessionName = sprintf('spont%d',sessions_spont{i}(j));
-%                     poleUpTest(mouseName,sessionName,videoloc)
-%                 end
-%             end
         end
     end
 end

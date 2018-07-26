@@ -28,19 +28,20 @@ poleUpLength = cellfun(@(x) length(x.poleUpFrames), wtArray);
 poleMovingLength = cellfun(@(x) length(x.poleMovingFrames), wtArray);
 noPoleLength = cellfun(@(x) x.nof - length(x.poleUpFrames) - length(x.poleMovingFrames), wtArray);
 %%
-figure,
+figure, title([mouse, ' ', session])
 oonum = find(cellfun(@(x) strcmp(x.trialType,'oo'), wtArray));
 subplot(311), plot(poleUpLength), hold on, plot(oonum,poleUpLength(oonum), 'r.')
 subplot(312), plot(poleMovingLength), hold on, plot(oonum,poleMovingLength(oonum), 'r.')
 subplot(313), plot(noPoleLength), hold on, plot(oonum,noPoleLength(oonum), 'r.')
 %%
-figure,
+figure, title([mouse, ' ', session])
 poleAxesUpX = [];
 poleAxesUpY = [];
 poleAxesUpX90 = [];
 poleAxesUpY90 = [];
 angles = unique(cellfun(@(x) x.angle, wtArray));
 rds = unique(cellfun(@(x) x.radialDistance, wtArray));
+rds = rds(find(rds));
 for ai = 1 : length(angles)
     for ri = 1 : length(rds)
         tn = find(cellfun(@(x) x.angle == angles(ai) && x.radialDistance == rds(ri), wtArray));
@@ -56,13 +57,7 @@ for ai = 1 : length(angles)
             poleAxesUpX = [poleAxesUpX; wtArray{tn(1)}.poleAxesUp{1}(1,:)];
             poleAxesUpY = [poleAxesUpY; wtArray{tn(1)}.poleAxesUp{1}(2,:)];
         end
-        waitforbuttonpress
-        hold off, imshow(wtArray{tn(10)}.binvavg), hold on, 
-        for j = 1 : length(tn)
-            plot(wtArray{tn(j)}.poleAxesUp{1}(1,:), wtArray{tn(j)}.poleAxesUp{1}(2,:), 'r.'), 
-            plot(wtArray{tn(j)}.poleAxesUp{2}(1,:), wtArray{tn(j)}.poleAxesUp{2}(2,:), 'b.')
-        end
-        waitforbuttonpress
+        waitforbuttonpress        
         hold off
     end
 end
@@ -71,3 +66,4 @@ for i = 1 : size(poleAxesUpX,1)
     plot(poleAxesUpX(i,:), poleAxesUpY(i,:), 'k-')
 end
 plot(poleAxesUpX90, poleAxesUpY90, 'r-')
+waitforbuttonpress
