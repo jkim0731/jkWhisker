@@ -28,13 +28,13 @@ poleUpLength = cellfun(@(x) length(x.poleUpFrames), wtArray);
 poleMovingLength = cellfun(@(x) length(x.poleMovingFrames), wtArray);
 noPoleLength = cellfun(@(x) x.nof - length(x.poleUpFrames) - length(x.poleMovingFrames), wtArray);
 %%
-figure, title([mouse, ' ', session])
+figure, title([mouse, ' ', session]), hold on
 oonum = find(cellfun(@(x) strcmp(x.trialType,'oo'), wtArray));
 subplot(311), plot(poleUpLength), hold on, plot(oonum,poleUpLength(oonum), 'r.')
 subplot(312), plot(poleMovingLength), hold on, plot(oonum,poleMovingLength(oonum), 'r.')
 subplot(313), plot(noPoleLength), hold on, plot(oonum,noPoleLength(oonum), 'r.')
 %%
-figure, title([mouse, ' ', session])
+figure, title([mouse, ' ', session]), hold on
 poleAxesUpX = [];
 poleAxesUpY = [];
 poleAxesUpX90 = [];
