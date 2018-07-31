@@ -42,6 +42,7 @@ classdef WhiskerTrialLite_2pad < handle
         Flateral = {};
         M0 = {}; % Moment at the follicle.
         meanKappa = {};
+        distanceToPoleCenter = []; % dummy variable for now. It is populated during force calculation 2018/07/26 JK
         
         barPos = []; %  Inherited from WhiskerSignalTrial. [frameNum XPosition YPosition]
         barPosOffset = []; % Inherited from WhiskerSignalTrial. [x y], either 1X2 or nframesX2
@@ -62,18 +63,16 @@ classdef WhiskerTrialLite_2pad < handle
         poleMovingFrames = [];
         
         thPolygon = []; % convex hull of the touch hyperplane at this specific pole position
-        touchHP = []; % middle of protraction and retraction boundary
+        touchHPmean = []; % middle of protraction and retraction boundary
         touchBoundaryThickness = [];
         touchPsi1 = [];
         touchPsi2 = [];
         dist2thPolygon = [];
-        dist2touchHP = []; % distance to the touch hyperplane (middle of protraction and retraction boundary)
+        dist2touchHPmean = []; % distance to the touch hyperplane (middle of protraction and retraction boundary)
         thTouchFrames = []; % touch frames derived from the touch hyperplane.
         thTouchChunks = {}; % divide thTouchFrames into chunks based on the continuity
-        
-        kappaTouchThreshold = []; % the threshold for determining touch based on kappa, on top of thTouchFrames
-        durationThreshold = []; % the threshold for determining touch based on touch duration, on top of thTouchFrames
-        touchFrames = []; % touch frames deteremined by touch hyperplane, kappa threshold, and duration threshold.
+        retractionTouchFrames = [];
+        protractionTouchFrames = [];
     end
     
     properties (Dependent = true)
@@ -156,7 +155,7 @@ classdef WhiskerTrialLite_2pad < handle
             p.addParameter('mirrorAngle', [], @isnumeric); % averaged from all the trials in the session
             p.addParameter('rInMm',{}, @isnumeric);
             p.addParameter('thPolygon',[], @isnumeric);
-            p.addParameter('touchHP',[], @isnumeric);
+            p.addParameter('touchHPmean',[], @isnumeric);
             p.addParameter('touchBoundaryThickness', [], @isnumeric);
             p.addParameter('touchPsi1', [], @isnumeric);
             p.addParameter('touchPsi2', [], @isnumeric);
@@ -197,13 +196,13 @@ classdef WhiskerTrialLite_2pad < handle
             obj.apPosition = ws.apPosition;
             obj.radialDistance = ws.radialDistance;
             obj.trialType = ws.trialType;
-    
+
             obj.thPolygon = p.Results.thPolygon;
-            obj.touchHP = p.Results.touchHP;
+            obj.touchHPmean = p.Results.touchHPmean;
             obj.touchBoundaryThickness = p.Results.touchBoundaryThickness;
             obj.touchPsi1 = p.Results.touchPsi1;
-            obj.touchPsi2 = p.Results.touchPsi2;            
-                    
+            obj.touchPsi2 = p.Results.touchPsi2;
+
             obj.poleAxesUp = ws.poleAxesUp;
             obj.poleAxesMoving = ws.poleAxesMoving;
             obj.whiskerPoleIntersection = ws.whiskerPoleIntersection;
@@ -211,11 +210,10 @@ classdef WhiskerTrialLite_2pad < handle
             obj.poleUpFrames = ws.poleUpFrames;
             obj.poleMovingFrames = ws.poleMovingFrames;
             obj.distanceToPole = ws.dist2pole;
-            
+
             obj.nof = ws.nof;
             obj.frontRInMm = ws.get_frontRInMm(obj.rInMm);
-            
-            
+
 %             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %             obj.time = (0:obj.nof-1)*obj.framePeriodInSec;
 %             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Change this to using 'timestamp'
@@ -276,7 +274,7 @@ classdef WhiskerTrialLite_2pad < handle
             %%
             if strcmp(ws.trialType, 'oo')
                 obj.thTouchFrames = [];
-            else
+            elseif contains(ws.sessionName, 'S') || contains(ws.sessionName, 'pre')
                 topInd = find(~isnan(ws.whiskerEdgeCoord(:,1)));
                 frontInd = find(~isnan(ws.whiskerEdgeCoord(:,2)));
                 apPositionInd = find(~isnan(ws.apPosition));
@@ -290,18 +288,19 @@ classdef WhiskerTrialLite_2pad < handle
                     intersect_2d = intersect_2d';
                 end
                 intersect_2d = intersect_2d(:,1:2);
-                dist2thPolygon = p_poly_dist(intersect_2d(:,1)', intersect_2d(:,2)', obj.thPolygon(:,1)', obj.thPolygon(:,2)');
+                dist2thPolygon = p_poly_dist(intersect_2d(:,1)', intersect_2d(:,2)', obj.thPolygon(:,1)', obj.thPolygon(:,2)', true);
                 if size(dist2thPolygon,2) > size(dist2thPolygon,1)
                     dist2thPolygon = dist2thPolygon';
                 end
+                dist2thPolygon(find(dist2thPolygon < 0)) = deal(0);
                 obj.dist2thPolygon = nan(obj.nof,1);
                 obj.dist2thPolygon(noNaNInd) = dist2thPolygon;
                 obj.thTouchFrames = noNaNInd(dist2thPolygon < obj.touchBoundaryThickness);
                 
-                [~, maxind] = max(obj.touchHP(:,1));
-                v2 = obj.touchHP(maxind,:);
-                [~, minind] = min(obj.touchHP(:,1));
-                v1temp = obj.touchHP(minind,:);
+                [~, maxind] = max(obj.touchHPmean(:,1));
+                v2 = obj.touchHPmean(maxind,:);
+                [~, minind] = min(obj.touchHPmean(:,1));
+                v1temp = obj.touchHPmean(minind,:);
                 hpSlope = (v2(2) - v1temp(2)) / (v2(1) - v1temp(1));
                 [~, minind] = min(intersect_2d(:,1));
                 v1 = [intersect_2d(minind,1), v2(2) - (v2(1) - intersect_2d(minind,1)) * hpSlope];
@@ -312,15 +311,16 @@ classdef WhiskerTrialLite_2pad < handle
                 a = v1_ - v2_;
                 b = intersect_2d - v2_;
 %                 dist2touchHP = p_poly_dist(intersect_2d(1,:), intersect_2d(2,:), obj.touchHP(:,1)', obj.touchHP(:,2)');
-                dist2touchHP =  sqrt(sum(cross(a,b,2).^2,2)) ./ sqrt(sum(a.^2,2));
-                if size(dist2touchHP,2) > size(dist2touchHP,1)
-                    dist2touchHP = dist2touchHP';
+                dist2meanHP =  sqrt(sum(cross(a,b,2).^2,2)) ./ sqrt(sum(a.^2,2));
+                if size(dist2meanHP,2) > size(dist2meanHP,1)
+                    dist2meanHP = dist2meanHP';
                 end
                 intersectSlopes = (intersect_2d(:,2) - v1(2)) ./ (intersect_2d(:,1) - v1(1));
                 negind = find(intersectSlopes > hpSlope);
-                dist2touchHP(negind) = -dist2touchHP(negind);
-                obj.dist2touchHP = nan(obj.nof,1);
-                obj.dist2touchHP(noNaNInd) = dist2touchHP;
+                dist2meanHP(negind) = -dist2meanHP(negind);
+                obj.dist2thPolygon(noNaNInd(negind)) = -obj.dist2thPolygon(noNaNInd(negind));
+                obj.dist2touchHPmean = nan(obj.nof,1);
+                obj.dist2touchHPmean(noNaNInd) = dist2meanHP;
             end
             %
             %
@@ -341,10 +341,7 @@ classdef WhiskerTrialLite_2pad < handle
                 for i = 1 : length(obj.thTouchChunks)
                     obj.thTouchChunks{i} = obj.thTouchFrames(chunkPoints(i) : chunkPoints(i+1)-1);
                 end
-            end
-            %% Applying threshold (But... how to determine the threshold?)
-            
-            
+            end            
         end
         
         function chunks = get_chunks(frames)

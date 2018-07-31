@@ -1,16 +1,16 @@
 %% basic information
-% mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
-mice = {'JK052','JK053','JK054','JK056'};
-% mice = {'JK052','JK053'};
-videoloc = 'L:\Tracked\';
+mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
+% mice = {'JK052','JK053','JK054','JK056'};
+% mice = {'JK025'};
+videoloc = 'D:\Jinho_works\Data\WhiskerVideo\';
 if strcmp(videoloc(end),filesep)
     whisker_d = videoloc;
 else
     whisker_d = ([videoloc filesep]);
 end
-behavior_base_dir = 'Y:\Whiskernas\JK\SoloData\';
+behavior_base_dir = 'D:\Jinho_works\Data\SoloData\';
 
-ppm = 17.81;
+ppm = 17.81/2;
             % 'pxPerMm': 17.81002608 for telecentric lens
 % comment out when doing for all of the sessions in the mouse directory
 maskmm = 1; % mm from the face to draw the mask
@@ -29,22 +29,22 @@ barRadius = 0.3; % in mm
 %%
 % sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
 % sessions = {[],[9],[],[2:16],[1:6,8:24],[1,3:31],[2:21],[1,2,4:30]};
-sessions = {[],[],[3:10],[1:9]};
+sessions = {[4],[],[3:10],[1:9]};
 % sessions = {[2:10], [1:10], [1:9]};
 
 sessions_pre = {[],[],[1],[1]};
 sessions_piezo = {[],[1],[1],[1]};
 sessions_spont = {[],[1:2],[1:2],[1:2]};
 
-all_session = 0; % 1 if using all sessions, 0 if using selected sessions
+all_session = 1; % 1 if using all sessions, 0 if using selected sessions
 
 DoFollicle = 0;
 DoRemeasure = 0;
-buildWT = 0;
-testPoleUp = 1;
-buildWST = 0;
+doWT = 0;
+testPoleUp = 0;
+doWST = 0;
 makeTouchHyperplane = 0;
-buildWL = 0;
+doWL = 1;
 
 %% Define follicle points and masks
 % saves follicle_n_mask.mat file consists of variables 'maskx','masky','width', 'height', and 'follicle_first'
@@ -232,7 +232,7 @@ end
 %% build WT_2pad, WST_2pad, and WL_2pad
 % build WL_2pad after touch plane
 
-if buildWT
+if doWT
     cd(whisker_d)
     if all_session == 1
         for mi = 1 : size(mice,2) % mouse index
@@ -471,7 +471,7 @@ if testPoleUp
 end
 
 %% Build WST
-if buildWST
+if doWST
     cd(whisker_d)
     if all_session == 1
         for mi = 1 : size(mice,2) % mouse index
@@ -669,7 +669,7 @@ end
 %% Build WL (Finally)
 % it includes touch frame calculation
 
-if buildWL
+if doWL
     cd(whisker_d)
     if all_session == 1
         for mi = 1 : size(mice,2) % mouse index
@@ -697,7 +697,7 @@ if buildWL
                         end
                         b_session = b{b_ind};
                         wd = [whisker_d, mouseName, sessionName];
-                        buildWL(wd, b_session, rInMm)
+                        buildWL_2pad(wd, b_session, rInMm)
                     end
                 end
             end
@@ -722,7 +722,7 @@ if buildWL
                     b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                     b_session = b{b_ind};
                     wd = [whisker_d, mouseName, sessionName];
-                    buildWL(wd, b_session, rInMm)
+                    buildWL_2pad(wd, b_session, rInMm)
                 end
             end
 
@@ -733,7 +733,7 @@ if buildWL
                 if sn_piezo(si).isdir
                     [mouseName, sessionName] = strtok(sn_piezo(si).name,'piezo');
                     wd = [whisker_d, mouseName, sessionName];
-                    buildWL(wd, [], rInMm)
+                    buildWL_2pad(wd, [], rInMm)
                 end
             end
             
@@ -744,7 +744,7 @@ if buildWL
                 if sn_spont(si).isdir
                     [mouseName, sessionName] = strtok(sn_spont(si).name,'piezo');
                     wd = [whisker_d, mouseName, sessionName];
-                    buildWL(wd, [], rInMm)
+                    buildWL_2pad(wd, [], rInMm)
                 end
             end
         end
@@ -775,7 +775,7 @@ if buildWL
                         end
                         b_session = b{b_ind};
                         wd = [whisker_d, mouseName, sessionName];
-                        buildWL(wd, b_session, rInMm)
+                        buildWL_2pad(wd, b_session, rInMm)
                     end
                 end
             end
@@ -800,7 +800,7 @@ if buildWL
                         b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                         b_session = b{b_ind};
                         wd = [whisker_d, mouseName, sessionName];
-                        buildWL(wd, b_session, rInMm)
+                        buildWL_2pad(wd, b_session, rInMm)
                     end
                 end
             end
@@ -811,7 +811,7 @@ if buildWL
                     cd(whisker_d)
                     if exist([mouseName, sessionName],'dir')
                         wd = [whisker_d, mouseName, sessionName];
-                        buildWL(wd, [], rInMm)
+                        buildWL_2pad(wd, [], rInMm)
                     end
                 end
             end
@@ -822,7 +822,7 @@ if buildWL
                     cd(whisker_d)
                     if exist([mouseName, sessionName],'dir')
                         wd = [whisker_d, mouseName, sessionName];
-                        buildWL(wd, [], rInMm)
+                        buildWL_2pad(wd, [], rInMm)
                     end
                 end
             end            
