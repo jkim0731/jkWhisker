@@ -2,13 +2,13 @@
 mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
 % mice = {'JK052','JK053','JK054','JK056'};
 % mice = {'JK025'};
-videoloc = 'D:\Jinho_works\Data\WhiskerVideo\';
+videoloc = 'E:\WhiskerVideo\';
 if strcmp(videoloc(end),filesep)
     whisker_d = videoloc;
 else
     whisker_d = ([videoloc filesep]);
 end
-behavior_base_dir = 'D:\Jinho_works\Data\SoloData\';
+behavior_base_dir = 'E:\SoloData\';
 
 ppm = 17.81/2;
             % 'pxPerMm': 17.81002608 for telecentric lens
@@ -28,23 +28,21 @@ barRadius = 0.3; % in mm
 %%
 %%
 % sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
-% sessions = {[],[9],[],[2:16],[1:6,8:24],[1,3:31],[2:21],[1,2,4:30]};
-sessions = {[4],[],[3:10],[1:9]};
-% sessions = {[2:10], [1:10], [1:9]};
+sessions = {[1:3,5:18],[1,2,4:15],[1,2,4:20],[2:16],[1:6,8:24],[1,3:31],[2:21],[1,2,4:30]};
 
-sessions_pre = {[],[],[1],[1]};
-sessions_piezo = {[],[1],[1],[1]};
-sessions_spont = {[],[1:2],[1:2],[1:2]};
+sessions_pre = {[1,2],[1,2],[1,2],[1,2],[1,2],[1,2],[1,2],[1,2]};
+sessions_piezo = {[1,2],[1,2],[1,2],[1,2],[1,2],[1,2],[1,2],[1,2]};
+sessions_spont = {[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3]};
 
-all_session = 1; % 1 if using all sessions, 0 if using selected sessions
+all_session = 0; % 1 if using all sessions, 0 if using selected sessions
 
 DoFollicle = 0;
 DoRemeasure = 0;
 doWT = 0;
 testPoleUp = 0;
-doWST = 0;
+doWST = 1;
 makeTouchHyperplane = 0;
-doWL = 1;
+doWL = 0;
 
 %% Define follicle points and masks
 % saves follicle_n_mask.mat file consists of variables 'maskx','masky','width', 'height', and 'follicle_first'
@@ -640,8 +638,12 @@ if doWST
                         else
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                         end
-                        b_session = b{b_ind};
-                        buildWST_2pad(mouseName, sessionName, whisker_d, b_session, ppm)
+                        if isempty(b_ind)
+                            buildWST_2pad(mouseName, sessionName, whisker_d, [], ppm)
+                        else
+                            b_session = b{b_ind};
+                            buildWST_2pad(mouseName, sessionName, whisker_d, b_session, ppm)
+                        end
                     end
                 end
             end

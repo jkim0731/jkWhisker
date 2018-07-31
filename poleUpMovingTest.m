@@ -1,8 +1,9 @@
 close all
 % sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
-mouse = 'JK054';
-session = 'S02';
-dirBase = 'L:\tracked\';
+mouse = 'JK041';
+% 06, 08, 12, 17, 22, 
+session = 'S17';
+dirBase = 'E:\WhiskerVideo\';
 dirName = [dirBase, mouse, session];
 cd(dirName)
 flist = dir('*_WT.mat');
@@ -75,7 +76,7 @@ poleAxesUpY90 = [];
 angles = unique(cellfun(@(x) x.angle, wtArray));
 rds = unique(cellfun(@(x) x.radialDistance, wtArray));
 rds = rds(find(rds));
-for ai = 2
+for ai = 1
     for ri = 1
         tn = find(cellfun(@(x) x.angle == angles(ai) && x.radialDistance == rds(ri), wtArray));
         if ~isempty(tn)
@@ -109,6 +110,18 @@ for ai = 2
         end
     end
 end
+%% Individual trials top-view axis comparison
+ai = 2;
+ri = 1;
+tn = find(cellfun(@(x) x.angle == angles(ai) && x.radialDistance == rds(ri), wtArray));
+difVal = zeros(length(tn),1);
+first = wtArray{tn(1)}.poleAxesUp{1};
+for i = 1 : length(tn)
+    temp = wtArray{tn(i)}.poleAxesUp{1};
+    difVal(i) = sum(sqrt(sum((first-temp).^2,2)));
+end
+figure, plot(tn, difVal)
+
 %%
 
 for i = 1 : length(wsArray.trials)
@@ -130,7 +143,8 @@ subplot(313), plot(noPoleLength(plotnum))
 
 %%
 
-olnum = 373; % outlier number
+% 592, 598, 605, 609, 613, 615, 617, 620~629, 631, 633~639
+olnum = 572; % outlier number
 
 figure, 
 if ~isempty(wtArray{olnum}.topPix)
