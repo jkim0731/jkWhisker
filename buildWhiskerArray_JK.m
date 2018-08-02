@@ -1,23 +1,24 @@
 %% basic information
-mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
-% mice = {'JK052','JK053','JK054','JK056'};
-% mice = {'JK025'};
-videoloc = 'E:\WhiskerVideo\';
+% mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
+mice = {'JK052','JK053','JK054','JK056'};
+% mice = {'JK052'};
+videoloc = 'L:\tracked\';
 if strcmp(videoloc(end),filesep)
     whisker_d = videoloc;
 else
     whisker_d = ([videoloc filesep]);
 end
-behavior_base_dir = 'E:\SoloData\';
+behavior_base_dir = 'Y:\Whiskernas\JK\SoloData\';
 
-ppm = 17.81/2;
+ppm = 17.81;
             % 'pxPerMm': 17.81002608 for telecentric lens
 % comment out when doing for all of the sessions in the mouse directory
 maskmm = 1; % mm from the face to draw the mask
 facePosition = 'bottom';
 rInMm = 2; % mm from the mask along the whisker to calculate delta kappa
-follicleSkip = 'noskip'; % 'skip' or 'noskip'
-remeasureSkip = 'noskip'; % 'skip' or 'noskip'
+follicleSkip = 'skip'; % 'skip' or 'noskip'
+remeasureSkip = 'skip'; % 'skip' or 'noskip'
+touchHyperplaneSkip = 'skip';
 videoFreq = 311.24; % frequency of whisker video imaging. If 0, then use timestamp file (calculated from .seq file)
 barRadius = 0.3; % in mm
 %%
@@ -28,20 +29,20 @@ barRadius = 0.3; % in mm
 %%
 %%
 % sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
-sessions = {[1:3,5:18],[1,2,4:15],[1,2,4:20],[2:16],[1:6,8:24],[1,3:31],[2:21],[1,2,4:30]};
+sessions = {[2],[1,2,4:15],[1,2,4:20],[2:16],[1:6,8:24],[1,3:31],[2:21],[1,2,4:30]};
 
-sessions_pre = {[1,2],[1,2],[1,2],[1,2],[1,2],[1,2],[1,2],[1,2]};
-sessions_piezo = {[1,2],[1,2],[1,2],[1,2],[1,2],[1,2],[1,2],[1,2]};
-sessions_spont = {[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3]};
+sessions_pre = {[],[1,2],[1,2],[1,2],[1,2],[1,2],[1,2],[1,2]};
+sessions_piezo = {[],[1,2],[1,2],[1,2],[1,2],[1,2],[1,2],[1,2]};
+sessions_spont = {[],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3]};
 
-all_session = 0; % 1 if using all sessions, 0 if using selected sessions
+all_session = 1; % 1 if using all sessions, 0 if using selected sessions
 
 DoFollicle = 0;
 DoRemeasure = 0;
 doWT = 0;
 testPoleUp = 0;
-doWST = 1;
-makeTouchHyperplane = 0;
+doWST = 0;
+makeTouchHyperplane = 1;
 doWL = 0;
 
 %% Define follicle points and masks
@@ -493,7 +494,7 @@ if doWST
                         b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                         b_session = b{b_ind};
 
-                        buildWST_2pad(mouseName, sessionName, whisker_d, b_session, videoFreq)
+                        buildWST_2pad(mouseName, sessionName, whisker_d, b_session, ppm)
                     end
                 end
             end
@@ -665,8 +666,113 @@ end
 %% Perfrom touch_hyperplane
 % it includes frame-by-frame estimation of corresponding motor position, based on _WST files
 % touch_hyperplane
+
 if makeTouchHyperplane
-    
+    if all_session == 1
+        for mi = 1 : size(mice,2) % mouse index
+            cd(whisker_d)
+            sn = dir([whisker_d, mice{mi},'S*']);
+            for si = 1 : length(sn)
+                if sn(si).isdir
+                    [mouseName, sessionName] = strtok(sn(si).name,'S');
+                    behavior_d = [behavior_base_dir mouseName '\'];
+                    if ~isempty(sessionName)
+                        if exist('b','var')
+                            if strcmp(b{1}.mouseName, mouseName)
+                                disp('using the same behavior file')
+                            else
+                                disp('loading a new behavior file')
+                                load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+                            end
+                        else
+                            load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+                        end
+                        b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
+                        b_session = b{b_ind};
+                        run_touch_hyperplane(mouseName, sessionName, b_session, whisker_d, ppm, touchHyperplaneSkip)
+                    end
+                end
+            end
+
+            cd(whisker_d)
+            sn_pre = dir([mice{mi},'pre*']);
+            for si = 1 : length(sn_pre)
+                cd(whisker_d)
+                if sn_pre(si).isdir
+                    [mouseName, sessionName] = strtok(sn_pre(si).name,'pre');
+                    behavior_d = [behavior_base_dir mouseName '\'];
+                    if exist('b','var')
+                        if strcmp(b{1}.mouseName, mouseName)
+                            disp('using the same behavior file')
+                        else
+                            disp('loading a new behavior file')
+                            load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+                        end
+                    else
+                        load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+                    end
+                    b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
+                    b_session = b{b_ind};
+                    run_touch_hyperplane(mouseName, sessionName, b_session, whisker_d, ppm, touchHyperplaneSkip)
+                end
+            end
+        end
+    else
+        for mi = 1 : size(mice,2) % mouse index            
+            mouseName = mice{mi};
+            if ~isempty(sessions{mi}) 
+                for j = 1 : length(sessions{mi})  
+                    cd(whisker_d)
+                    sessionName = sprintf('S%02d',sessions{mi}(j));
+                    if exist([mouseName, sessionName],'dir')
+                        behavior_d = [behavior_base_dir mouseName '\'];
+
+                        if exist('b','var')
+                            if strcmp(b{1}.mouseName, mouseName)
+                                disp('using the same behavior file')
+                            else
+                                disp('loading a new behavior file')
+                                load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+                            end
+                        else
+                            load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+                        end
+                        if strcmp(sessionName, 'S91')
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
+                        else
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
+                        end
+                        b_session = b{b_ind};
+                        run_touch_hyperplane(mouseName, sessionName, b_session, whisker_d, ppm, touchHyperplaneSkip)
+                    end
+                end
+            end
+
+            if ~isempty(sessions_pre{mi})
+                for j = 1 : length(sessions_pre{mi})
+                    sessionName = sprintf('pre%d',sessions_pre{mi}(j));
+                    cd(whisker_d)
+                    if exist([mouseName, sessionName],'dir')
+                        behavior_d = [behavior_base_dir mouseName '\'];
+
+                        if exist('b','var')
+                            if strcmp(b{1}.mouseName, mouseName)
+                                disp('using the same behavior file')
+                            else
+                                disp('loading a new behavior file')
+                                load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+                            end
+                        else
+                            load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
+                        end
+                        b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
+                        b_session = b{b_ind};
+                        run_touch_hyperplane(mouseName, sessionName, b_session, whisker_d, ppm, touchHyperplaneSkip)
+                    end
+                end
+            end
+        end
+    end    
 end
 %% Build WL (Finally)
 % it includes touch frame calculation

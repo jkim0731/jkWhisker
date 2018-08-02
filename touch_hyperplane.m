@@ -173,6 +173,7 @@ for mi = 1 : length(mice)
                 ws = Whisker.WhiskerSignalTrialArray_2pad(whisker_d,'include_files',temp_files);            
                 done_flag = 1; 
                 psi1_polygon_answer = 'Yes'; % for re-drawing of polygon for psi1
+                psi2Flip = 0;
                 while (done_flag)
                     intersect_3d_total = [];
                     for tnum = 1 : length(ws.trials)
@@ -415,7 +416,6 @@ for mi = 1 : length(mice)
                         switch answer1
                             case 'Yes'
                                 if psi1(iservo,idist) > 90
-                                    psi2(iservo,idist) = -psi2(iservo,idist);
                                     psi2Flip = 1;
                                 end
                                 close all
@@ -467,7 +467,7 @@ for mi = 1 : length(mice)
 
                     close all
                     %% Calculate touch hyperplanes
-                    answer7 = 'Yes'; psi2Flip = 0;
+                    answer7 = 'Yes';
                     while strcmp(answer7, 'Yes')
                         answer7 = 'No'; % stay in this while loop only when certain condition is met (psi2 flip for some 90 degrees)
                     
@@ -551,7 +551,7 @@ for mi = 1 : length(mice)
                                     %%
                                     h2 = figure('units','normalized','outerposition',[0 0 1 1]); 
                                     if psi2Flip
-                                        A = viewmtx(psi1(iservo,idist),-90+psi2(iservo,idist));
+                                        A = viewmtx(psi1(iservo,idist),-90-psi2(iservo,idist));
                                     else
                                         A = viewmtx(psi1(iservo,idist),90-psi2(iservo,idist));
                                     end
@@ -611,13 +611,13 @@ for mi = 1 : length(mice)
                                             step_boundary_cell = inputdlg({'First step','Last step'},'What are the sweep boundaries?',1,{'',''},options);
                                             steps{iservo, idist} = str2double(step_boundary_cell{1}):str2double(step_boundary_cell{2});
                                             peak_answer = 'No';
+                                            answer7 = 'No';
                                             close all
                                         case 'No'
                                             answer7 = MFquestdlg([0.5, 0.3], 'Do you want to flip psi2?', 'Wierd psi2 error', 'Yes', 'No', 'Yes');
                                             switch answer7
                                                 case 'Yes'
-                                                    psi2(iservo,idist) = -psi2(iservo,idist);
-                                                    psi2Flip = 1;
+                                                    psi2Flip = 1-psi2Flip;
                                                     peak_answer = 'No';
                                                 case 'No'
                 %                                     questTitle = 'Return to psi1 polygon'; 
