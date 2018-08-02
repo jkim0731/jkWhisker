@@ -54,25 +54,26 @@ classdef WhiskerTrialLite_2pad < handle
         servoAngle = []; % Inherited from WhiskerSignalTrial.
         apPosition = []; % Inherited from WhiskerSignalTrial.
         radialDistance = [] ; % Inherited from WhiskerSignalTrial.
-        poleAxesUp = {}; % Inherited from WhiskerSignalTrial.
-        poleAxesMoving = cell(1,2); % Inherited from WhiskerSignalTrial.
-        whiskerPoleIntersection = {}; % Inherited from WhiskerSignalTrial.
         whiskerEdgeCoord = []; % Inherited from WhiskerSignalTrial.        
         nof = []; % Number of Frames. Inherited from WhiskerSignalTrial.
         poleUpFrames = []; % Inherited from WhiskerSignalTrial. first timepoint is 1, not 0. 2017/04/13 JK
         poleMovingFrames = [];
         
-        thPolygon = []; % convex hull of the touch hyperplane at this specific pole position
-        touchHPmean = []; % middle of protraction and retraction boundary
+        touchHP = []; % in 2d
+        protractionHP = []; % in 2d
+        retractionHP = []; % in 2d
         touchBoundaryThickness = [];
+        touchBoundaryBuffer = [];
         touchPsi1 = [];
         touchPsi2 = [];
-        dist2thPolygon = [];
-        dist2touchHPmean = []; % distance to the touch hyperplane (middle of protraction and retraction boundary)
-        thTouchFrames = []; % touch frames derived from the touch hyperplane.
-        thTouchChunks = {}; % divide thTouchFrames into chunks based on the continuity
+        
+        touchKappaSTDthreshold = [];
         retractionTouchFrames = [];
+        retractionTFchunks = {};
         protractionTouchFrames = [];
+        protractionTFchunks = {};
+        
+        intersect_2d = []; % for test, maybe just for now 2018/07/31 JK
     end
     
     properties (Dependent = true)
@@ -154,11 +155,11 @@ classdef WhiskerTrialLite_2pad < handle
             p.addParameter('durationThreshold',[], @isnumeric);
             p.addParameter('mirrorAngle', [], @isnumeric); % averaged from all the trials in the session
             p.addParameter('rInMm',{}, @isnumeric);
-            p.addParameter('thPolygon',[], @isnumeric);
-            p.addParameter('touchHPmean',[], @isnumeric);
-            p.addParameter('touchBoundaryThickness', [], @isnumeric);
+            p.addParameter('touchHP',[], @(x) isnumeric(x) && size(x,1) == 3);
+            p.addParameter('touchHPpeaks',[], @(x) isnumeric(x) && numel(x) ==2);
             p.addParameter('touchPsi1', [], @isnumeric);
             p.addParameter('touchPsi2', [], @isnumeric);
+            p.addParameter('touchKappaSTDthreshold', 2, @isnumeric);
             
             p.parse(ws,varargin{:});
             
@@ -197,15 +198,12 @@ classdef WhiskerTrialLite_2pad < handle
             obj.radialDistance = ws.radialDistance;
             obj.trialType = ws.trialType;
 
-            obj.thPolygon = p.Results.thPolygon;
-            obj.touchHPmean = p.Results.touchHPmean;
-            obj.touchBoundaryThickness = p.Results.touchBoundaryThickness;
             obj.touchPsi1 = p.Results.touchPsi1;
             obj.touchPsi2 = p.Results.touchPsi2;
-
-            obj.poleAxesUp = ws.poleAxesUp;
-            obj.poleAxesMoving = ws.poleAxesMoving;
-            obj.whiskerPoleIntersection = ws.whiskerPoleIntersection;
+            obj.touchKappaSTDthreshold = p.Results.touchKappaSTDthreshold;
+            obj.touchBoundaryThickness = obj.pxPerMm/2; % 0.5 mm for detecting touch frames (later to be used with kappa change)
+            obj.touchBoundaryBuffer = max([1,round(obj.touchBoundaryThickness/5)]); % 0.1 mm for touch distance threshold
+            
             obj.whiskerEdgeCoord = ws.whiskerEdgeCoord;
             obj.poleUpFrames = ws.poleUpFrames;
             obj.poleMovingFrames = ws.poleMovingFrames;
@@ -271,16 +269,13 @@ classdef WhiskerTrialLite_2pad < handle
 %             thp2 = obj.thPolygon(end/2+1:end,:);
 %             thp2 = [2*thp2(1,:) - thp2(end,:); thp2; 2*thp2(end,:) - thp2(1,:)];
 %             obj.thPolygon = [thp1; thp2];            
-            %%
-            if strcmp(ws.trialType, 'oo')
-                obj.thTouchFrames = [];
-            elseif contains(ws.sessionName, 'S') || contains(ws.sessionName, 'pre')
+            %% Finding touch frames
+            if (contains(ws.sessionName, 'S') || contains(ws.sessionName, 'pre')) && ~strcmp(ws.trialType, 'oo')
                 topInd = find(~isnan(ws.whiskerEdgeCoord(:,1)));
                 frontInd = find(~isnan(ws.whiskerEdgeCoord(:,2)));
                 apPositionInd = find(~isnan(ws.apPosition));
                 noNaNInd = intersect(intersect(topInd, frontInd), apPositionInd);
                 intersect_3d_total = [ws.whiskerEdgeCoord(noNaNInd,1), ws.whiskerEdgeCoord(noNaNInd,2), ws.apPosition(noNaNInd)];
-                
                 intersect_4d = [intersect_3d_total, ones(size(intersect_3d_total,1),1)]';
                 projMat = viewmtx(obj.touchPsi1, 90 - obj.touchPsi2);
                 intersect_2d = projMat*intersect_4d;
@@ -288,40 +283,93 @@ classdef WhiskerTrialLite_2pad < handle
                     intersect_2d = intersect_2d';
                 end
                 intersect_2d = intersect_2d(:,1:2);
-                dist2thPolygon = p_poly_dist(intersect_2d(:,1)', intersect_2d(:,2)', obj.thPolygon(:,1)', obj.thPolygon(:,2)', true);
+                obj.intersect_2d = intersect_2d;
+                
+                touchHP4d = [p.Results.touchHP; ones(1,size(p.Results.touchHP,2))];
+                touchHP = projMat*touchHP4d;
+                obj.touchHP = unique(touchHP(1:2,:)','rows');
+                proHP4d = [p.Results.touchHP(1,:) + p.Results.touchHPpeaks(2); p.Results.touchHP(2:3,:); ones(1,size(p.Results.touchHP,2))];
+                proHP = projMat*proHP4d;
+                obj.protractionHP = unique(proHP(1:2,:)', 'rows');
+                retHP4d = [p.Results.touchHP(1,:) + p.Results.touchHPpeaks(1); p.Results.touchHP(2:3,:); ones(1,size(p.Results.touchHP,2))];
+                retHP = projMat*retHP4d;
+                obj.retractionHP = unique(retHP(1:2,:)', 'rows');
+                
+                hpPolygon = [obj.protractionHP; obj.retractionHP];
+                thPolygon = hpPolygon(convhull([obj.protractionHP; obj.retractionHP], 'simplify', true),:);
+                dist2thPolygon = p_poly_dist(intersect_2d(:,1)', intersect_2d(:,2)', thPolygon(:,1)', thPolygon(:,2)', true);
                 if size(dist2thPolygon,2) > size(dist2thPolygon,1)
                     dist2thPolygon = dist2thPolygon';
                 end
-                dist2thPolygon(find(dist2thPolygon < 0)) = deal(0);
-                obj.dist2thPolygon = nan(obj.nof,1);
-                obj.dist2thPolygon(noNaNInd) = dist2thPolygon;
-                obj.thTouchFrames = noNaNInd(dist2thPolygon < obj.touchBoundaryThickness);
+                inPolyFrames = find(dist2thPolygon <= 0);
+                inPolyChunks = obj.get_chunks(inPolyFrames);
                 
-                [~, maxind] = max(obj.touchHPmean(:,1));
-                v2 = obj.touchHPmean(maxind,:);
-                [~, minind] = min(obj.touchHPmean(:,1));
-                v1temp = obj.touchHPmean(minind,:);
-                hpSlope = (v2(2) - v1temp(2)) / (v2(1) - v1temp(1));
-                [~, minind] = min(intersect_2d(:,1));
-                v1 = [intersect_2d(minind,1), v2(2) - (v2(1) - intersect_2d(minind,1)) * hpSlope];
-                
-                v1_ = repmat([v1,0], [size(intersect_2d,1),1]);
-                v2_ = repmat([v2,0], [size(intersect_2d,1),1]);
-                intersect_2d = [intersect_2d, zeros(size(intersect_2d,1),1)];
-                a = v1_ - v2_;
-                b = intersect_2d - v2_;
-%                 dist2touchHP = p_poly_dist(intersect_2d(1,:), intersect_2d(2,:), obj.touchHP(:,1)', obj.touchHP(:,2)');
-                dist2meanHP =  sqrt(sum(cross(a,b,2).^2,2)) ./ sqrt(sum(a.^2,2));
-                if size(dist2meanHP,2) > size(dist2meanHP,1)
-                    dist2meanHP = dist2meanHP';
+                protractionDistance = obj.distance_and_side_from_line(intersect_2d, obj.protractionHP);
+                tempProtFrames = find(protractionDistance > 0);
+                retractionDistance = obj.distance_and_side_from_line(intersect_2d, obj.retractionHP);
+                tempRetFrames = find(retractionDistance < 0);
+                if ~isempty(inPolyChunks)
+                    if inPolyChunks{1}(1) == 1
+                        if abs(obj.distance_and_side_from_line(intersect_2d(inPolyChunks{1}(end),:), obj.protractionHP)) ...
+                                <= abs(obj.distance_and_side_from_line(intersect_2d(inPolyChunks{1}(end),:), obj.retractionHP)) % (end) of whiskerEdgeCoord should be more stable than (1)
+                            tempProtFrames = [tempProtFrames; inPolyChunks{1}];
+                        else
+                            tempRetFrames = [tempRetFrames; inPolyChunks{1}];
+                        end
+                    else
+                        if ismember(inPolyChunks{1}(1)-1, tempProtFrames)
+                            tempProtFrames = [tempProtFrames; inPolyChunks{1}];
+                        else % ismember(inPolyChunks{i}(1)-1, tempRetFrames)
+                            tempRetFrames = [tempRetFrames; inPolyChunks{1}];
+                        end
+                    end
+                    for i = 2 : length(inPolyChunks)
+                        if ismember(inPolyChunks{i}(1)-1, tempProtFrames)
+                            tempProtFrames = [tempProtFrames; inPolyChunks{i}];
+                        else % ismember(inPolyChunks{i}(1)-1, tempRetFrames)
+                            tempRetFrames = [tempRetFrames; inPolyChunks{i}];
+                        end
+                    end
                 end
-                intersectSlopes = (intersect_2d(:,2) - v1(2)) ./ (intersect_2d(:,1) - v1(1));
-                negind = find(intersectSlopes > hpSlope);
-                dist2meanHP(negind) = -dist2meanHP(negind);
-                obj.dist2thPolygon(noNaNInd(negind)) = -obj.dist2thPolygon(noNaNInd(negind));
-                obj.dist2touchHPmean = nan(obj.nof,1);
-                obj.dist2touchHPmean(noNaNInd) = dist2meanHP;
+                tempProtFrames = sort(tempProtFrames);
+                tempRetFrames = sort(tempRetFrames);
+                protractionFrames = noNaNInd(tempProtFrames);
+                protractionDistance = protractionDistance(tempProtFrames);
+                retractionFrames = noNaNInd(tempRetFrames);
+                retractionDistance = retractionDistance(tempRetFrames);
+
+                % (1) protraction touch
+                if ~isempty( protractionDistance < obj.touchBoundaryThickness) % meaning when there is possible touch frames
+                    protractionDistance( (protractionDistance < 0) ) = deal(0);
+                    minDistInds = find( round(protractionDistance) == min(round(protractionDistance)) );
+                    noPoleFrames = setdiff(1:obj.nof, union(obj.poleUpFrames, obj.poleMovingFrames));
+                    meanKappaNoPole = nanmean(obj.deltaKappa{1}(noPoleFrames));
+                    stdKappaNoPole = nanstd(obj.deltaKappa{1}(noPoleFrames));
+                    candid = find(obj.deltaKappa{1}(protractionFrames(minDistInds)) < meanKappaNoPole - obj.touchKappaSTDthreshold * stdKappaNoPole & ...
+                        obj.deltaKappa{1}(protractionFrames(minDistInds)) > meanKappaNoPole + obj.touchKappaSTDthreshold * stdKappaNoPole); % meaning there IS (ARE) protraction touch frames. There can be multiple frames with min value
+                    if ~isempty(candid)
+                        threshold = mode(round(protractionDistance(minDistInds(candid)))) + obj.touchBoundaryBuffer;
+                        obj.protractionTouchFrames = protractionFrames(protractionDistance <= threshold);
+                    end
+                end
+
+                % (2) retraction touch
+                if ~isempty( retractionDistance > -obj.touchBoundaryThickness) % meaning when there is possible touch frames
+                    retractionDistance( (retractionDistance > 0) ) = deal(0);
+                    maxDistInds = find( round(retractionDistance) == max(round(retractionDistance)) ); % max value is negative or 0
+                    noPoleFrames = setdiff(1:obj.nof, union(obj.poleUpFrames, obj.poleMovingFrames));
+                    meanKappaNoPole = nanmean(obj.deltaKappa{1}(noPoleFrames));
+                    stdKappaNoPole = nanstd(obj.deltaKappa{1}(noPoleFrames));
+                    candid = find(obj.deltaKappa{1}(retractionFrames(maxDistInds)) > meanKappaNoPole + obj.touchKappaSTDthreshold * stdKappaNoPole & ...
+                        obj.deltaKappa{1}(retractionFrames(maxDistInds)) < meanKappaNoPole - obj.touchKappaSTDthreshold * stdKappaNoPole); % meaning there IS (ARE) protraction touch frames. There can be multiple frames with min value
+                    if ~isempty(candid)
+                        threshold = mode(round(retractionDistance(maxDistInds(candid)))) - obj.touchBoundaryBuffer;
+                        obj.retractionTouchFrames = retractionFrames(retractionDistance >= threshold);
+                    end
+                end
             end
+            obj.protractionTFchunks = obj.get_chunks(obj.protractionTouchFrames);
+            obj.retractionTFchunks = obj.get_chunks(obj.retractionTouchFrames);
             %
             %
             % for debugging
@@ -331,27 +379,50 @@ classdef WhiskerTrialLite_2pad < handle
 %             plot(intersect_2d(1, dist2HP < obj.touchBoundaryThickness ), intersect_2d(2, dist2HP < obj.touchBoundaryThickness ), 'b.')
             %
             %
-            %
-            
-            if isempty(obj.thTouchFrames)
-                obj.thTouchChunks = {};
-            else
-                chunkPoints = [1; find(diff(obj.thTouchFrames)>1) + 1; length(obj.thTouchFrames)+1]; % +1 because of diff. first 1 for the first chunk. last one for the end of the last chunk
-                obj.thTouchChunks = cell(1,length(chunkPoints)-1); 
-                for i = 1 : length(obj.thTouchChunks)
-                    obj.thTouchChunks{i} = obj.thTouchFrames(chunkPoints(i) : chunkPoints(i+1)-1);
-                end
-            end            
+            %           
         end
         
-        function chunks = get_chunks(frames)
+        function distance = distance_and_side_from_line(obj, points, line)
+        % points right side of the line is assigned to be positive.
+        % distanceNside returns distance from the line and + if the points are on the right side (protraction space), 0 on the line, - otherwise (retraction space). 
+            [~, maxind] = max(line(:,1));
+            v2 = line(maxind,:);
+            [~, minind] = min(line(:,1));
+            v1temp = line(minind,:);
+            if v2(1) - v1temp(1) == 0
+                error('Hyperplane 2d slope is 90 degrees')
+            else
+                hpSlope = (v2(2) - v1temp(2)) / (v2(1) - v1temp(1));
+            end
+            [~, minind] = min(points(:,1));
+            v1 = [points(minind,1), v2(2) - (v2(1) - points(minind,1)) * hpSlope];
+
+            v1_ = repmat([v1,0], [size(points,1),1]);
+            v2_ = repmat([v2,0], [size(points,1),1]);
+            points = [points, zeros(size(points,1),1)];
+            a = v1_ - v2_;
+            b = points - v2_;
+%                 dist2touchHP = p_poly_dist(intersect_2d(1,:), intersect_2d(2,:), obj.touchHP(:,1)', obj.touchHP(:,2)');
+            distance = sqrt(sum(cross(a,b,2).^2,2)) ./ sqrt(sum(a.^2,2));
+            if size(distance,2) > size(distance,1)
+                distance = distance';
+            end
+            intersectSlopes = (points(:,2) - v1(2)) ./ (points(:,1) - v1(1));
+            negind = find(intersectSlopes > hpSlope);
+            distance(negind) = -distance(negind);
+        end
+        
+        function chunks = get_chunks(obj, frames)
             if isempty(frames)
                 chunks = {};
             else
-                chunkPoints = [1, find(diff(frames)>1) + 1]; % +1 because of diff. first 1 for the first chunk. So this is actually start points of each chunk.
-                chunks = cell(1,length(chunkPoints) + 1); % +1 for the last chunk
+                if size(frames,1) > size(frames,2)
+                    frames = frames';
+                end
+                chunkPoints = [1, find(diff(frames)>1) + 1, length(frames)+1]; % +1 because of diff. first 1 for the first chunk. So this is actually start points of each chunk.
+                chunks = cell(1,length(chunkPoints)-1); % 
                 for i = 1 : length(chunks)
-                    chunks{i} = frames(chunkPoints(i) : chunkPoints(i+1)-1);
+                    chunks{i} = [frames(chunkPoints(i) : chunkPoints(i+1)-1)]';
                 end
             end
         end

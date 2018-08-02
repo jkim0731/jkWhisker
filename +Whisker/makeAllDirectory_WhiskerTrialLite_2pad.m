@@ -82,11 +82,10 @@ p.addParameter('proximity_threshold', -1, @isnumeric);
 p.addParameter('behavior',[], @(x) isa(x,'Solo.BehavTrial2padArray')); % adding behavior 2017/04/12 JK
 p.addParameter('hp_peaks',{}, @iscell);
 p.addParameter('touch_hp',{}, @iscell);
-p.addParameter('thPolygon',{}, @iscell);
 p.addParameter('psi1',{}, @isnumeric);
 p.addParameter('psi2',{}, @isnumeric);
 
-p.addParameter('touch_boundary_thickness', 1, @(x) isnumeric(x) && numel(x)==1);
+p.addParameter('touchKappaSTDthreshold', 2, @(x) isnumeric(x) && numel(x) == 1);
 p.addParameter('servo_distance_pair',{}, @iscell);
 
 p.addParameter('rInMm',{}, @isnumeric);
@@ -130,37 +129,15 @@ if ~isempty(inBoth)
     disp(inBoth)
 end
 
-% fnall = {'50'};
+% %%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%
+% fnall = {'100'};
+%
+%
+% %%%%%%%%%%%%%%%%%%%%%%%%%%
 
 nfiles = length(fnall);
-
-% Calculating hyperplane first
-if isempty(p.Results.thPolygon) && ~isempty(p.Results.touch_hp)
-    thPolygon = cell(size(p.Results.touch_hp));
-    touchHPmean = cell(size(p.Results.touch_hp));
-    for ti = 1 : size(p.Results.touch_hp,1)
-        for tj = 1 : size(p.Results.touch_hp,2)
-            A = viewmtx(p.Results.psi1(ti,tj), 90 - p.Results.psi2(ti,tj));
-            touch4d = [p.Results.touch_hp{ti,tj}(1,:) + p.Results.hp_peaks{ti,tj}(1), p.Results.touch_hp{ti,tj}(1,:) + p.Results.hp_peaks{ti,tj}(2); 
-                p.Results.touch_hp{ti,tj}(2:3,:), p.Results.touch_hp{ti,tj}(2:3,:);
-                ones( 1, size(p.Results.touch_hp{ti,tj},2)*2 ) ];
-            touch2d = A * touch4d;
-            touch2d = round(touch2d * 10000) / 10000;
-            touch2d = unique(touch2d(1:2,:)','rows');
-            cvh = convhull(touch2d, 'simplify', true);
-            thPolygon{ti,tj} = touch2d(cvh,:);
-            
-            touch4d = [p.Results.touch_hp{ti,tj}(1,:) + mean(p.Results.hp_peaks{ti,tj}(:));
-                p.Results.touch_hp{ti,tj}(2:3,:);
-                ones(1, size(p.Results.touch_hp{ti,tj},2)) ];
-            touch2d = A * touch4d;
-            touch2d = round(touch2d * 10000) / 10000;
-            touchHPmean{ti, tj} = unique(touch2d(1:2,:)','rows'); 
-        end
-    end
-else
-    thPolygon = p.Results.thPolygon;
-end
 
 if ~isempty(fnall)
     if exist('parfor','builtin') % Parallel Computing Toolbox is installed.
@@ -195,8 +172,8 @@ if ~isempty(fnall)
                         'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
                         'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
                         'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value, 'proximity_threshold',p.Results.proximity_threshold, ...
-                        'mirrorAngle', mirrorAngle, 'thPolygon', thPolygon{th_ind}, 'touchHPmean', touchHPmean{th_ind}, 'touchPsi1', p.Results.psi1(th_ind), 'touchPsi2', p.Results.psi2(th_ind), ...
-                        'rInMm', p.Results.rInMm, 'touchBoundaryThickness', p.Results.touch_boundary_thickness);
+                        'mirrorAngle', mirrorAngle, 'touchHPpeaks', p.Results.hp_peaks{th_ind}, 'touchHP', p.Results.touch_hp{th_ind}, 'touchPsi1', p.Results.psi1(th_ind), 'touchPsi2', p.Results.psi2(th_ind), ...
+                        'rInMm', p.Results.rInMm, 'touchKappaSTDthreshold', p.Results.touchKappaSTDthreshold);
                 end
             end
             outfn = [fn '_WL_2pad.mat'];
@@ -233,8 +210,8 @@ if ~isempty(fnall)
                         'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
                         'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
                         'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value, 'proximity_threshold',p.Results.proximity_threshold, ...
-                        'mirrorAngle', mirrorAngle, 'thPolygon', thPolygon{th_ind}, 'touchPsi1', p.Results.psi1(th_ind), 'touchPsi2', p.Results.psi2(th_ind), ...
-                        'rInMm', p.Results.rInMm, 'touchBoundaryThickness', p.Results.touch_boundary_thickness);
+                        'mirrorAngle', mirrorAngle, 'touchHPpeaks', p.Results.hp_peaks{th_ind}, 'touchHP', p.Results.touch_hp{th_ind}, 'touchPsi1', p.Results.psi1(th_ind), 'touchPsi2', p.Results.psi2(th_ind), ...
+                        'rInMm', p.Results.rInMm, 'touchKappaSTDthreshold', p.Results.touchKappaSTDthreshold);
                 end
             end
             outfn = [fn '_WL_2pad.mat'];
