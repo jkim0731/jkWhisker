@@ -254,14 +254,13 @@ if doWT
                         end
                         if strcmp(sessionName, 'S91')
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
-                        elseif strcmp(sessionname, 'S94') % JK052
+                        elseif strcmp(sessionName, 'S94') % JK052
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S04'), b));
-                        elseif strcmp(sessionname, 'S99') % JK027
+                        elseif strcmp(sessionName, 'S99') % JK027
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b)); 
                         else
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
-                        end
-                        b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
+                        end                        
                         b_session = b{b_ind};
 
                         buildWT_2pad(mouseName, sessionName, whisker_d, b_session, videoFreq, ppm, barRadius)
@@ -353,9 +352,9 @@ if doWT
                         end
                         if strcmp(sessionName, 'S91')
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
-                        elseif strcmp(sessionname, 'S94') % JK052
+                        elseif strcmp(sessionName, 'S94') % JK052
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S04'), b));
-                        elseif strcmp(sessionname, 'S99') % JK027
+                        elseif strcmp(sessionName, 'S99') % JK027
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b)); 
                         else
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
@@ -506,14 +505,13 @@ if doWST
                         end
                         if strcmp(sessionName, 'S91')
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
-                        elseif strcmp(sessionname, 'S94') % JK052
+                        elseif strcmp(sessionName, 'S94') % JK052
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S04'), b));
-                        elseif strcmp(sessionname, 'S99') % JK027
+                        elseif strcmp(sessionName, 'S99') % JK027
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b)); 
                         else
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                         end
-                        b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                         b_session = b{b_ind};
 
                         buildWST_2pad(mouseName, sessionName, whisker_d, b_session, ppm)
@@ -605,9 +603,9 @@ if doWST
                         end
                         if strcmp(sessionName, 'S91')
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
-                        elseif strcmp(sessionname, 'S94') % JK052
+                        elseif strcmp(sessionName, 'S94') % JK052
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S04'), b));
-                        elseif strcmp(sessionname, 'S99') % JK027
+                        elseif strcmp(sessionName, 'S99') % JK027
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b)); 
                         else
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
@@ -704,14 +702,13 @@ if makeTouchHyperplane
                         end
                         if strcmp(sessionName, 'S91')
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
-                        elseif strcmp(sessionname, 'S94') % JK052
+                        elseif strcmp(sessionName, 'S94') % JK052
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S04'), b));
-                        elseif strcmp(sessionname, 'S99') % JK027
+                        elseif strcmp(sessionName, 'S99') % JK027
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b)); 
                         else
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                         end
-                        b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                         b_session = b{b_ind};
                         run_touch_hyperplane(mouseName, sessionName, b_session, whisker_d, ppm, touchHyperplaneSkip)
                     end
@@ -763,9 +760,9 @@ if makeTouchHyperplane
                         end
                         if strcmp(sessionName, 'S91')
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
-                        elseif strcmp(sessionname, 'S94') % JK052
+                        elseif strcmp(sessionName, 'S94') % JK052
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S04'), b));
-                        elseif strcmp(sessionname, 'S99') % JK027
+                        elseif strcmp(sessionName, 'S99') % JK027
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b)); 
                         else
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
@@ -828,9 +825,9 @@ if doWL
                         end
                         if strcmp(sessionName, 'S91')
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
-                        elseif strcmp(sessionname, 'S94') % JK052
+                        elseif strcmp(sessionName, 'S94') % JK052
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S04'), b));
-                        elseif strcmp(sessionname, 'S99') % JK027
+                        elseif strcmp(sessionName, 'S99') % JK027
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b)); 
                         else
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
@@ -910,9 +907,9 @@ if doWL
                         end
                         if strcmp(sessionName, 'S91')
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
-                        elseif strcmp(sessionname, 'S94') % JK052
+                        elseif strcmp(sessionName, 'S94') % JK052
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S04'), b));
-                        elseif strcmp(sessionname, 'S99') % JK027
+                        elseif strcmp(sessionName, 'S99') % JK027
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b)); 
                         else
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
