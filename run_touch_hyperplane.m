@@ -210,7 +210,7 @@ for iservo = 1 : length(servo_values)
                 end
                 [~, I] = findpeaks(smooth(smooth(stds_pre)),'sortstr','descend');    
 
-                answer = 'No';
+                answer = 'No'; % first answer for psi1 (Is psi1 correct?)
                 while(strcmp(answer,'No'))
                     max_psi1_pre = angle_steps_pre(I(ind_opt));
                     h2 = figure('units','normalized','outerposition',[0.5 0 0.5 1]); subplot(1,2,1), plot(1:length(stds_pre), smooth(smooth(stds_pre,5))), hold on, plot(I(ind_opt),stds_pre(I(ind_opt)),'ro')
@@ -281,7 +281,7 @@ for iservo = 1 : length(servo_values)
             answer1 = 'No'; answer2 = 'Yes';
             disp('Calculating psi2')
             x2d_flip = flip(x2d_final,1);
-            while(strcmp(answer1,'No'))
+            while(strcmp(answer1,'No')) % answer1 = Is psi2 correct?
                 h2 = figure('units','normalized','outerposition',[0 0 1 1]); imagesc(x2d_flip), hold on       
                 BW = zeros(size(x2d_flip)) + 1;
                 while(strcmp(answer2,'No')) % Draw polygon to select regions for radon transform
@@ -312,7 +312,6 @@ for iservo = 1 : length(servo_values)
                     end
                 end  
                 x2d_edge = x2d_flip .* BW;
-                figure, imagesc(x2d_edge)
         %%
                 theta = 0:0.01:180;
                 R = radon(x2d_edge, theta);
@@ -339,9 +338,6 @@ for iservo = 1 : length(servo_values)
                 answer1 = MFquestdlg([0.5, 0.3], 'Is psi2 correct?', 'whisker-pole intersection coordinate side-view', 'Yes', 'No', 'Yes');
                 switch answer1
                     case 'Yes'
-                        if psi1(iservo,idist) > 90
-                            psi2Flip = 1;
-                        end
                         close all
                     case 'No'                 
                         answer3 = MFquestdlg([0.5, 0.3], 'Do you want to draw a region again?', 'Re-drawing the region', 'Yes', 'No', 'Yes');
@@ -386,6 +382,10 @@ for iservo = 1 : length(servo_values)
                                     end
                                 end
                         end
+                end
+                if psi1(iservo,idist) > 90
+                    psi2(iservo, idist) = -psi2(iservo, idist);
+                    psi2Flip = 1;
                 end
             end
 
@@ -447,6 +447,7 @@ for iservo = 1 : length(servo_values)
 
                     if isempty(steps_hp{iservo, idist})
                         steps_hp{iservo, idist} = -ppm*4 : -ppm*2 + 20;
+                        steps_hp{iservo, idist} = round(steps_hp{iservo, idist});
                     end
                     num_points = zeros(length(steps_hp{iservo, idist}),1);
                     parfor i = 1:length(steps_hp{iservo, idist}) % this is time consuming...
@@ -475,7 +476,7 @@ for iservo = 1 : length(servo_values)
                             %%
                             h2 = figure('units','normalized','outerposition',[0 0 1 1]); 
                             if psi2Flip
-                                A = viewmtx(psi1(iservo,idist),-90-psi2(iservo,idist));
+                                A = viewmtx(psi1(iservo,idist),-90+psi2(iservo,idist));
                             else
                                 A = viewmtx(psi1(iservo,idist),90-psi2(iservo,idist));
                             end
@@ -541,6 +542,7 @@ for iservo = 1 : length(servo_values)
                                     switch answer7
                                         case 'Yes'
                                             psi2Flip = 1-psi2Flip;
+                                            psi2(iservo, idist) = -psi2(iservo, idist);
                                             peak_answer = 'No';
                                         case 'No'
         %                                     questTitle = 'Return to psi1 polygon'; 
