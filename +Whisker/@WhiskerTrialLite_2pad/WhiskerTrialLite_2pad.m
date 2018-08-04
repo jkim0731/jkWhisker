@@ -72,6 +72,7 @@ classdef WhiskerTrialLite_2pad < handle
         retractionTFchunks = {};
         protractionTouchFrames = [];
         protractionTFchunks = {};
+        obviousNoTouchFrames = []; % just for check
         
         intersect_2d = []; % for test, maybe just for now 2018/07/31 JK
     end
@@ -139,7 +140,7 @@ classdef WhiskerTrialLite_2pad < handle
             end
             
             p = inputParser;
-            p.addRequired('ws', @(x) isa(x,'Whisker.WhiskerSignalTrial_2pad'));                      
+            p.addRequired('ws', @(x) isa(x,'Whisker.WhiskerSignalTrial_2pad'));
             p.addParameter('calc_forces', false, @islogical);
        
             p.addParameter('whisker_radius_at_base', 33.5, @isnumeric);
@@ -271,6 +272,47 @@ classdef WhiskerTrialLite_2pad < handle
 %             obj.thPolygon = [thp1; thp2];            
             %% Finding touch frames
             if (contains(ws.sessionName, 'S') || contains(ws.sessionName, 'pre')) && ~strcmp(ws.trialType, 'oo')
+                
+                % first, sort out any obvious non-touch frames, where whisker does not overlap at all with top-view pole, except for 90 degrees 
+                % (assigning these frames into touch frames happens more frequently in lower degrees (45~75)
+                % Only for pole-up frames. Touch detection during pole-moving frames is highly unreliable
+                obj.obviousNoTouchFrames = zeros(obj.nof,1,'logical');
+                if obj.servoAngle ~= 90
+                    height = size(ws.binvavg,1);
+                    width = size(ws.binvavg,2);
+                    topViewPole = zeros([height, width],'logical');
+                    targetH = 0.6; targetW = 0.6; targetArea = zeros(size(ws.binvavg), 'logical'); targetArea(1:round(height*targetH), round((1-targetW)*width):end) = deal(1);
+                    targetInd = find(targetArea);
+                    bw = bwconncomp(ws.binvavg);
+                    bwInd = find(cellfun(@(x) length(intersect(x,targetInd)),bw.PixelIdxList));
+                    if isempty(bwInd)
+                        error(['no top-view pole detected at mouse ', obj.mouseName, ' session ', obj.sessionName, ' trial # ', num2str(obj.trialNum)]);
+                    elseif length(bwInd) > 1
+                        pixLength = cellfun(@(x) length(x), bw.PixelIdxList);
+                        [~,tempInd] = max(pixLength(bwInd));
+                        bwInd = bwInd(tempInd);
+                    end
+                    topViewPole(bw.PixelIdxList{bwInd}) = deal(1);
+                    
+                    for tempi = 1 : length(obj.poleUpFrames)
+                        trackerFrameTop = find(ws.trackerFrames{1} == obj.poleUpFrames(tempi),1);
+                        if ~isempty(trackerFrameTop)
+                            x = polyval(ws.polyFits{1}{1}(trackerFrameTop,:),linspace(0,1.3)); % stretch the whisker fitting outwardly 30 % for cases where whisker tracing is cut off because of the pole
+                            y = polyval(ws.polyFits{1}{2}(trackerFrameTop,:),linspace(0,1.3));
+                            xyi = find(y >= 1 & y <= height & x >= 1 & x <= width); % take only those within image dimension
+                            x = x(xyi); y = y(xyi);
+                            whiskerBW = zeros([height, width],'logical');
+                            whiskerBW(sub2ind(size(whiskerBW),round(y),round(x))) = deal(1);
+                            whiskerPoleIntersection = intersect(find(whiskerBW), find(topViewPole));
+                            if isempty(whiskerPoleIntersection)
+                                obj.obviousNoTouchFrames(obj.poleUpFrames(tempi)) = 1;
+                            end
+                        end
+                    end
+                end
+                obj.obviousNoTouchFrames = find(obj.obviousNoTouchFrames);
+                
+                % Now find touch frames
                 topInd = find(~isnan(ws.whiskerEdgeCoord(:,1)));
                 frontInd = find(~isnan(ws.whiskerEdgeCoord(:,2)));
                 apPositionInd = find(~isnan(ws.apPosition));
@@ -351,8 +393,9 @@ classdef WhiskerTrialLite_2pad < handle
                         threshold = mode(round(protractionDistance(minDistInds(candid)))) + obj.touchBoundaryBuffer;
                         obj.protractionTouchFrames = protractionFrames(protractionDistance <= threshold);
                     end
-                end
-
+                end                
+                obj.protractionTouchFrames = setdiff(obj.protractionTouchFrames, obj.obviousNoTouchFrames);
+                
                 % (2) retraction touch
                 if ~isempty( retractionDistance > -obj.touchBoundaryThickness) % meaning when there is possible touch frames
                     retractionDistance( (retractionDistance > 0) ) = deal(0);
@@ -367,6 +410,7 @@ classdef WhiskerTrialLite_2pad < handle
                         obj.retractionTouchFrames = retractionFrames(retractionDistance >= threshold);
                     end
                 end
+                obj.retractionTouchFrames = setdiff(obj.retractionTouchFrames, obj.obviousNoTouchFrames);
             end
             obj.protractionTFchunks = obj.get_chunks(obj.protractionTouchFrames);
             obj.retractionTFchunks = obj.get_chunks(obj.retractionTouchFrames);

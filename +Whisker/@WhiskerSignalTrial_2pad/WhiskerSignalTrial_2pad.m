@@ -21,7 +21,6 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
         imagePixelDimsXY = []; % [NumberOfXPixels NumberOfYPixels]
         poleAxesUp = cell(1,2); % {1} for top-view, {2} for front-view
         poleAxesMoving = {}; % axes for poles during moving. cell(nframes,2). only from poleMovingFrames 
-%         vavg = []; % average pic
         poleUpFrames = [];
         poleMovingFrames = [];
         angle = [];
@@ -50,7 +49,7 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
         function obj = WhiskerSignalTrial_2pad(w, poleAxisTop, varargin) % w is whisker trial 2pad obj
 
             obj = obj@Whisker.WhiskerSignalTrial(w,varargin{:});                   
-% uncomment this when I need to use show_nan_polyfits_with_mask            
+           
             obj.trackerData = w.trackerData;
             obj.whiskerPadOrigin = w.whiskerPadOrigin;
             obj.trackerFrames = w.trackerFrames;
@@ -82,16 +81,6 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
 %               (extrapolate) from the tip, with the theta at tip preserved.
 %             If the whisker still does not meet the pole edge, then return
 %               [].
-            
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% Follows MATLAB image coordinates!! Different from whisker polynomial or
-% polyfit (x and y axis, [0,0] vs [1,1] as the origin (left top corner)
-
-% Currently only for face at the bottom and rightward whisking position.
-% 2017/04/10 JK
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %             
 %             2017/04/10 JK
 % 
@@ -121,8 +110,7 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
                             xall = xall';
                             yall = obj.trackerData{i}{frame_ind}{5};
                             yall = yall';
-                            C = [xall+1;yall+1]; % [y;x] order is changed to [x;y] for consistency 2018/06/13 JK
-    %                         C = [ty'+1;tx'+1]; % converting whisker tracker points into normal MATLAB coordinates
+                            C = [xall;yall]; % [y;x] order is changed to [x;y] for consistency 2018/06/13 JK                        
 
                             if ismember(k,obj.poleMovingFrames)
                                 currAxis = obj.poleAxesMoving{obj.poleMovingFrames==k,i};
@@ -157,7 +145,7 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
                                 q = linspace(0,1.3); 
                                 xall = polyval(coeffX,q);
                                 yall = polyval(coeffY,q);
-                                C = [xall+1;yall+1];
+                                C = [xall;yall];
                                 temp = Whisker.InterX(currAxis,C);
     %                             if ty(1) < ty(end) % follicle at the beginning of the vector (column)
     %                                 ty = flip(ty);
