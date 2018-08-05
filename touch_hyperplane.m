@@ -1,11 +1,9 @@
 % For 2pad (2-port angle distance), WT, WST, and WL is generated during prebuild_JK.m
 
 %% Setup whisker array builder 
-% behavior_base_dir = 'F:\SoloData\';
-behavior_base_dir = 'E:\SoloData\';
-% whisker_base_dir = 'F:\tracked\';
-whisker_base_dir = 'E:\WhiskerVideo\';
-mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
+behavior_base_dir = 'Y:\Whiskernas\JK\SoloData\';
+whisker_base_dir = 'L:\tracked\';
+mice = {'JK052'};
 %%%%%%%%%%%%%%%%%%%%%% manual selection
 % steps = {[10:70],[20:80],[140:200],[140:200]};
 %%%%%%%%%%%%%%%%%%%%%% try as short as possible to reduce time next step
@@ -14,7 +12,7 @@ mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
 % sessionNum = [7];
 
 % sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};  
-sessions = {[22],[16,17],[21,22],[17,18,91],[],[],[22:25],[]};
+sessions = {[7],[16,17],[21,22],[17,18,91],[],[],[22:25],[]};
 useGPU = 0;
 options.WindowStyle = 'normal';
 optionsFin.WindowStyle = 'normal';
@@ -140,7 +138,7 @@ for mi = 1 : length(mice)
         end
         
         %%
-        for iservo = 1 : length(servo_values)
+        for iservo = 2 : length(servo_values)
 %         for iservo = 4 
             for idist = 1 : length(distance_values)
 %             for idist = 4 : length(distance_values)                
@@ -173,7 +171,6 @@ for mi = 1 : length(mice)
                 ws = Whisker.WhiskerSignalTrialArray_2pad(whisker_d,'include_files',temp_files);            
                 done_flag = 1; 
                 psi1_polygon_answer = 'Yes'; % for re-drawing of polygon for psi1
-                psi2Flip = 0;
                 while (done_flag)
                     intersect_3d_total = [];
                     for tnum = 1 : length(ws.trials)
@@ -196,7 +193,7 @@ for mi = 1 : length(mice)
                     psi1_answer = 'Yes'; % for overall psi1 detection            
                     while(strcmp(psi1_answer,'Yes'))                    
                         while(strcmp(psi1_polygon_answer,'No'))
-                            h2 = figure('units','normalized','outerposition',[0 0 1 1]); plot(intersect_3d_total(:,1), intersect_3d_total(:,2), 'k.', 'MarkerSize', 0.1), hold on
+                            h2 = figure('units','normalized','outerposition',[0 0 1 1]); plot(intersect_3d_total(:,1), intersect_3d_total(:,2), 'k.', 'MarkerSize', 0.1), hold on                            
                             pre_poly = []; % points of the polygon
                             i = 1;
                             temp_point = ginput(1);
@@ -230,18 +227,28 @@ for mi = 1 : length(mice)
                             intersect_3d = intersect_3d_total;
                         end
                         h1 = figure; plot3(intersect_3d(:,1), intersect_3d(:,2), intersect_3d(:,3), 'k.', 'MarkerSize', 0.1)
+                        %
+                        % FDB
+%                         targetTn = 385;
+%                         tempTn = find(cellfun(@(x) x.trialNum==targetTn, ws.trials));
+%                         tempPUframes = ws.trials{tempTn}.poleUpFrames;
+%                         hold on, plot3(ws.trials{tempTn}.whiskerEdgeCoord(tempPUframes,1), ws.trials{tempTn}.whiskerEdgeCoord(tempPUframes,2), ws.trials{tempTn}.apPosition(tempPUframes), 'r.')
+                        
+                        %
+                        %
                         title(['Angle = ', num2str(servo_values(iservo)), ', Distance = ', num2str(distance_values(idist))]), xlabel('Top-view intersection coord'), ylabel('Front-view intersection coord'), zlabel('Pole position')
 
                         %% when interested in certain points in the figure                    
     %                     % 'oo': 245   246   353   382   436   558   559
-% 45:     441 447 456
-%     
-% %     
-%                         zvalue = 68000;
-%                         tnumHigher = intersect(tt_ind, find(cellfun(@(x) x.motorApPosition < zvalue, bSession.trials)))
-%                         tnumLower = intersect(tt_ind, find(cellfun(@(x) x.motorApPosition > zvalue, bSession.trials)))
-%                         zvalue = 42410;
-%                         tnum = intersect(tt_ind, find(cellfun(@(x) abs(x.motorApPosition - zvalue) < 10, bSession.trials)))
+ % 112, 117, 238, 260, 306, 311, 330, 332, 347, 375 / 400, 435, 441, 473,
+ % 487, 509, 536, 550, 553, 587, 603, 625, 627, 630, 662 
+    
+    
+                        zvalue = 86500;
+                        tnumHigher = intersect(tt_ind, find(cellfun(@(x) x.motorApPosition < zvalue, bSession.trials)))
+                        tnumLower = intersect(tt_ind, find(cellfun(@(x) x.motorApPosition > zvalue,   bSession.trials)))
+%                         zvalue = 100800;
+%                         tnum = intersect(tt_ind, find(cellfun(@(x) abs(x.motorApPosition - zvalue) < 50, bSession.trials)))
 %                         tnum_ws = find(cellfun(@(x) x.trialNum == tnum(1), ws.trials))
 %                         ws.trials{tnum_ws}.trackerFileName
 %                         figure, plot3(ws.trials{tnum_ws}.whiskerEdgeCoord(:,1), ws.trials{tnum_ws}.whiskerEdgeCoord(:,2), 1:length(ws.trials{tnum_ws}.whiskerEdgeCoord(:,1)))
@@ -416,6 +423,7 @@ for mi = 1 : length(mice)
                         switch answer1
                             case 'Yes'
                                 if psi1(iservo,idist) > 90
+                                    psi2(iservo,idist) = -psi2(iservo,idist);
                                     psi2Flip = 1;
                                 end
                                 close all
@@ -467,7 +475,7 @@ for mi = 1 : length(mice)
 
                     close all
                     %% Calculate touch hyperplanes
-                    answer7 = 'Yes';
+                    answer7 = 'Yes'; psi2Flip = 0;
                     while strcmp(answer7, 'Yes')
                         answer7 = 'No'; % stay in this while loop only when certain condition is met (psi2 flip for some 90 degrees)
                     
@@ -551,7 +559,7 @@ for mi = 1 : length(mice)
                                     %%
                                     h2 = figure('units','normalized','outerposition',[0 0 1 1]); 
                                     if psi2Flip
-                                        A = viewmtx(psi1(iservo,idist),-90-psi2(iservo,idist));
+                                        A = viewmtx(psi1(iservo,idist),-90+psi2(iservo,idist));
                                     else
                                         A = viewmtx(psi1(iservo,idist),90-psi2(iservo,idist));
                                     end
@@ -610,14 +618,14 @@ for mi = 1 : length(mice)
                                         case 'Yes'                            
                                             step_boundary_cell = inputdlg({'First step','Last step'},'What are the sweep boundaries?',1,{'',''},options);
                                             steps{iservo, idist} = str2double(step_boundary_cell{1}):str2double(step_boundary_cell{2});
-                                            peak_answer = 'No';
-                                            answer7 = 'No';
+                                            peak_answer = 'No';                                            
                                             close all
                                         case 'No'
                                             answer7 = MFquestdlg([0.5, 0.3], 'Do you want to flip psi2?', 'Wierd psi2 error', 'Yes', 'No', 'Yes');
                                             switch answer7
                                                 case 'Yes'
-                                                    psi2Flip = 1-psi2Flip;
+                                                    psi2(iservo,idist) = -psi2(iservo,idist);
+                                                    psi2Flip = 1;
                                                     peak_answer = 'No';
                                                 case 'No'
                 %                                     questTitle = 'Return to psi1 polygon'; 
