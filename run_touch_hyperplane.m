@@ -457,15 +457,18 @@ for iservo = 1 : length(servo_values)
                         steps_hp{iservo, idist} = round(steps_hp{iservo, idist});
                     end
                     num_points = zeros(length(steps_hp{iservo, idist}),1);
-                    steps = steps_hp{iservo, idist};
-                    parfor i = 1:length(steps) % this is time consuming...
+%                     steps = steps_hp{iservo, idist};
+%                     parfor i = 1:length(steps) % this is time consuming...
+                    parfor i = 1:length(steps_hp{iservo, idist})
 %                     for i = 1:length(steps_hp{iservo, idist})
                         hp = round(xyz_psi2);
-                        hp(1,:) = hp(1,:)+ steps(i);
-                        hp_4d = [hp; ones(1,size(hp,2))];
-                        hp_2d = A*hp_4d;
-                        hp_2d = hp_2d(1:2,:)';
-                        num_points(i) = sum(ismember(intersect_2d, hp_2d,'rows'));
+%                         hp(1,:) = hp(1,:)+ steps(i);
+%                         hp_4d = [hp; ones(1,size(hp,2))];
+%                         hp_2d = A*hp_4d;
+%                         hp_2d = hp_2d(1:2,:)';
+%                         num_points(i) = sum(ismember(intersect_2d, hp_2d,'rows'));
+                        hp(1,:) = hp(1,:)+ steps_hp{iservo, idist}(i);    
+                        num_points(i) = sum(ismember(intersect_pix, hp','rows'));
                     end
 
                     h1 = figure('WindowStyle','normal','units','normalized','outerposition',[0.5 0.3 0.5 0.5]); plot(steps_hp{iservo, idist},num_points(:), 'k-', 'LineWidth', 3), xlabel('translocation (pix)'), ylabel('# intersection')
