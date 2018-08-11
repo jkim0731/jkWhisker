@@ -449,9 +449,9 @@ for iservo = 1 : length(servo_values)
                     else
                         A = viewmtx(psi1(iservo,idist),90-psi2(iservo,idist));
                     end
-                    intersect_4d = [intersect_pix, ones(size(intersect_pix,1),1)]';
+                    intersect_4d = [intersect_3d_total, ones(size(intersect_pix,1),1)]';
                     intersect_2d = A*intersect_4d;
-                    intersect_2d = intersect_2d(1:2,:)';
+                    intersect_2d = unique(round(intersect_2d(1:2,:)',2),'rows');
                     if isempty(steps_hp{iservo, idist})
                         steps_hp{iservo, idist} = -ppm*4 : -ppm*2 + 20;
                         steps_hp{iservo, idist} = round(steps_hp{iservo, idist});
@@ -490,14 +490,7 @@ for iservo = 1 : length(servo_values)
                             % project the peak hyperplanes and all coordinates onto psi1 psi2 view
                             %%
                             h2 = figure('units','normalized','outerposition',[0 0 1 1]); 
-%                             if psi2Flip
-%                                 A = viewmtx(psi1(iservo,idist),-90+psi2(iservo,idist));
-%                             else
-%                                 A = viewmtx(psi1(iservo,idist),90-psi2(iservo,idist));
-%                             end
-                            intersect_4d = [intersect_3d_total, ones(size(intersect_3d_total,1),1)]';
-                            intersect_2d = A*intersect_4d;
-                            intersect_2d = unique(round(intersect_2d(1:2,:)',2),'rows');
+
                             th_4d1 = [xyz_psi2(1,:) + hp_peaks{iservo, idist}(1);xyz_psi2(2:3,:);ones(1,size(xyz_psi2,2))];
                             th_2d1 = A*th_4d1;
                             th_2d1 = unique(th_2d1(1:2,:)','rows');
