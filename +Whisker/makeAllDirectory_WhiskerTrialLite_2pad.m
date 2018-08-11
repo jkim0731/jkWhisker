@@ -79,22 +79,27 @@ p.addParameter('youngs_modulus', 5e9, @isnumeric);
 p.addParameter('baseline_time_or_kappa_value', [0 0.1], @isnumeric);
 p.addParameter('proximity_threshold', -1, @isnumeric);
 
+p.addParameter('rInMm',{}, @isnumeric);
 p.addParameter('behavior',[], @(x) isa(x,'Solo.BehavTrial2padArray')); % adding behavior 2017/04/12 JK
 p.addParameter('hp_peaks',{}, @iscell);
 p.addParameter('touch_hp',{}, @iscell);
 p.addParameter('psi1',{}, @isnumeric);
 p.addParameter('psi2',{}, @isnumeric);
-
 p.addParameter('touchKappaSTDthreshold', 2, @(x) isnumeric(x) && numel(x) == 1);
 p.addParameter('servo_distance_pair',{}, @iscell);
 
-p.addParameter('rInMm',{}, @isnumeric);
+% for touch frame refinement
+p.addParameter('whiskingAmpThreshold', 2.5, @isnumeric);
+p.addParameter('stdHistogramThreshold', 3, @isnumeric);
+p.addParameter('distanceHistogramBin', 0.2, @isnumeric);
+p.addParameter('touchBoundaryThickness', 0.25, @isnumeric);
+p.addParameter('touchBoundaryBuffer', 0.1, @isnumeric);
+p.addParameter('maxPointsNearHyperplane', 10, @isnumeric);
 
 p.parse(d,varargin{:});
 
 disp 'List of all arguments:'
 disp(p.Results)
-
 
 if ~strcmp(d(end), filesep)
     d = [d filesep];
@@ -103,10 +108,23 @@ end
 currentDir = pwd;
 cd(d)
 
-ws = Whisker.WhiskerSignalTrialArray_2pad(d);
+wsArray = Whisker.WhiskerSignalTrialArray_2pad(d);
 
-mirrorAngle = nanmean(cellfun(@(x) x.mirrorAngle, ws.trials));
-
+mirrorAngle = nanmean(cellfun(@(x) x.mirrorAngle, wsArray.trials));
+fwkappa = [];
+if contains(wsArray.trials{end}.sessionName, 'S') || contains(wsArray.trials{end}.sessionName, 'pre')
+    for i = 1 : length(wsArray.trials)
+        if ~strcmp(wsArray.trials{i}.trialType, 'oo')
+            [dk,~,~,~] = wsArray.trials{i}.get_kappa_at_roi_point(0,p.Results.rInMm);
+            inds = round(wsArray.trials{i}.time{1}/wsArray.trials{i}.framePeriodInSec) + 1;
+            deltaKappa = nan(wsArray.trials{i}.nof,1);
+            deltaKappa(inds) = dk';
+            fwkappa = [fwkappa; deltaKappa(setdiff(1:wsArray.trials{i}.nof, wsArray.trials{i}.poleMovingFrames(1)-20 : wsArray.trials{i}.poleMovingFrames(end)+20))];
+        end
+    end
+    fwkappamean = nanmean(fwkappa);
+    fwkappastd = nanstd(fwkappa);
+end
 fnall = arrayfun(@(x) x.name(1:(end-8)), dir([d '*_WST.mat']),'UniformOutput',false);
 
 if ~isempty(p.Results.include_files) % Make sure files are found. If not, ignored.
@@ -132,7 +150,7 @@ end
 % %%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %
-% fnall = {'154'};
+% fnall = {'286'};
 %
 %
 % %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -166,6 +184,11 @@ if ~isempty(fnall)
 
                     angle = p.Results.behavior.trials{b_ind}.servoAngle;
                     distance = p.Results.behavior.trials{b_ind}.motorDistance;
+                    if angle < 90
+                        kappaSTDthreshold = p.Results.touchKappaSTDthreshold/2;
+                    else
+                        kappaSTDthreshold = p.Results.touchKappaSTDthreshold;
+                    end
 
                     th_ind = find(cellfun(@(x) isequal(x, [angle, distance]), p.Results.servo_distance_pair));
                     wl = Whisker.WhiskerTrialLite_2pad(ws,'calc_forces',p.Results.calc_forces,...
@@ -173,12 +196,95 @@ if ~isempty(fnall)
                         'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
                         'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value, 'proximity_threshold',p.Results.proximity_threshold, ...
                         'mirrorAngle', mirrorAngle, 'touchHPpeaks', p.Results.hp_peaks{th_ind}, 'touchHP', p.Results.touch_hp{th_ind}, 'touchPsi1', p.Results.psi1(th_ind), 'touchPsi2', p.Results.psi2(th_ind), ...
-                        'rInMm', p.Results.rInMm, 'touchKappaSTDthreshold', p.Results.touchKappaSTDthreshold);
+                        'rInMm', p.Results.rInMm, 'touchKappaSTDthreshold', kappaSTDthreshold, 'whiskingAmpThreshold', p.Results.whiskingAmpThreshold, 'fwkappamean', fwkappamean, 'fwkappastd', fwkappastd, ...
+                        'touchBoundaryThickness', p.Results.touchBoundaryThickness, 'touchBoundaryBuffer', p.Results.touchBoundaryBuffer, 'distanceHistogramBin', p.Results.distanceHistogramBin, 'maxPointsNearHyperplane', p.Results.maxPointsNearHyperplane);
                 end
             end
+            
             outfn = [fn '_WL_2pad.mat'];
-
             pctsave(outfn,wl);
+        end
+        
+        if contains(wsArray.trials{end}.sessionName, 'S') || contains(wsArray.trials{end}.sessionName, 'pre')
+            wlArray = Whisker.WhiskerTrialLite_2padArray(wsArray.trials{end}.mouseName, wsArray.trials{end}.sessionName);                        
+            protractionThresholdInds = find(cellfun(@(x) ~isempty(x.protractionThreshold), wlArray.trials));
+            meanProtractionThreshold = zeros(size(p.Results.servo_distance_pair));
+            if isempty(protractionThresholdInds)
+                for i = 1 : size(meanProtractionThreshold,1)
+                    for j  = 1 : size(meanProtractionThreshold,2)
+                        meanProtractionThreshold(i,j) = p.Results.touchBoundaryBuffer;
+                    end
+                end
+            else
+                protractionThresholds = zeros(length(protractionThresholdInds),1);
+                pairNums = zeros(length(protractionThresholdInds),1); % index matching to p.Results.servo_distance_pair
+                for ii = 1 : length(protractionThresholdInds)
+                    protractionThresholds(ii) = wlArray.trials{protractionThresholdInds(ii)}.protractionThreshold;
+                    pairNums(ii) = find(cellfun(@(x) isequal(x, [wlArray.trials{protractionThresholdInds(ii)}.servoAngle, wlArray.trials{protractionThresholdInds(ii)}.radialDistance]), p.Results.servo_distance_pair));
+                end
+                pairInds = unique(pairNums);
+                for i = 1 : length(pairInds)
+                    tempInd = find(pairNums == pairInds(i));
+                    meanProtractionThreshold(i) = mean(protractionThresholds(tempInd));
+                end
+            end
+            
+            retractionThresholdInds = find(cellfun(@(x) ~isempty(x.retractionThreshold), wlArray.trials));
+            meanRetractionThreshold = zeros(size(p.Results.servo_distance_pair));
+            if isempty(retractionThresholdInds)
+                for i = 1 : size(meanRetractionThreshold,1)
+                    for j  = 1 : size(meanRetractionThreshold,2)
+                        meanRetractionThreshold(i,j) = p.Results.touchBoundaryBuffer;
+                    end
+                end
+            else
+                retractionThresholds = zeros(length(retractionThresholdInds),1);
+                pairNums = zeros(length(retractionThresholdInds),1); % index matching to p.Results.servo_distance_pair
+                for ii = 1 : length(retractionThresholdInds)
+                    retractionThresholds(ii) = wlArray.trials{retractionThresholdInds(ii)}.retractionThreshold;
+                    pairNums(ii) = find(cellfun(@(x) isequal(x, [wlArray.trials{retractionThresholdInds(ii)}.servoAngle, wlArray.trials{retractionThresholdInds(ii)}.radialDistance]), p.Results.servo_distance_pair));
+                end
+                pairInds = unique(pairNums);
+                for i = 1 : length(pairInds)
+                    tempInd = find(pairNums == pairInds(i));
+                    meanRetractionThreshold(i) = mean(retractionThresholds(tempInd));
+                end
+            end
+            
+            noProtractionThresholdTns = cellfun(@(x) ~strcmp(x.trialType, 'oo') * isempty(x.protractionThreshold) * ~isempty(x.protractionDistance) * x.trialNum, wlArray.trials);
+            noProtractionThresholdTns = noProtractionThresholdTns(noProtractionThresholdTns>0);
+            noRetractionThresholdTns = cellfun(@(x) ~strcmp(x.trialType, 'oo') * isempty(x.retractionThreshold) * ~isempty(x.retractionDistance) * x.trialNum, wlArray.trials);
+            noRetractionThresholdTns = noRetractionThresholdTns(noRetractionThresholdTns>0);
+            sdpair = p.Results.servo_distance_pair;
+            parfor k = 1 : length(noProtractionThresholdTns)
+                fn = num2str(noProtractionThresholdTns(k));
+                disp(['2nd processing ''_WL_2pad.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
+
+                wl = pctloadwl([fn '_WL_2pad.mat']);
+                tempInd = find(cellfun(@(x) isequal(x, [wl.servoAngle, wl.radialDistance]), sdpair));
+                wl.protractionThreshold = meanProtractionThreshold(tempInd);
+                wl.protractionTouchFrames = wl.protractionFrames(wl.protractionDistance <= wl.protractionThreshold);
+                wl.protractionTouchFrames = setdiff(wl.protractionTouchFrames, wl.obviousNoTouchFrames);
+                wl.protractionTFchunks = wl.get_chunks(wl.protractionTouchFrames);
+                
+                outfn = [fn '_WL_2pad.mat'];
+                pctsave(outfn,wl);
+            end
+            
+            parfor k = 1 : length(noRetractionThresholdTns)
+                fn = num2str(noRetractionThresholdTns(k));
+                disp(['2nd processing ''_WL_2pad.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
+
+                wl = pctloadwl([fn '_WL_2pad.mat']);
+                tempInd = find(cellfun(@(x) isequal(x, [wl.servoAngle, wl.radialDistance]), sdpair));
+                wl.retractionThreshold = meanRetractionThreshold(tempInd);
+                wl.retractionTouchFrames = wl.retractionFrames(wl.retractionDistance >= wl.retractionThreshold);
+                wl.retractionTouchFrames = setdiff(wl.retractionTouchFrames, wl.obviousNoTouchFrames);
+                wl.retractionTFchunks = wl.get_chunks(wl.retractionTouchFrames);
+                
+                outfn = [fn '_WL_2pad.mat'];
+                pctsave(outfn,wl);
+            end
         end
     else
         for k=1:nfiles
@@ -204,19 +310,107 @@ if ~isempty(fnall)
 
                     angle = p.Results.behavior.trials{b_ind}.servoAngle;
                     distance = p.Results.behavior.trials{b_ind}.motorDistance;
-
+                    if angle < 90
+                        kappaSTDthreshold = p.Results.touchKappaSTDthreshold/2;
+                    else
+                        kappaSTDthreshold = p.Results.touchKappaSTDthreshold;
+                    end
+                    
                     th_ind = find(cellfun(@(x) isequal(x, [angle, distance]), p.Results.servo_distance_pair));
                     wl = Whisker.WhiskerTrialLite_2pad(ws,'calc_forces',p.Results.calc_forces,...
                         'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
                         'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
                         'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value, 'proximity_threshold',p.Results.proximity_threshold, ...
                         'mirrorAngle', mirrorAngle, 'touchHPpeaks', p.Results.hp_peaks{th_ind}, 'touchHP', p.Results.touch_hp{th_ind}, 'touchPsi1', p.Results.psi1(th_ind), 'touchPsi2', p.Results.psi2(th_ind), ...
-                        'rInMm', p.Results.rInMm, 'touchKappaSTDthreshold', p.Results.touchKappaSTDthreshold);
+                        'rInMm', p.Results.rInMm, 'touchKappaSTDthreshold', kappaSTDthreshold, 'whiskingAmpThreshold', p.Results.whiskingAmpThreshold, 'fwkappamean', fwkappamean, 'fwkappastd', fwkappastd, ...
+                        'touchBoundaryThickness', p.Results.touchBoundaryThickness, 'touchBoundaryBuffer', p.Results.touchBoundaryBuffer, 'distanceHistogramBin', p.Results.distanceHistogramBin, 'maxPointsNearHyperplane', p.Results.maxPointsNearHyperplane);
                 end
             end
             outfn = [fn '_WL_2pad.mat'];
 
             save(outfn,'wl');
+        end
+        
+        if contains(wsArray.trials{end}.sessionName, 'S') || contains(wsArray.trials{end}.sessionName, 'pre')
+            wlArray = Whisker.WhiskerTrialLite_2padArray(wsArray.trials{end}.mouseName, wsArray.trials{end}.sessionName);                        
+            protractionThresholdInds = find(cellfun(@(x) ~isempty(x.protractionThreshold), wlArray.trials));
+            meanProtractionThreshold = zeros(size(p.Results.servo_distance_pair));
+            if isempty(protractionThresholdInds)
+                for i = 1 : size(meanProtractionThreshold,1)
+                    for j  = 1 : size(meanProtractionThreshold,2)
+                        meanProtractionThreshold(i,j) = p.Results.touchBoundaryBuffer;
+                    end
+                end
+            else
+                protractionThresholds = zeros(length(protractionThresholdInds),1);
+                pairNums = zeros(length(protractionThresholdInds),1); % index matching to p.Results.servo_distance_pair
+                for ii = 1 : length(protractionThresholdInds)
+                    protractionThresholds(ii) = wlArray.trials{protractionThresholdInds(ii)}.protractionThreshold;
+                    pairNums(ii) = find(cellfun(@(x) isequal(x, [wlArray.trials{protractionThresholdInds(ii)}.servoAngle, wlArray.trials{protractionThresholdInds(ii)}.radialDistance]), p.Results.servo_distance_pair));
+                end
+                pairInds = unique(pairNums);
+                for i = 1 : length(pairInds)
+                    tempInd = find(pairNums == pairInds(i));
+                    meanProtractionThreshold(i) = mean(protractionThresholds(tempInd));
+                end
+            end
+            
+            retractionThresholdInds = find(cellfun(@(x) ~isempty(x.retractionThreshold), wlArray.trials));
+            meanRetractionThreshold = zeros(size(p.Results.servo_distance_pair));
+            if isempty(retractionThresholdInds)
+                for i = 1 : size(meanRetractionThreshold,1)
+                    for j  = 1 : size(meanRetractionThreshold,2)
+                        meanRetractionThreshold(i,j) = p.Results.touchBoundaryBuffer;
+                    end
+                end
+            else
+                retractionThresholds = zeros(length(retractionThresholdInds),1);
+                pairNums = zeros(length(retractionThresholdInds),1); % index matching to p.Results.servo_distance_pair
+                for ii = 1 : length(retractionThresholdInds)
+                    retractionThresholds(ii) = wlArray.trials{retractionThresholdInds(ii)}.retractionThreshold;
+                    pairNums(ii) = find(cellfun(@(x) isequal(x, [wlArray.trials{retractionThresholdInds(ii)}.servoAngle, wlArray.trials{retractionThresholdInds(ii)}.radialDistance]), p.Results.servo_distance_pair));
+                end
+                pairInds = unique(pairNums);
+                for i = 1 : length(pairInds)
+                    tempInd = find(pairNums == pairInds(i));
+                    meanRetractionThreshold(i) = mean(retractionThresholds(tempInd));
+                end
+            end
+            
+            noProtractionThresholdTns = cellfun(@(x) ~strcmp(x.trialType, 'oo') * isempty(x.protractionThreshold) * ~isempty(x.protractionDistance) * x.trialNum, wlArray.trials);
+            noProtractionThresholdTns = noProtractionThresholdTns(noProtractionThresholdTns>0);
+            noRetractionThresholdTns = cellfun(@(x) ~strcmp(x.trialType, 'oo') * isempty(x.retractionThreshold) * ~isempty(x.retractionDistance) * x.trialNum, wlArray.trials);
+            noRetractionThresholdTns = noRetractionThresholdTns(noRetractionThresholdTns>0);
+            
+            for k = 1 : length(noProtractionThresholdTns)
+                fn = num2str(noProtractionThresholdTns(k));
+                disp(['2nd processing ''_WL_2pad.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
+
+                load([fn '_WL_2pad.mat'],'wl');
+                tempInd = find(cellfun(@(x) isequal(x, [wl.servoAngle, wl.radialDistance]), p.Results.servo_distance_pair));
+                wl.protractionThreshold = meanProtractionThreshold(tempInd);
+                wl.protractionTouchFrames = protractionFrames(wl.protractionDistance <= wl.protractionThreshold);
+                wl.protractionTouchFrames = setdiff(wl.protractionTouchFrames, wl.obviousNoTouchFrames);
+                wl.protractionTFchunks = wl.get_chunks(wl.protractionTouchFrames);
+                
+                outfn = [fn '_WL_2pad.mat'];
+                save(outfn,'wl');
+            end
+            
+            for k = 1 : length(noRetractionThresholdTns)
+                fn = num2str(noRetractionThresholdTns(k));
+                disp(['2nd processing ''_WL_2pad.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
+
+                load([fn '_WL_2pad.mat'],'wl');
+                tempInd = find(cellfun(@(x) isequal(x, [wl.servoAngle, wl.radialDistance]), p.Results.servo_distance_pair));
+                wl.retractionThreshold = meanRetractionThreshold(tempInd);
+                wl.retractionTouchFrames = retractionFrames(wl.retractionDistance <= wl.retractionThreshold);
+                wl.retractionTouchFrames = setdiff(wl.retractionTouchFrames, wl.obviousNoTouchFrames);
+                wl.retractionTFchunks = wl.get_chunks(wl.retractionTouchFrames);
+                
+                outfn = [fn '_WL_2pad.mat'];
+                save(outfn,'wl');
+            end
         end
     end
 end
@@ -232,7 +426,9 @@ function ws = pctload(loadfn)
 load(loadfn,'ws');
 end
 
-
+function wl = pctloadwl(loadfn)
+load(loadfn,'wl');
+end
 
 
 

@@ -132,42 +132,44 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
                                 obj.whiskerPoleIntersection{k,i} = temp; % This is not changed, (for analysis of JK025~041), since the important one is just whiskerEdgeCoord, calculated symmetrically. 2018/06/13 JK
                                 obj.whiskerEdgeCoord(k,i) = sqrt(sum((temp'-currAxis(:,1)).^2)); % the distances from each axis origin
                             else  % extrapolate the whisker and find the intersection with pole edge
-                                % increase the whisker outward for 30% based on the polynomial fitting
-                                polyDegree = 5;
-                                wpo = obj.whiskerPadOrigin;
-                                if sqrt(sum((wpo-[xall(end) yall(end)]).^2)) < sqrt(sum((wpo-[xall(1) yall(1)]).^2))
-                                    % c(q_max) is closest to whisker pad origin, so reverse the (x,y) sequence
-                                    xall = xall(end:-1:1);
-                                    yall = yall(end:-1:1);
-                                end
-                                coeffX = Whisker.polyfit(linspace(0,1,length(xall)), xall, polyDegree);
-                                coeffY = Whisker.polyfit(linspace(0,1,length(yall)), yall, polyDegree);
-                                q = linspace(0,1.3); 
-                                xall = polyval(coeffX,q);
-                                yall = polyval(coeffY,q);
-                                C = [xall;yall];
-                                temp = Whisker.InterX(currAxis,C);
-    %                             if ty(1) < ty(end) % follicle at the beginning of the vector (column)
-    %                                 ty = flip(ty);
-    %                                 tx = flip(tx);
-    %                             end
-    %                             p = polyfix(ty(end-3:end-1),tx(end-3:end-1),1,ty(end-3),tx(end-3)); % I need p(1) only.
-    %                             tip = [ty(end-3)+1, tx(end-3)+1];
-    %                             ext_tip = [tip(1)-20, tip(2)-p(1)*20];
-    %                             L = [tip', ext_tip'];
-    %                             temp = Whisker.InterX(obj.pole_axes{i},L);                            
-                                if ~isempty(temp)
-                                    temp = temp'; % row vector
-                                    if size(temp,1) > 1
-                                        temp = sortrows(temp,-2); % sort temp descending order of the first column, which is 1st dim (or ty) (This is the comment before the change 2018/06/13)
-                                        temp = temp(1,:); % select the largest value (lowest in the video)
-                                    end                            
-                                    obj.whiskerPoleIntersection{k,i} = temp; 
-                                    obj.whiskerEdgeCoord(k,i) = sqrt(sum((temp'-currAxis(:,1)).^2)); % the distances from each axis origin
-                                else
+%                                 % increase the whisker outward for 30% based on the polynomial fitting
+%                                 polyDegree = 4;
+%                                 wpo = obj.whiskerPadOrigin;
+%                                 if sqrt(sum((wpo-[xall(end) yall(end)]).^2)) < sqrt(sum((wpo-[xall(1) yall(1)]).^2))
+%                                     % c(q_max) is closest to whisker pad origin, so reverse the (x,y) sequence
+%                                     xall = xall(end:-1:1);
+%                                     yall = yall(end:-1:1);
+%                                 end
+%                                 xall = xall(1:end-round(length(xall)/10));
+%                                 yall = yall(1:end-round(length(xall)/10)); % to remove last 10% because when there is no intersection, there usually is noisy tracing at the end
+%                                 coeffX = Whisker.polyfit(linspace(0,1,length(xall)), xall, polyDegree);
+%                                 coeffY = Whisker.polyfit(linspace(0,1,length(yall)), yall, polyDegree);
+%                                 q = linspace(0,1.45);  % 45% increase from 90% of initial length corresponds to 30% increase of the initial length
+%                                 xall = polyval(coeffX,q);
+%                                 yall = polyval(coeffY,q);
+%                                 C = [xall;yall];
+%                                 temp = Whisker.InterX(currAxis,C);
+%     %                             if ty(1) < ty(end) % follicle at the beginning of the vector (column)
+%     %                                 ty = flip(ty);
+%     %                                 tx = flip(tx);
+%     %                             end
+%     %                             p = polyfix(ty(end-3:end-1),tx(end-3:end-1),1,ty(end-3),tx(end-3)); % I need p(1) only.
+%     %                             tip = [ty(end-3)+1, tx(end-3)+1];
+%     %                             ext_tip = [tip(1)-20, tip(2)-p(1)*20];
+%     %                             L = [tip', ext_tip'];
+%     %                             temp = Whisker.InterX(obj.pole_axes{i},L);                            
+%                                 if ~isempty(temp)
+%                                     temp = temp'; % row vector
+%                                     if size(temp,1) > 1
+%                                         temp = sortrows(temp,-2); % sort temp descending order of the first column, which is 1st dim (or ty) (This is the comment before the change 2018/06/13)
+%                                         temp = temp(1,:); % select the largest value (lowest in the video)
+%                                     end                            
+%                                     obj.whiskerPoleIntersection{k,i} = temp; 
+%                                     obj.whiskerEdgeCoord(k,i) = sqrt(sum((temp'-currAxis(:,1)).^2)); % the distances from each axis origin
+%                                 else
                                     obj.whiskerPoleIntersection{k,i} = [];
                                     obj.whiskerEdgeCoord(k,i) = NaN;
-                                end
+%                                 end
                             end
                         else
                             obj.whiskerPoleIntersection{k,i} = [];

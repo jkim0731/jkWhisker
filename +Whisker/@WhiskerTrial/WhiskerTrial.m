@@ -540,7 +540,7 @@ classdef WhiskerTrial < handle
             % y: Row vector of y coordinates to define mask.
             %
             % If N points are selected, mask will be the (N-1)-th
-            % degree polynomial fit to the points for N < 6. For N >= 6
+            % degree polynomial fit to the points for N < 5. For N >= 6
             % the polynomial will be 5-th degree.
             %
             %

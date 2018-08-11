@@ -58,23 +58,39 @@ classdef WhiskerTrialLite_2pad < handle
         nof = []; % Number of Frames. Inherited from WhiskerSignalTrial.
         poleUpFrames = []; % Inherited from WhiskerSignalTrial. first timepoint is 1, not 0. 2017/04/13 JK
         poleMovingFrames = [];
+        mirrorAngle = [];
         
         touchHP = []; % in 2d
         protractionHP = []; % in 2d
         retractionHP = []; % in 2d
-        touchBoundaryThickness = [];
-        touchBoundaryBuffer = [];
+        touchBoundaryThicknessInPix = [];
+        touchBoundaryBufferInPix = [];
         touchPsi1 = [];
         touchPsi2 = [];
-        
+        stdHistogramThreshold = [];
+        whiskingAmpThreshold = [];
+        distanceHistogramBin = [];
+        maxPointsNearHyperplane = [];
         touchKappaSTDthreshold = [];
+        
         retractionTouchFrames = [];
         retractionTFchunks = {};
         protractionTouchFrames = [];
         protractionTFchunks = {};
+        protractionThreshold = [];
+        retractionThreshold = [];
         obviousNoTouchFrames = []; % just for check
+        fwkappamean = []; % just for check
+        fwkappastd = []; % just for check
+        protractionDistance = []; % just for check
+        retractionDistance = []; % just for check
+        protractionFrames = [];
+        retractionFrames = [];
+        
         
         intersect_2d = []; % for test, maybe just for now 2018/07/31 JK
+        prothresholdMethod = 0; % 1 if > mean + std, 2 if max > 10, 3 if kappa std > threshold, 0 otherwise
+        rethresholdMethod = 0; % 1 if > mean + std, 2 if max > 10, 3 if kappa std > threshold, 0 otherwise        
     end
     
     properties (Dependent = true)
@@ -161,6 +177,14 @@ classdef WhiskerTrialLite_2pad < handle
             p.addParameter('touchPsi1', [], @isnumeric);
             p.addParameter('touchPsi2', [], @isnumeric);
             p.addParameter('touchKappaSTDthreshold', 2, @isnumeric);
+            p.addParameter('fwkappamean', 0, @isnumeric);
+            p.addParameter('fwkappastd', 0, @isnumeric);
+            p.addParameter('stdHistogramThreshold', 3, @isnumeric);
+            p.addParameter('whiskingAmpThreshold', 2.5, @isnumeric);
+            p.addParameter('distanceHistogramBin', 0.2, @isnumeric);
+            p.addParameter('touchBoundaryThickness', 0.25, @isnumeric);
+            p.addParameter('touchBoundaryBuffer', 0.1, @isnumeric);
+            p.addParameter('maxPointsNearHyperplane', 10, @isnumeric);
             
             p.parse(ws,varargin{:});
             
@@ -189,6 +213,7 @@ classdef WhiskerTrialLite_2pad < handle
             obj.Flateral = cell(1,ntraj);
             obj.M0 = cell(1,ntraj); % Moment at the follicle.
             obj.meanKappa = cell(1,ntraj); % Mean kappa over the ROI.
+            obj.mirrorAngle = p.Results.mirrorAngle;
           
             obj.barPos = ws.barPos; %  Inherited from WhiskerSignalTrial. [frameNum XPosition YPosition]
             obj.barPosOffset = ws.barPosOffset; % Inherited from WhiskerSignalTrial. [x y], either 1X2 or nframesX2
@@ -202,8 +227,14 @@ classdef WhiskerTrialLite_2pad < handle
             obj.touchPsi1 = p.Results.touchPsi1;
             obj.touchPsi2 = p.Results.touchPsi2;
             obj.touchKappaSTDthreshold = p.Results.touchKappaSTDthreshold;
-            obj.touchBoundaryThickness = obj.pxPerMm/2; % 0.5 mm for detecting touch frames (later to be used with kappa change)
-            obj.touchBoundaryBuffer = max([1,round(obj.touchBoundaryThickness/5)]); % 0.1 mm for touch distance threshold
+            obj.fwkappamean = p.Results.fwkappamean;
+            obj.fwkappastd = p.Results.fwkappastd;
+            obj.touchBoundaryThicknessInPix = obj.pxPerMm * p.Results.touchBoundaryThickness; % in pixels for detecting touch frames (later to be used with kappa change)
+            obj.touchBoundaryBufferInPix = obj.pxPerMm * p.Results.touchBoundaryBuffer; % in pixels for touch distance threshold
+            obj.stdHistogramThreshold = p.Results.stdHistogramThreshold;
+            obj.whiskingAmpThreshold = p.Results.whiskingAmpThreshold;
+            obj.distanceHistogramBin = p.Results.distanceHistogramBin; % in pixels
+            obj.maxPointsNearHyperplane = p.Results.maxPointsNearHyperplane;
             
             obj.whiskerEdgeCoord = ws.whiskerEdgeCoord;
             obj.poleUpFrames = ws.poleUpFrames;
@@ -276,12 +307,13 @@ classdef WhiskerTrialLite_2pad < handle
                 % first, sort out any obvious non-touch frames, where whisker does not overlap at all with top-view pole, except for 90 degrees 
                 % (assigning these frames into touch frames happens more frequently in lower degrees (45~75)
                 % Only for pole-up frames. Touch detection during pole-moving frames is highly unreliable
+                
                 obj.obviousNoTouchFrames = zeros(obj.nof,1,'logical');
                 if obj.servoAngle ~= 90
                     height = size(ws.binvavg,1);
                     width = size(ws.binvavg,2);
                     topViewPole = zeros([height, width],'logical');
-                    targetH = 0.6; targetW = 0.6; targetArea = zeros(size(ws.binvavg), 'logical'); targetArea(1:round(height*targetH), round((1-targetW)*width):end) = deal(1);
+                    targetH = 0.6; targetW = 0.5; targetArea = zeros(size(ws.binvavg), 'logical'); targetArea(1:round(height*targetH), round((1-targetW)*width):end) = deal(1);
                     targetInd = find(targetArea);
                     bw = bwconncomp(ws.binvavg);
                     bwInd = find(cellfun(@(x) length(intersect(x,targetInd)),bw.PixelIdxList));
@@ -315,11 +347,17 @@ classdef WhiskerTrialLite_2pad < handle
                 % Now find touch frames
                 topInd = find(~isnan(ws.whiskerEdgeCoord(:,1)));
                 frontInd = find(~isnan(ws.whiskerEdgeCoord(:,2)));
-                apPositionInd = find(~isnan(ws.apPosition));
-                noNaNInd = intersect(intersect(topInd, frontInd), apPositionInd);
+%                 apPositionInd = find(~isnan(ws.apPosition));                
+%                 noNaNInd = intersect(intersect(topInd, frontInd), apPositionInd);
+                noNaNInd = intersect(intersect(topInd, frontInd), ws.poleUpFrames);
                 intersect_3d_total = [ws.whiskerEdgeCoord(noNaNInd,1), ws.whiskerEdgeCoord(noNaNInd,2), ws.apPosition(noNaNInd)];
+
                 intersect_4d = [intersect_3d_total, ones(size(intersect_3d_total,1),1)]';
-                projMat = viewmtx(obj.touchPsi1, 90 - obj.touchPsi2);
+                if obj.touchPsi1 <= 90
+                    projMat = viewmtx(obj.touchPsi1, 90 - obj.touchPsi2);
+                else
+                    projMat = viewmtx(obj.touchPsi1, -90 + obj.touchPsi2);
+                end
                 intersect_2d = projMat*intersect_4d;
                 if size(intersect_2d,1) < size(intersect_2d,2)
                     intersect_2d = intersect_2d';
@@ -329,91 +367,215 @@ classdef WhiskerTrialLite_2pad < handle
                 
                 touchHP4d = [p.Results.touchHP; ones(1,size(p.Results.touchHP,2))];
                 touchHP = projMat*touchHP4d;
-                obj.touchHP = unique(touchHP(1:2,:)','rows');
+                obj.touchHP = unique(round(touchHP(1:2,:)'*100)/100,'rows');
                 proHP4d = [p.Results.touchHP(1,:) + p.Results.touchHPpeaks(2); p.Results.touchHP(2:3,:); ones(1,size(p.Results.touchHP,2))];
                 proHP = projMat*proHP4d;
-                obj.protractionHP = unique(proHP(1:2,:)', 'rows');
+                obj.protractionHP = unique(round(proHP(1:2,:)'*100)/100, 'rows');
                 retHP4d = [p.Results.touchHP(1,:) + p.Results.touchHPpeaks(1); p.Results.touchHP(2:3,:); ones(1,size(p.Results.touchHP,2))];
                 retHP = projMat*retHP4d;
-                obj.retractionHP = unique(retHP(1:2,:)', 'rows');
-                
-                hpPolygon = [obj.protractionHP; obj.retractionHP];
-                thPolygon = hpPolygon(convhull([obj.protractionHP; obj.retractionHP], 'simplify', true),:);
-                dist2thPolygon = p_poly_dist(intersect_2d(:,1)', intersect_2d(:,2)', thPolygon(:,1)', thPolygon(:,2)', true);
-                if size(dist2thPolygon,2) > size(dist2thPolygon,1)
-                    dist2thPolygon = dist2thPolygon';
-                end
-                inPolyFrames = find(dist2thPolygon <= 0);
-                inPolyChunks = obj.get_chunks(inPolyFrames);
+                obj.retractionHP = unique(round(retHP(1:2,:)'*100)/100, 'rows');
                 
                 protractionDistance = obj.distance_and_side_from_line(intersect_2d, obj.protractionHP);
                 tempProtFrames = find(protractionDistance > 0);
                 retractionDistance = obj.distance_and_side_from_line(intersect_2d, obj.retractionHP);
                 tempRetFrames = find(retractionDistance < 0);
-                if ~isempty(inPolyChunks)
-                    if inPolyChunks{1}(1) == 1
-                        if abs(obj.distance_and_side_from_line(intersect_2d(inPolyChunks{1}(end),:), obj.protractionHP)) ...
-                                <= abs(obj.distance_and_side_from_line(intersect_2d(inPolyChunks{1}(end),:), obj.retractionHP)) % (end) of whiskerEdgeCoord should be more stable than (1)
-                            tempProtFrames = [tempProtFrames; inPolyChunks{1}];
+                inFrames = setdiff(1:length(noNaNInd), union(tempProtFrames, tempRetFrames));
+                inChunks = obj.get_chunks(inFrames);
+                if ~isempty(inChunks)
+%                     if inChunks{1}(1) == 1
+%                         if abs(obj.distance_and_side_from_line(intersect_2d(inChunks{1}(end),:), obj.protractionHP)) ...
+%                                 <= abs(obj.distance_and_side_from_line(intersect_2d(inChunks{1}(end),:), obj.retractionHP)) % (end) of whiskerEdgeCoord should be more stable than (1)
+%                             tempProtFrames = [tempProtFrames; inChunks{1}];
+%                         else
+%                             tempRetFrames = [tempRetFrames; inChunks{1}];
+%                         end
+%                     else
+%                         if ismember(inChunks{1}(1)-1, tempProtFrames)
+%                             tempProtFrames = [tempProtFrames; inChunks{1}];
+%                         elseif ismember(inChunks{1}(1)-1, tempRetFrames)
+%                             tempRetFrames = [tempRetFrames; inChunks{1}];
+%                         else
+%                             error(['Cannot assign to a side of the pole in trial #', num2str(obj.trialNum)])
+%                         end
+%                     end
+%                     for i = 2 : length(inChunks)
+%                         if ismember(inChunks{i}(1)-1, tempProtFrames)
+%                             tempProtFrames = [tempProtFrames; inChunks{i}];
+%                         elseif ismember(inChunks{i}(1)-1, tempRetFrames)
+%                             tempRetFrames = [tempRetFrames; inChunks{i}];
+%                         else
+%                             error(['Cannot assign to a side of the pole in trial #', num2str(obj.trialNum)])
+%                         end
+%                     end
+                    prodist = cellfun(@(x) mean(abs(protractionDistance(x))), inChunks);
+                    retdist = cellfun(@(x) mean(abs(retractionDistance(x))), inChunks);
+                    for i = 1 : length(inChunks)
+                        if prodist(i) > retdist(i)
+                            tempRetFrames = [tempRetFrames; inChunks{i}];
                         else
-                            tempRetFrames = [tempRetFrames; inPolyChunks{1}];
-                        end
-                    else
-                        if ismember(inPolyChunks{1}(1)-1, tempProtFrames)
-                            tempProtFrames = [tempProtFrames; inPolyChunks{1}];
-                        else % ismember(inPolyChunks{i}(1)-1, tempRetFrames)
-                            tempRetFrames = [tempRetFrames; inPolyChunks{1}];
-                        end
-                    end
-                    for i = 2 : length(inPolyChunks)
-                        if ismember(inPolyChunks{i}(1)-1, tempProtFrames)
-                            tempProtFrames = [tempProtFrames; inPolyChunks{i}];
-                        else % ismember(inPolyChunks{i}(1)-1, tempRetFrames)
-                            tempRetFrames = [tempRetFrames; inPolyChunks{i}];
+                            tempProtFrames = [tempProtFrames; inChunks{i}];
                         end
                     end
                 end
                 tempProtFrames = sort(tempProtFrames);
                 tempRetFrames = sort(tempRetFrames);
-                protractionFrames = noNaNInd(tempProtFrames);
+                obj.protractionFrames = noNaNInd(tempProtFrames);
                 protractionDistance = protractionDistance(tempProtFrames);
-                retractionFrames = noNaNInd(tempRetFrames);
+                obj.retractionFrames = noNaNInd(tempRetFrames);
                 retractionDistance = retractionDistance(tempRetFrames);
 
-                % (1) protraction touch
-                if ~isempty( protractionDistance < obj.touchBoundaryThickness) % meaning when there is possible touch frames
-                    protractionDistance( (protractionDistance < 0) ) = deal(0);
-                    minDistInds = find( round(protractionDistance) == min(round(protractionDistance)) );
-                    noPoleFrames = setdiff(1:obj.nof, union(obj.poleUpFrames, obj.poleMovingFrames));
-                    meanKappaNoPole = nanmean(obj.deltaKappa{1}(noPoleFrames));
-                    stdKappaNoPole = nanstd(obj.deltaKappa{1}(noPoleFrames));
-                    candid = find(obj.deltaKappa{1}(protractionFrames(minDistInds)) < meanKappaNoPole - obj.touchKappaSTDthreshold * stdKappaNoPole & ...
-                        obj.deltaKappa{1}(protractionFrames(minDistInds)) > meanKappaNoPole + obj.touchKappaSTDthreshold * stdKappaNoPole); % meaning there IS (ARE) protraction touch frames. There can be multiple frames with min value
-                    if ~isempty(candid)
-                        threshold = mode(round(protractionDistance(minDistInds(candid)))) + obj.touchBoundaryBuffer;
-                        obj.protractionTouchFrames = protractionFrames(protractionDistance <= threshold);
-                    end
-                end                
-                obj.protractionTouchFrames = setdiff(obj.protractionTouchFrames, obj.obviousNoTouchFrames);
+                obj.protractionDistance = protractionDistance;                
+                obj.retractionDistance = retractionDistance;
                 
-                % (2) retraction touch
-                if ~isempty( retractionDistance > -obj.touchBoundaryThickness) % meaning when there is possible touch frames
-                    retractionDistance( (retractionDistance > 0) ) = deal(0);
-                    maxDistInds = find( round(retractionDistance) == max(round(retractionDistance)) ); % max value is negative or 0
-                    noPoleFrames = setdiff(1:obj.nof, union(obj.poleUpFrames, obj.poleMovingFrames));
-                    meanKappaNoPole = nanmean(obj.deltaKappa{1}(noPoleFrames));
-                    stdKappaNoPole = nanstd(obj.deltaKappa{1}(noPoleFrames));
-                    candid = find(obj.deltaKappa{1}(retractionFrames(maxDistInds)) > meanKappaNoPole + obj.touchKappaSTDthreshold * stdKappaNoPole & ...
-                        obj.deltaKappa{1}(retractionFrames(maxDistInds)) < meanKappaNoPole - obj.touchKappaSTDthreshold * stdKappaNoPole); % meaning there IS (ARE) protraction touch frames. There can be multiple frames with min value
-                    if ~isempty(candid)
-                        threshold = mode(round(retractionDistance(maxDistInds(candid)))) - obj.touchBoundaryBuffer;
-                        obj.retractionTouchFrames = retractionFrames(retractionDistance >= threshold);
+%                 % (1) protraction touch
+%                 if ~isempty( protractionDistance <= obj.touchBoundaryThickness) % meaning when there is possible touch frames
+%                     threshold = obj.touchBoundaryBuffer; % minimum threshold value (correct when the hyperplane is perfect
+%                     % (1) - 1. Number of points at the distance with the densest population has more than 1/3 of all possible
+%                     % points between 0 and "touch boundary thickness" pixels from the boundary, when divided into 0.25 pixels
+%                     closeFrames = find(protractionDistance <= obj.touchBoundaryThickness);
+%                     tempDist = round(protractionDistance(closeFrames)*4);
+%                     modeVal = mode(tempDist);
+%                     if length(find(tempDist == modeVal)) > length(closeFrames)/3
+%                         threshold = modeVal/4 + obj.touchBoundaryBuffer;
+%                     else
+%                         % (1) - 2. Closest points have kappa larger or shorter than the mean by a certain threshold, 
+%                         % defined by std of free whisking frames
+%                         protractionDistance( (protractionDistance < 0) ) = deal(0);
+%                         minDistInds = find( round(protractionDistance) == min(round(protractionDistance)) );                    
+%                         candid = find(obj.deltaKappa{1}(protractionFrames(minDistInds)) < obj.fwkappamean- obj.touchKappaSTDthreshold * obj.fwkappastd & ...
+%                             obj.deltaKappa{1}(protractionFrames(minDistInds)) > obj.fwkappamean + obj.touchKappaSTDthreshold * obj.fwkappastd); % meaning there IS (ARE) protraction touch frames. There can be multiple frames with min value
+%                         if ~isempty(candid)
+%                             threshold = mode(round(protractionDistance(minDistInds(candid)))) + obj.touchBoundaryBuffer;                            
+%                         end
+%                     end
+%                     obj.protractionTouchFrames = protractionFrames(protractionDistance <= threshold);
+%                 end                
+%                 obj.protractionTouchFrames = setdiff(obj.protractionTouchFrames, obj.obviousNoTouchFrames);
+%                 
+%                 % (2) retraction touch
+%                 if ~isempty( retractionDistance >= -obj.touchBoundaryThickness) % meaning when there is possible touch frames
+%                     threshold = -obj.touchBoundaryBuffer; % minimum threshold value (correct when the hyperplane is perfect
+%                     % (2) - 1. Number of points at the distance with the densest population has more than 1/3 of all possible
+%                     % points between 0 and "touch boundary thickness" pixels from the boundary, when divided into 0.25 pixels
+%                     closeFrames = find(retractionDistance >= -obj.touchBoundaryThickness);
+%                     tempDist = round(retractionDistance(closeFrames)*4);
+%                     modeVal = mode(tempDist);
+%                     if length(find(tempDist == modeVal)) > length(closeFrames)/3
+%                         threshold = modeVal/4 - obj.touchBoundaryBuffer;
+%                     else
+%                         % (2) - 2. Closest points have kappa larger or shorter than the mean by a certain threshold, 
+%                         % defined by std of free whisking frames
+%                         retractionDistance( (retractionDistance > 0) ) = deal(0);
+%                         maxDistInds = find( round(retractionDistance) == max(round(retractionDistance)) ); % max value is negative or 0                    
+%                         candid = find(obj.deltaKappa{1}(retractionFrames(maxDistInds)) > obj.fwkappamean + obj.touchKappaSTDthreshold * obj.fwkappastd & ...
+%                             obj.deltaKappa{1}(retractionFrames(maxDistInds)) < obj.fwkappamean - obj.touchKappaSTDthreshold * obj.fwkappastd); % meaning there IS (ARE) protraction touch frames. There can be multiple frames with min value
+%                         if ~isempty(candid)
+%                             threshold = mode(round(retractionDistance(maxDistInds(candid)))) - obj.touchBoundaryBuffer;                            
+%                         end
+%                     end
+%                     obj.retractionTouchFrames = retractionFrames(retractionDistance >= threshold);
+%                 end
+%                 obj.retractionTouchFrames = setdiff(obj.retractionTouchFrames, obj.obviousNoTouchFrames);
+                
+                % a new way of calculating touch distance: within 5 pixels from the touch hp, find the peak distance with consecutive frames, 
+                % and if the occurance at this distance is significantly higher than all the other distances, set this distance as the touch distance. 
+                % (1) protraction touch
+                if ~isempty( protractionDistance <= obj.touchBoundaryThicknessInPix) % meaning when there is possible touch frames                    
+                    % (1) - 1. Number of points at the distance with the densest population has more than "n" X std of all possible
+                    % points between 0 and "touch boundary thickness" pixels from the boundary, when divided into "bin" pixels
+                    % In case of protraction, consider only during whisking (amplitude > "amplitude threshold")
+                    closeFrames = find(protractionDistance <= obj.touchBoundaryThicknessInPix);                    
+                    closeAdjFrames = closeFrames(find([0;diff(closeFrames)] == 1));
+                    if ~isempty(closeAdjFrames)
+                        [~, amplitude, ~, ~, ~, ~, phase, ~] = jkWhiskerDecomposition(obj.thetaAtBase{1});
+                        whiskingInds = [1;find([0;diff(phase)]<0); length(phase)+1];
+                        if ~isempty(whiskingInds)
+                            whiskingFrames = [];
+                            for i = 1 : length(whiskingInds)-1
+                                if max(amplitude(whiskingInds(i):whiskingInds(i+1)-1)) > obj.whiskingAmpThreshold
+                                    whiskingFrames = [whiskingFrames, whiskingInds(i):whiskingInds(i+1)-1];
+                                end
+                            end
+                            closeProtractionDist = protractionDistance(intersect(closeAdjFrames, whiskingFrames));
+                            if length(closeProtractionDist) > 1 && max(closeProtractionDist) - min(closeProtractionDist) > obj.distanceHistogramBin
+                                closeProtractionDist = round(closeProtractionDist / obj.distanceHistogramBin) * obj.distanceHistogramBin;                                
+                                [N, edges] = histcounts(closeProtractionDist, [min(closeProtractionDist) : obj.distanceHistogramBin : max(closeProtractionDist)]);
+                                if max(N) > mean(N) + std(N) * obj.stdHistogramThreshold
+                                    [~, maxind] = max(N);
+                                    obj.prothresholdMethod = 1;
+                                    obj.protractionThreshold = ( edges(maxind) + edges(maxind+1) ) / 2 + obj.touchBoundaryBufferInPix;
+                                elseif max(N) > obj.maxPointsNearHyperplane
+                                    [~, maxind] = max(N);
+                                    obj.prothresholdMethod = 2;
+                                    obj.protractionThreshold = ( edges(maxind) + edges(maxind+1) ) / 2 + obj.touchBoundaryBufferInPix;                                    
+                                end
+                            end
+                        end
+                        if isempty(obj.protractionThreshold) % in case where the above method could not be used.
+                            % (1) - 2. Closest points have kappa larger or shorter than the mean by a certain threshold, 
+                            % defined by std of free whisking frames
+                            protractionDistance( (protractionDistance < 0) ) = deal(0);
+                            protractionDistance = round(protractionDistance / obj.distanceHistogramBin) * obj.distanceHistogramBin;
+                            minDistInds = find( protractionDistance == min(protractionDistance) );
+                            candid = find(obj.deltaKappa{1}(obj.protractionFrames(minDistInds)) < obj.fwkappamean - obj.touchKappaSTDthreshold * obj.fwkappastd & ...
+                                obj.deltaKappa{1}(obj.protractionFrames(minDistInds)) > obj.fwkappamean + obj.touchKappaSTDthreshold * obj.fwkappastd); % meaning there IS (ARE) protraction touch frames. There can be multiple frames with min value
+                            if ~isempty(candid)
+                                obj.prothresholdMethod = 3;
+                                obj.protractionThreshold = mode(protractionDistance(minDistInds(candid))) + obj.touchBoundaryBufferInPix;                            
+                            end
+                        end
                     end
                 end
-                obj.retractionTouchFrames = setdiff(obj.retractionTouchFrames, obj.obviousNoTouchFrames);
+                if ~isempty(obj.protractionThreshold)
+                    obj.protractionTouchFrames = obj.protractionFrames(obj.protractionDistance <= obj.protractionThreshold);
+                    obj.protractionTouchFrames = setdiff(obj.protractionTouchFrames, obj.obviousNoTouchFrames);
+                    obj.protractionTFchunks = obj.get_chunks(obj.protractionTouchFrames);
+                end
+                
+                % (2) retraction touch
+                if ~isempty( retractionDistance >= -obj.touchBoundaryThicknessInPix) % meaning when there is possible touch frames                    
+                    % (2) - 1. Number of points at the distance with the densest population has more than "n" X std of all possible
+                    % points between 0 and "touch boundary thickness" pixels from the boundary, when divided into "bin" pixels
+                    closeFrames = find(retractionDistance >= -obj.touchBoundaryThicknessInPix);                    
+                    closeAdjFrames = closeFrames(find([0;diff(closeFrames)] == 1));
+                    if ~isempty(closeAdjFrames)
+                        closeRetractionDist = retractionDistance(closeAdjFrames);
+                        if length(closeRetractionDist) > 1 && max(closeRetractionDist) - min(closeRetractionDist) > obj.distanceHistogramBin 
+                            closeRetractionDist = round(closeRetractionDist / obj.distanceHistogramBin) * obj.distanceHistogramBin;
+                            [N, edges] = histcounts(closeRetractionDist, [min(closeRetractionDist) : obj.distanceHistogramBin : max(closeRetractionDist)]);
+                            if max(N) > mean(N) + std(N) * obj.stdHistogramThreshold
+                                obj.rethresholdMethod = 1;
+                                [~, maxind] = max(N);
+                                obj.retractionThreshold = ( edges(maxind) + edges(maxind+1) ) / 2 - obj.touchBoundaryBufferInPix;
+                            elseif max(N) > obj.maxPointsNearHyperplane
+                                obj.rethresholdMethod = 2;
+                                [~, maxind] = max(N);
+                                obj.retractionThreshold = ( edges(maxind) + edges(maxind+1) ) / 2 - obj.touchBoundaryBufferInPix;
+                            end
+                        end
+                        if isempty(obj.retractionThreshold) % in case where the above method could not be used.
+                            % (2) - 2. Closest points have kappa larger or shorter than the mean by a certain threshold, 
+                            % defined by std of free whisking frames
+                            retractionDistance( (retractionDistance > 0) ) = deal(0);
+                            retractionDistance = round(retractionDistance / obj.distanceHistogramBin) * obj.distanceHistogramBin;
+                            minDistInds = find( retractionDistance == max(retractionDistance) );
+                            candid = find(obj.deltaKappa{1}(obj.retractionFrames(minDistInds)) < obj.fwkappamean - obj.touchKappaSTDthreshold * obj.fwkappastd & ...
+                                obj.deltaKappa{1}(obj.retractionFrames(minDistInds)) > obj.fwkappamean + obj.touchKappaSTDthreshold * obj.fwkappastd); % meaning there IS (ARE) protraction touch frames. There can be multiple frames with min value
+                            if ~isempty(candid)
+                                obj.rethresholdMethod = 3;
+                                obj.retractionThreshold = mode(retractionDistance(minDistInds(candid))) - obj.touchBoundaryBufferInPix;                            
+                            end
+                        end
+                    end
+                end
+                if ~isempty(obj.retractionThreshold)
+                    obj.retractionTouchFrames = obj.retractionFrames(obj.retractionDistance >= obj.retractionThreshold);
+                    obj.retractionTouchFrames = setdiff(obj.retractionTouchFrames, obj.obviousNoTouchFrames);
+                    obj.retractionTFchunks = obj.get_chunks(obj.retractionTouchFrames);
+                end
             end
-            obj.protractionTFchunks = obj.get_chunks(obj.protractionTouchFrames);
-            obj.retractionTFchunks = obj.get_chunks(obj.retractionTouchFrames);
+                
+
             %
             %
             % for debugging

@@ -1,16 +1,17 @@
 %% basic information
-% mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
-mice = {'JK052','JK053','JK054','JK056'};
-% mice = {'JK052'};
-videoloc = 'L:\tracked\';
+mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
+% mice = {'JK052','JK053','JK054','JK056'};
+% mice = {'JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
+% mice = {'JK041'};
+videoloc = 'D:\Jinho_works\Data\WhiskerVideo\';
 if strcmp(videoloc(end),filesep)
     whisker_d = videoloc;
 else
     whisker_d = ([videoloc filesep]);
 end
-behavior_base_dir = 'Y:\Whiskernas\JK\SoloData\';
+behavior_base_dir = 'D:\Jinho_works\Data\SoloData\';
 
-ppm = 17.81;
+ppm = 17.81/2;
             % 'pxPerMm': 17.81002608 for telecentric lens
 % comment out when doing for all of the sessions in the mouse directory
 maskmm = 1; % mm from the face to draw the mask
@@ -21,6 +22,16 @@ remeasureSkip = 'skip'; % 'skip' or 'noskip'
 touchHyperplaneSkip = 'skip';
 videoFreq = 311.24; % frequency of whisker video imaging. If 0, then use timestamp file (calculated from .seq file)
 barRadius = 0.3; % in mm
+
+% parameters for refining touch frames
+whiskingAmpThreshold = 2.5; % in degrees
+stdHistogramThreshold = 1;
+distanceHistogramBinInMm = 0.02; %
+distanceHistogramBin = round(ppm*distanceHistogramBinInMm*100)/100; % up to 2 significant numbers
+touchBoundaryThickness = 0.3; % in mm
+touchBoundaryBuffer = 0.1; % in mm
+maxPointsNearHyperplane = videoFreq * 15 / 1000; % mean touch duration ~ 15 ms. 
+touchKappaSTDthreshold = 2;
 %%
 %%
 %% re-do these
@@ -29,7 +40,8 @@ barRadius = 0.3; % in mm
 %%
 %%
 % sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
-sessions = {[3],[1,2,4:15],[1,2,4:20],[2:16],[1:6,8:24],[1,3:31],[2:21],[1,2,4:30]};
+sessions = {[22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
+% sessions = {[3]};
 
 sessions_pre = {[],[1,2],[1,2],[1,2],[1,2],[1,2],[1,2],[1,2]};
 sessions_piezo = {[],[1,2],[1,2],[1,2],[1,2],[1,2],[1,2],[1,2]};
@@ -42,8 +54,8 @@ DoRemeasure = 0;
 doWT = 0;
 testPoleUp = 0;
 doWST = 0;
-makeTouchHyperplane = 1;
-doWL = 0;
+makeTouchHyperplane = 0;
+doWL = 1;
 
 %% Define follicle points and masks
 % saves follicle_n_mask.mat file consists of variables 'maskx','masky','width', 'height', and 'follicle_first'
@@ -256,6 +268,8 @@ if doWT
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
                         elseif strcmp(sessionName, 'S94') % JK052
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S04'), b));
+                        elseif strcmp(sessionName, 'S95') % JK052
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S05'), b));
                         elseif strcmp(sessionName, 'S99') % JK027
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b)); 
                         else
@@ -354,6 +368,8 @@ if doWT
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
                         elseif strcmp(sessionName, 'S94') % JK052
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S04'), b));
+                        elseif strcmp(sessionName, 'S95') % JK052
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S05'), b));
                         elseif strcmp(sessionName, 'S99') % JK027
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b)); 
                         else
@@ -507,6 +523,8 @@ if doWST
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
                         elseif strcmp(sessionName, 'S94') % JK052
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S04'), b));
+                        elseif strcmp(sessionName, 'S95') % JK052
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S05'), b));
                         elseif strcmp(sessionName, 'S99') % JK027
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b)); 
                         else
@@ -605,6 +623,8 @@ if doWST
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
                         elseif strcmp(sessionName, 'S94') % JK052
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S04'), b));
+                        elseif strcmp(sessionName, 'S95') % JK052
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S05'), b));
                         elseif strcmp(sessionName, 'S99') % JK027
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b)); 
                         else
@@ -704,6 +724,8 @@ if makeTouchHyperplane
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
                         elseif strcmp(sessionName, 'S94') % JK052
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S04'), b));
+                        elseif strcmp(sessionName, 'S95') % JK052
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S05'), b));
                         elseif strcmp(sessionName, 'S99') % JK027
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b)); 
                         else
@@ -762,6 +784,8 @@ if makeTouchHyperplane
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
                         elseif strcmp(sessionName, 'S94') % JK052
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S04'), b));
+                        elseif strcmp(sessionName, 'S95') % JK052
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S05'), b));
                         elseif strcmp(sessionName, 'S99') % JK027
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b)); 
                         else
@@ -827,6 +851,8 @@ if doWL
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
                         elseif strcmp(sessionName, 'S94') % JK052
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S04'), b));
+                        elseif strcmp(sessionName, 'S95') % JK052
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S05'), b));
                         elseif strcmp(sessionName, 'S99') % JK027
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b)); 
                         else
@@ -834,7 +860,7 @@ if doWL
                         end
                         b_session = b{b_ind};
                         wd = [whisker_d, mouseName, sessionName];
-                        buildWL_2pad(wd, b_session, rInMm)
+                        buildWL_2pad(wd, b_session, rInMm, 'whiskingAmpThreshold', whiskingAmpThreshold, 'stdHistogramThreshold', stdHistogramThreshold, 'distanceHistogramBin', distanceHistogramBin, 'touchBoundaryThickness', touchBoundaryThickness, 'touchBoundaryBuffer', touchBoundaryBuffer, 'maxPointsNearHyperplane', maxPointsNearHyperplane, 'touchKappaSTDthreshold', touchKappaSTDthreshold)
                     end
                 end
             end
@@ -859,7 +885,7 @@ if doWL
                     b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                     b_session = b{b_ind};
                     wd = [whisker_d, mouseName, sessionName];
-                    buildWL_2pad(wd, b_session, rInMm)
+                    buildWL_2pad(wd, b_session, rInMm, 'whiskingAmpThreshold', whiskingAmpThreshold, 'stdHistogramThreshold', stdHistogramThreshold, 'distanceHistogramBin', distanceHistogramBin, 'touchBoundaryThickness', touchBoundaryThickness, 'touchBoundaryBuffer', touchBoundaryBuffer, 'maxPointsNearHyperplane', maxPointsNearHyperplane, 'touchKappaSTDthreshold', touchKappaSTDthreshold)
                 end
             end
 
@@ -909,6 +935,8 @@ if doWL
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
                         elseif strcmp(sessionName, 'S94') % JK052
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S04'), b));
+                        elseif strcmp(sessionName, 'S95') % JK052
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S05'), b));
                         elseif strcmp(sessionName, 'S99') % JK027
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b)); 
                         else
@@ -916,7 +944,7 @@ if doWL
                         end
                         b_session = b{b_ind};
                         wd = [whisker_d, mouseName, sessionName];
-                        buildWL_2pad(wd, b_session, rInMm)
+                        buildWL_2pad(wd, b_session, rInMm, 'whiskingAmpThreshold', whiskingAmpThreshold, 'stdHistogramThreshold', stdHistogramThreshold, 'distanceHistogramBin', distanceHistogramBin, 'touchBoundaryThickness', touchBoundaryThickness, 'touchBoundaryBuffer', touchBoundaryBuffer, 'maxPointsNearHyperplane', maxPointsNearHyperplane, 'touchKappaSTDthreshold', touchKappaSTDthreshold)
                     end
                 end
             end
@@ -941,7 +969,7 @@ if doWL
                         b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                         b_session = b{b_ind};
                         wd = [whisker_d, mouseName, sessionName];
-                        buildWL_2pad(wd, b_session, rInMm)
+                        buildWL_2pad(wd, b_session, rInMm, 'whiskingAmpThreshold', whiskingAmpThreshold, 'stdHistogramThreshold', stdHistogramThreshold, 'distanceHistogramBin', distanceHistogramBin, 'touchBoundaryThickness', touchBoundaryThickness, 'touchBoundaryBuffer', touchBoundaryBuffer, 'maxPointsNearHyperplane', maxPointsNearHyperplane, 'touchKappaSTDthreshold', touchKappaSTDthreshold)
                     end
                 end
             end
