@@ -410,7 +410,11 @@ classdef WhiskerTrialLite_2pad < handle
                     prodist = cellfun(@(x) mean(abs(protractionDistance(x))), inChunks);
                     retdist = cellfun(@(x) mean(abs(retractionDistance(x))), inChunks);
                     for i = 1 : length(inChunks)
-                        if prodist(i) > retdist(i)
+                        if ismember(inChunks{i}(1)-1, tempProtFrames)
+                            tempProtFrames = [tempProtFrames; inChunks{i}];
+                        elseif ismember(inChunks{i}(1)-1, tempRetFrames)
+                            tempRetFrames = [tempRetFrames; inChunks{i}];
+                        elseif prodist(i) > retdist(i)
                             tempRetFrames = [tempRetFrames; inChunks{i}];
                         else
                             tempProtFrames = [tempProtFrames; inChunks{i}];
