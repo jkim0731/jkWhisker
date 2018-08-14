@@ -73,6 +73,7 @@ classdef WhiskerTrialLite_2pad < handle
         maxPointsNearHyperplane = [];
         touchKappaSTDthreshold = [];
         
+        allTouchFrames = [];
         retractionTouchFrames = [];
         retractionTFchunks = {};
         protractionTouchFrames = [];
@@ -87,6 +88,11 @@ classdef WhiskerTrialLite_2pad < handle
         protractionFrames = [];
         retractionFrames = [];
         
+        
+        retractionTouchFramesPre = [];
+        retractionTFchunksPre = {};
+        protractionTouchFramesPre = [];
+        protractionTFchunksPre = {};
         
         intersect_2d = []; % for test, maybe just for now 2018/07/31 JK
         prothresholdMethod = 0; % 1 if > mean + std, 2 if max > 10, 3 if kappa std > threshold, 0 otherwise
@@ -345,11 +351,7 @@ classdef WhiskerTrialLite_2pad < handle
                 obj.obviousNoTouchFrames = find(obj.obviousNoTouchFrames);
                 
                 % Now find touch frames
-                topInd = find(~isnan(ws.whiskerEdgeCoord(:,1)));
-                frontInd = find(~isnan(ws.whiskerEdgeCoord(:,2)));
-%                 apPositionInd = find(~isnan(ws.apPosition));                
-%                 noNaNInd = intersect(intersect(topInd, frontInd), apPositionInd);
-                noNaNInd = intersect(intersect(topInd, frontInd), ws.poleUpFrames);
+                noNaNInd = intersect(find(~isnan(sum(ws.whiskerEdgeCoord,2))), ws.poleUpFrames);
                 intersect_3d_total = [ws.whiskerEdgeCoord(noNaNInd,1), ws.whiskerEdgeCoord(noNaNInd,2), ws.apPosition(noNaNInd)];
 
                 intersect_4d = [intersect_3d_total, ones(size(intersect_3d_total,1),1)]';
@@ -518,22 +520,23 @@ classdef WhiskerTrialLite_2pad < handle
                         if isempty(obj.protractionThreshold) % in case where the above method could not be used.
                             % (1) - 2. Closest points have kappa larger or shorter than the mean by a certain threshold, 
                             % defined by std of free whisking frames
-                            protractionDistance( (protractionDistance < 0) ) = deal(0);
-                            protractionDistance = round(protractionDistance / obj.distanceHistogramBin) * obj.distanceHistogramBin;
-                            minDistInds = find( protractionDistance == min(protractionDistance) );
+                            proDist = protractionDistance;
+                            proDist( (proDist < 0) ) = deal(0);
+                            proDist = round(proDist / obj.distanceHistogramBin) * obj.distanceHistogramBin;
+                            minDistInds = find( proDist == min(proDist) );
                             candid = find(obj.deltaKappa{1}(obj.protractionFrames(minDistInds)) < obj.fwkappamean - obj.touchKappaSTDthreshold * obj.fwkappastd & ...
                                 obj.deltaKappa{1}(obj.protractionFrames(minDistInds)) > obj.fwkappamean + obj.touchKappaSTDthreshold * obj.fwkappastd); % meaning there IS (ARE) protraction touch frames. There can be multiple frames with min value
                             if ~isempty(candid)
                                 obj.prothresholdMethod = 3;
-                                obj.protractionThreshold = mode(protractionDistance(minDistInds(candid))) + obj.touchBoundaryBufferInPix;                            
+                                obj.protractionThreshold = mode(proDist(minDistInds(candid))) + obj.touchBoundaryBufferInPix;                            
                             end
                         end
                     end
                 end
                 if ~isempty(obj.protractionThreshold)
-                    obj.protractionTouchFrames = obj.protractionFrames(obj.protractionDistance <= obj.protractionThreshold);
-                    obj.protractionTouchFrames = setdiff(obj.protractionTouchFrames, obj.obviousNoTouchFrames);
-                    obj.protractionTFchunks = obj.get_chunks(obj.protractionTouchFrames);
+                    obj.protractionTouchFramesPre = obj.protractionFrames(obj.protractionDistance <= obj.protractionThreshold);
+                    obj.protractionTouchFramesPre = setdiff(obj.protractionTouchFramesPre, obj.obviousNoTouchFrames);
+                    obj.protractionTFchunksPre = obj.get_chunks(obj.protractionTouchFramesPre);
                 end
                 
                 % (2) retraction touch
@@ -560,22 +563,77 @@ classdef WhiskerTrialLite_2pad < handle
                         if isempty(obj.retractionThreshold) % in case where the above method could not be used.
                             % (2) - 2. Closest points have kappa larger or shorter than the mean by a certain threshold, 
                             % defined by std of free whisking frames
-                            retractionDistance( (retractionDistance > 0) ) = deal(0);
-                            retractionDistance = round(retractionDistance / obj.distanceHistogramBin) * obj.distanceHistogramBin;
-                            minDistInds = find( retractionDistance == max(retractionDistance) );
+                            retDist = retractionDistance;
+                            retDist( (retDist > 0) ) = deal(0);
+                            retDist = round(retDist / obj.distanceHistogramBin) * obj.distanceHistogramBin;
+                            minDistInds = find( retDist == max(retDist) );
                             candid = find(obj.deltaKappa{1}(obj.retractionFrames(minDistInds)) < obj.fwkappamean - obj.touchKappaSTDthreshold * obj.fwkappastd & ...
                                 obj.deltaKappa{1}(obj.retractionFrames(minDistInds)) > obj.fwkappamean + obj.touchKappaSTDthreshold * obj.fwkappastd); % meaning there IS (ARE) protraction touch frames. There can be multiple frames with min value
                             if ~isempty(candid)
                                 obj.rethresholdMethod = 3;
-                                obj.retractionThreshold = mode(retractionDistance(minDistInds(candid))) - obj.touchBoundaryBufferInPix;                            
+                                obj.retractionThreshold = mode(retDist(minDistInds(candid))) - obj.touchBoundaryBufferInPix;                            
                             end
                         end
                     end
                 end
                 if ~isempty(obj.retractionThreshold)
-                    obj.retractionTouchFrames = obj.retractionFrames(obj.retractionDistance >= obj.retractionThreshold);
-                    obj.retractionTouchFrames = setdiff(obj.retractionTouchFrames, obj.obviousNoTouchFrames);
-                    obj.retractionTFchunks = obj.get_chunks(obj.retractionTouchFrames);
+                    obj.retractionTouchFramesPre = obj.retractionFrames(obj.retractionDistance >= obj.retractionThreshold);
+                    obj.retractionTouchFramesPre = setdiff(obj.retractionTouchFramesPre, obj.obviousNoTouchFrames);
+                    obj.retractionTFchunksPre = obj.get_chunks(obj.retractionTouchFramesPre);
+                end
+                
+                % Combine both protraction and retraciton touches in pre-,
+                % and re-chunk them to assign protraction and retraction
+                % touches
+                
+                if ~isempty(obj.protractionTouchFramesPre) && ~isempty(obj.retractionTouchFramesPre)
+                    protractionDistance = obj.distance_and_side_from_line(intersect_2d, obj.protractionHP);
+                    tempProtFrames = find(protractionDistance > obj.protractionThreshold);
+                    retractionDistance = obj.distance_and_side_from_line(intersect_2d, obj.retractionHP);
+                    tempRetFrames = find(retractionDistance < obj.retractionThreshold);
+                    
+                    obj.allTouchFrames = union(obj.protractionTouchFramesPre, obj.retractionTouchFramesPre); % union results in sorted order
+                    [~, allTouchFrames] = ismember(obj.allTouchFrames, noNaNInd); % change back to noNaNInd indexing for further processing
+                    if ~isempty(find(allTouchFrames == 0,1)) % something's wrong
+                        error(['allTouchFrames not included in noNaNInd in trial #', num2str(wl.trialNum)])
+                    end
+                    touchFramesChunks = obj.get_chunks(allTouchFrames);
+                    prodist = cellfun(@(x) mean(abs(protractionDistance(x))), touchFramesChunks);
+                    retdist = cellfun(@(x) mean(abs(retractionDistance(x))), touchFramesChunks);
+                    proTF = [];
+                    retTF = [];
+                    for i = 1 : length(touchFramesChunks)
+                        if ismember(touchFramesChunks{i}(1)-1, tempProtFrames)
+                            proTF = [proTF; touchFramesChunks{i}];
+                            tempProtFrames = [tempProtFrames; touchFramesChunks{i}];
+                        elseif ismember(touchFramesChunks{i}(1)-1, tempRetFrames)
+                            retTF = [retTF; touchFramesChunks{i}];
+                            tempRetFrames = [tempRetFrames; touchFramesChunks{i}];
+                        elseif prodist(i) > retdist(i)
+                            retTF = [retTF; touchFramesChunks{i}];
+                            tempRetFrames = [tempRetFrames; touchFramesChunks{i}];
+                        else
+                            proTF = [proTF; touchFramesChunks{i}];
+                            tempProtFrames = [tempProtFrames; touchFramesChunks{i}];
+                        end
+                    end
+                    obj.protractionFrames = noNaNInd(unique(tempProtFrames));
+                    obj.retractionFrames = noNaNInd(unique(tempRetFrames));
+                    obj.protractionDistance = protractionDistance(tempProtFrames);
+                    obj.retractionDistance = retractionDistance(tempRetFrames);
+                    if ~isempty(proTF)
+                        obj.protractionTouchFrames = noNaNInd(sort(proTF));
+                        obj.protractionTFchunks = obj.get_chunks(obj.protractionTouchFrames);
+                    end
+                    if ~isempty(retTF)
+                        obj.retractionTouchFrames = noNaNInd(sort(retTF));
+                        obj.retractionTFchunks = obj.get_chunks(obj.retractionTouchFrames);
+                    end
+                else
+                    obj.protractionTouchFrames = obj.protractionTouchFramesPre;
+                    obj.protractionTFchunks = obj.protractionTFchunksPre;
+                    obj.retractionTouchFrames = obj.retractionTouchFramesPre;
+                    obj.retractionTFchunks = obj.retractionTFchunksPre;
                 end
             end
                 

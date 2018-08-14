@@ -150,7 +150,7 @@ end
 % %%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %
-% fnall = {'286'};
+% fnall = {'181'};
 %
 %
 % %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -255,36 +255,82 @@ if ~isempty(fnall)
             noProtractionThresholdTns = noProtractionThresholdTns(noProtractionThresholdTns>0);
             noRetractionThresholdTns = cellfun(@(x) ~strcmp(x.trialType, 'oo') * isempty(x.retractionThreshold) * ~isempty(x.retractionDistance) * x.trialNum, wlArray.trials);
             noRetractionThresholdTns = noRetractionThresholdTns(noRetractionThresholdTns>0);
+            changeInds = union(noProtractionThresholdTns, noRetractionThresholdTns);
             sdpair = p.Results.servo_distance_pair;
-            parfor k = 1 : length(noProtractionThresholdTns)
-                fn = num2str(noProtractionThresholdTns(k));
+            parfor k = 1 : length(changeInds)
+                fn = num2str(changeInds(k));
                 disp(['2nd processing ''_WL_2pad.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
 
                 wl = pctloadwl([fn '_WL_2pad.mat']);
                 tempInd = find(cellfun(@(x) isequal(x, [wl.servoAngle, wl.radialDistance]), sdpair));
-                wl.protractionThreshold = meanProtractionThreshold(tempInd);
-                wl.protractionTouchFrames = wl.protractionFrames(wl.protractionDistance <= wl.protractionThreshold);
-                wl.protractionTouchFrames = setdiff(wl.protractionTouchFrames, wl.obviousNoTouchFrames);
-                wl.protractionTFchunks = wl.get_chunks(wl.protractionTouchFrames);
+                if ismember(changeInds(k), noProtractionThresholdTns)
+                    wl.protractionThreshold = meanProtractionThreshold(tempInd);
+                    wl.protractionTouchFramesPre = wl.protractionFrames(wl.protractionDistance <= wl.protractionThreshold);
+                    wl.protractionTouchFramesPre = setdiff(wl.protractionTouchFramesPre, wl.obviousNoTouchFrames);
+                    wl.protractionTFchunksPre = wl.get_chunks(wl.protractionTouchFramesPre);
+                end
+                if ismember(changeInds(k), noRetractionThresholdTns)
+                    wl.retractionThreshold = meanRetractionThreshold(tempInd);
+                    wl.retractionTouchFramesPre = wl.retractionFrames(wl.retractionDistance >= wl.retractionThreshold);
+                    wl.retractionTouchFramesPre = setdiff(wl.retractionTouchFramesPre, wl.obviousNoTouchFrames);
+                    wl.retractionTFchunksPre = wl.get_chunks(wl.retractionTouchFramesPre);
+                end
                 
-                outfn = [fn '_WL_2pad.mat'];
-                pctsave(outfn,wl);
-            end
-            
-            parfor k = 1 : length(noRetractionThresholdTns)
-                fn = num2str(noRetractionThresholdTns(k));
-                disp(['2nd processing ''_WL_2pad.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
+                if ~isempty(wl.protractionTouchFramesPre) && ~isempty(wl.retractionTouchFramesPre)
+                    protractionDistance = wl.distance_and_side_from_line(wl.intersect_2d, wl.protractionHP);
+                    tempProtFrames = find(protractionDistance > wl.protractionThreshold);
+                    retractionDistance = wl.distance_and_side_from_line(wl.intersect_2d, wl.retractionHP);
+                    tempRetFrames = find(retractionDistance < wl.retractionThreshold);
 
-                wl = pctloadwl([fn '_WL_2pad.mat']);
-                tempInd = find(cellfun(@(x) isequal(x, [wl.servoAngle, wl.radialDistance]), sdpair));
-                wl.retractionThreshold = meanRetractionThreshold(tempInd);
-                wl.retractionTouchFrames = wl.retractionFrames(wl.retractionDistance >= wl.retractionThreshold);
-                wl.retractionTouchFrames = setdiff(wl.retractionTouchFrames, wl.obviousNoTouchFrames);
-                wl.retractionTFchunks = wl.get_chunks(wl.retractionTouchFrames);
+                    noNaNInd = intersect(find(~isnan(sum(wl.whiskerEdgeCoord,2))), wl.poleUpFrames);
+                    
+                    wl.allTouchFrames = union(wl.protractionTouchFramesPre, wl.retractionTouchFramesPre); % union results in sorted order
+                    [~, allTouchFrames] = ismember(wl.allTouchFrames, noNaNInd); % change back to noNaNInd indexing for further processing
+                    if ~isempty(find(allTouchFrames == 0,1)) % something's wrong
+                        error(['allTouchFrames not included in noNaNInd in trial #', num2str(wl.trialNum)])
+                    end
+                    touchFramesChunks = wl.get_chunks(allTouchFrames);
+                    prodist = cellfun(@(x) mean(abs(protractionDistance(x))), touchFramesChunks);
+                    retdist = cellfun(@(x) mean(abs(retractionDistance(x))), touchFramesChunks);
+                    proTF = [];
+                    retTF = [];
+                    for i = 1 : length(touchFramesChunks)
+                        if ismember(touchFramesChunks{i}(1)-1, tempProtFrames)
+                            proTF = [proTF; touchFramesChunks{i}];
+                            tempProtFrames = [tempProtFrames; touchFramesChunks{i}];
+                        elseif ismember(touchFramesChunks{i}(1)-1, tempRetFrames)
+                            retTF = [retTF; touchFramesChunks{i}];
+                            tempRetFrames = [tempRetFrames; touchFramesChunks{i}];
+                        elseif prodist(i) > retdist(i)
+                            retTF = [retTF; touchFramesChunks{i}];
+                            tempRetFrames = [tempRetFrames; touchFramesChunks{i}];
+                        else
+                            proTF = [proTF; touchFramesChunks{i}];
+                            tempProtFrames = [tempProtFrames; touchFramesChunks{i}];
+                        end
+                    end
+                    wl.protractionFrames = noNaNInd(unique(tempProtFrames));
+                    wl.retractionFrames = noNaNInd(unique(tempRetFrames));
+                    wl.protractionDistance = protractionDistance(tempProtFrames);
+                    wl.retractionDistance = retractionDistance(tempRetFrames);
+                    if ~isempty(proTF)
+                        wl.protractionTouchFrames = noNaNInd(sort(proTF));
+                        wl.protractionTFchunks = wl.get_chunks(wl.protractionTouchFrames);
+                    end
+                    if ~isempty(retTF)
+                        wl.retractionTouchFrames = noNaNInd(sort(retTF));
+                        wl.retractionTFchunks = wl.get_chunks(wl.retractionTouchFrames);
+                    end
+                else
+                    wl.protractionTouchFrames = wl.protractionTouchFramesPre;
+                    wl.protractionTFchunks = wl.protractionTFchunksPre;
+                    wl.retractionTouchFrames = wl.retractionTouchFramesPre;
+                    wl.retractionTFchunks = wl.retractionTFchunksPre;
+                end
                 
                 outfn = [fn '_WL_2pad.mat'];
                 pctsave(outfn,wl);
-            end
+            end            
         end
     else
         for k=1:nfiles
@@ -382,34 +428,81 @@ if ~isempty(fnall)
             noRetractionThresholdTns = cellfun(@(x) ~strcmp(x.trialType, 'oo') * isempty(x.retractionThreshold) * ~isempty(x.retractionDistance) * x.trialNum, wlArray.trials);
             noRetractionThresholdTns = noRetractionThresholdTns(noRetractionThresholdTns>0);
             
-            for k = 1 : length(noProtractionThresholdTns)
-                fn = num2str(noProtractionThresholdTns(k));
+            changeInds = union(noProtractionThresholdTns, noRetractionThresholdTns);
+            sdpair = p.Results.servo_distance_pair;
+            for k = 1 : length(changeInds)
+                fn = num2str(changeInds(k));
                 disp(['2nd processing ''_WL_2pad.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
 
-                load([fn '_WL_2pad.mat'],'wl');
-                tempInd = find(cellfun(@(x) isequal(x, [wl.servoAngle, wl.radialDistance]), p.Results.servo_distance_pair));
-                wl.protractionThreshold = meanProtractionThreshold(tempInd);
-                wl.protractionTouchFrames = protractionFrames(wl.protractionDistance <= wl.protractionThreshold);
-                wl.protractionTouchFrames = setdiff(wl.protractionTouchFrames, wl.obviousNoTouchFrames);
-                wl.protractionTFchunks = wl.get_chunks(wl.protractionTouchFrames);
+                wl = pctloadwl([fn '_WL_2pad.mat']);
+                tempInd = find(cellfun(@(x) isequal(x, [wl.servoAngle, wl.radialDistance]), sdpair));
+                if ismember(changeInds(k), noProtractionThresholdTns)
+                    wl.protractionThreshold = meanProtractionThreshold(tempInd);
+                    wl.protractionTouchFramesPre = wl.protractionFrames(wl.protractionDistance <= wl.protractionThreshold);
+                    wl.protractionTouchFramesPre = setdiff(wl.protractionTouchFramesPre, wl.obviousNoTouchFrames);
+                    wl.protractionTFchunksPre = wl.get_chunks(wl.protractionTouchFramesPre);
+                end
+                if ismember(changeInds(k), noRetractionThresholdTns)
+                    wl.retractionThreshold = meanRetractionThreshold(tempInd);
+                    wl.retractionTouchFramesPre = wl.retractionFrames(wl.retractionDistance >= wl.retractionThreshold);
+                    wl.retractionTouchFramesPre = setdiff(wl.retractionTouchFramesPre, wl.obviousNoTouchFrames);
+                    wl.retractionTFchunksPre = wl.get_chunks(wl.retractionTouchFramesPre);
+                end
                 
-                outfn = [fn '_WL_2pad.mat'];
-                save(outfn,'wl');
-            end
-            
-            for k = 1 : length(noRetractionThresholdTns)
-                fn = num2str(noRetractionThresholdTns(k));
-                disp(['2nd processing ''_WL_2pad.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
+                if ~isempty(wl.protractionTouchFramesPre) && ~isempty(wl.retractionTouchFramesPre)
+                    protractionDistance = wl.distance_and_side_from_line(wl.intersect_2d, wl.protractionHP);
+                    tempProtFrames = find(protractionDistance > wl.protractionThreshold);
+                    retractionDistance = wl.distance_and_side_from_line(wl.intersect_2d, wl.retractionHP);
+                    tempRetFrames = find(retractionDistance < wl.retractionThreshold);
 
-                load([fn '_WL_2pad.mat'],'wl');
-                tempInd = find(cellfun(@(x) isequal(x, [wl.servoAngle, wl.radialDistance]), p.Results.servo_distance_pair));
-                wl.retractionThreshold = meanRetractionThreshold(tempInd);
-                wl.retractionTouchFrames = retractionFrames(wl.retractionDistance <= wl.retractionThreshold);
-                wl.retractionTouchFrames = setdiff(wl.retractionTouchFrames, wl.obviousNoTouchFrames);
-                wl.retractionTFchunks = wl.get_chunks(wl.retractionTouchFrames);
+                    noNaNInd = intersect(find(~isnan(sum(wl.whiskerEdgeCoord,2))), wl.poleUpFrames);
+                    
+                    wl.allTouchFrames = union(wl.protractionTouchFramesPre, wl.retractionTouchFramesPre); % union results in sorted order
+                    [~, allTouchFrames] = ismember(wl.allTouchFrames, noNaNInd); % change back to noNaNInd indexing for further processing
+                    if ~isempty(find(allTouchFrames == 0,1)) % something's wrong
+                        error(['allTouchFrames not included in noNaNInd in trial #', num2str(wl.trialNum)])
+                    end
+                    touchFramesChunks = wl.get_chunks(allTouchFrames);
+                    prodist = cellfun(@(x) mean(abs(protractionDistance(x))), touchFramesChunks);
+                    retdist = cellfun(@(x) mean(abs(retractionDistance(x))), touchFramesChunks);
+                    proTF = [];
+                    retTF = [];
+                    for i = 1 : length(touchFramesChunks)
+                        if ismember(touchFramesChunks{i}(1)-1, tempProtFrames)
+                            proTF = [proTF; touchFramesChunks{i}];
+                            tempProtFrames = [tempProtFrames; touchFramesChunks{i}];
+                        elseif ismember(touchFramesChunks{i}(1)-1, tempRetFrames)
+                            retTF = [retTF; touchFramesChunks{i}];
+                            tempRetFrames = [tempRetFrames; touchFramesChunks{i}];
+                        elseif prodist(i) > retdist(i)
+                            retTF = [retTF; touchFramesChunks{i}];
+                            tempRetFrames = [tempRetFrames; touchFramesChunks{i}];
+                        else
+                            proTF = [proTF; touchFramesChunks{i}];
+                            tempProtFrames = [tempProtFrames; touchFramesChunks{i}];
+                        end
+                    end
+                    wl.protractionFrames = noNaNInd(unique(tempProtFrames));
+                    wl.retractionFrames = noNaNInd(unique(tempRetFrames));
+                    wl.protractionDistance = protractionDistance(tempProtFrames);
+                    wl.retractionDistance = retractionDistance(tempRetFrames);
+                    if ~isempty(proTF)
+                        wl.protractionTouchFrames = noNaNInd(sort(proTF));
+                        wl.protractionTFchunks = wl.get_chunks(wl.protractionTouchFrames);
+                    end
+                    if ~isempty(retTF)
+                        wl.retractionTouchFrames = noNaNInd(sort(retTF));
+                        wl.retractionTFchunks = wl.get_chunks(wl.retractionTouchFrames);
+                    end
+                else
+                    wl.protractionTouchFrames = wl.protractionTouchFramesPre;
+                    wl.protractionTFchunks = wl.protractionTFchunksPre;
+                    wl.retractionTouchFrames = wl.retractionTouchFramesPre;
+                    wl.retractionTFchunks = wl.retractionTFchunksPre;
+                end
                 
                 outfn = [fn '_WL_2pad.mat'];
-                save(outfn,'wl');
+                pctsave(outfn,wl);
             end
         end
     end
