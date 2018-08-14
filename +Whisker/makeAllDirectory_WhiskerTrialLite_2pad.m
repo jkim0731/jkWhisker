@@ -110,7 +110,11 @@ cd(d)
 
 wsArray = Whisker.WhiskerSignalTrialArray_2pad(d);
 
-mirrorAngle = nanmean(cellfun(@(x) x.mirrorAngle, wsArray.trials));
+if ~isempty(p.Results.behavior) && ~isempty(p.Results.touch_hp)
+    mirrorAngle = nanmean(cellfun(@(x) x.mirrorAngle, wsArray.trials));
+else
+    mirrorAngle = 0;
+end
 fwkappa = [];
 if contains(wsArray.trials{end}.sessionName, 'S') || contains(wsArray.trials{end}.sessionName, 'pre')
     for i = 1 : length(wsArray.trials)
@@ -124,9 +128,12 @@ if contains(wsArray.trials{end}.sessionName, 'S') || contains(wsArray.trials{end
     end
     fwkappamean = nanmean(fwkappa);
     fwkappastd = nanstd(fwkappa);
-end
-fnall = arrayfun(@(x) x.name(1:(end-8)), dir([d '*_WST.mat']),'UniformOutput',false);
+else
+    fwkappamean = 0;
+    fwkappastd = 0;
+end    
 
+fnall = arrayfun(@(x) x.name(1:(end-8)), dir([d '*_WST.mat']),'UniformOutput',false);
 if ~isempty(p.Results.include_files) % Make sure files are found. If not, ignored.
     ind = ismember(p.Results.include_files,fnall);
     fnall = p.Results.include_files(ind);
@@ -171,7 +178,7 @@ if ~isempty(fnall)
                     'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
                     'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
                     'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
-                    'proximity_threshold',p.Results.proximity_threshold,'mirrorAngle', mirrorAngle, 'rInMm', p.Results.rInMm);
+                    'proximity_threshold',p.Results.proximity_threshold, 'rInMm', p.Results.rInMm);
             else                    
                 b_ind = find(cellfun(@(x) x.trialNum,p.Results.behavior.trials)==str2double(fn));
                 if strcmp(p.Results.behavior.trials{b_ind}.trialType, 'oo')
@@ -343,7 +350,7 @@ if ~isempty(fnall)
                     'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
                     'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
                     'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
-                    'proximity_threshold',p.Results.proximity_threshold,'mirrorAngle', mirrorAngle, 'rInMm', p.Results.rInMm);
+                    'proximity_threshold',p.Results.proximity_threshold,'rInMm', p.Results.rInMm);
             else                    
                 b_ind = find(cellfun(@(x) x.trialNum,p.Results.behavior.trials)==str2double(fn));
                 if strcmp(p.Results.behavior.trials{b_ind}.trialType, 'oo')

@@ -1,17 +1,17 @@
 %% basic information
-mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
-% mice = {'JK052','JK053','JK054','JK056'};
+% mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
+mice = {'JK052','JK053','JK054','JK056'};
 % mice = {'JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
-% mice = {'JK041'};
-videoloc = 'D:\Jinho_works\Data\WhiskerVideo\';
+mice = {'JK052'};
+videoloc = 'L:\tracked\';
 if strcmp(videoloc(end),filesep)
     whisker_d = videoloc;
 else
     whisker_d = ([videoloc filesep]);
 end
-behavior_base_dir = 'D:\Jinho_works\Data\SoloData\';
+behavior_base_dir = 'Y:\Whiskernas\JK\SoloData\';
 
-ppm = 17.81/2;
+ppm = 17.81;
             % 'pxPerMm': 17.81002608 for telecentric lens
 % comment out when doing for all of the sessions in the mouse directory
 maskmm = 1; % mm from the face to draw the mask
@@ -40,14 +40,14 @@ touchKappaSTDthreshold = 2;
 %%
 %%
 % sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
-sessions = {[22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
+sessions = {[],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
 % sessions = {[3]};
 
 sessions_pre = {[],[1,2],[1,2],[1,2],[1,2],[1,2],[1,2],[1,2]};
-sessions_piezo = {[],[1,2],[1,2],[1,2],[1,2],[1,2],[1,2],[1,2]};
-sessions_spont = {[],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3]};
+sessions_piezo = {[1],[1,2],[1,2],[1,2],[1,2],[1,2],[1,2],[1,2]};
+sessions_spont = {[1,2],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3]};
 
-all_session = 1; % 1 if using all sessions, 0 if using selected sessions
+all_session = 0; % 1 if using all sessions, 0 if using selected sessions
 
 DoFollicle = 0;
 DoRemeasure = 0;
@@ -860,7 +860,7 @@ if doWL
                         end
                         b_session = b{b_ind};
                         wd = [whisker_d, mouseName, sessionName];
-                        buildWL_2pad(wd, b_session, rInMm, 'whiskingAmpThreshold', whiskingAmpThreshold, 'stdHistogramThreshold', stdHistogramThreshold, 'distanceHistogramBin', distanceHistogramBin, 'touchBoundaryThickness', touchBoundaryThickness, 'touchBoundaryBuffer', touchBoundaryBuffer, 'maxPointsNearHyperplane', maxPointsNearHyperplane, 'touchKappaSTDthreshold', touchKappaSTDthreshold)
+                        buildWL_2pad(wd, rInMm, 'b_session', b_session, 'whiskingAmpThreshold', whiskingAmpThreshold, 'stdHistogramThreshold', stdHistogramThreshold, 'distanceHistogramBin', distanceHistogramBin, 'touchBoundaryThickness', touchBoundaryThickness, 'touchBoundaryBuffer', touchBoundaryBuffer, 'maxPointsNearHyperplane', maxPointsNearHyperplane, 'touchKappaSTDthreshold', touchKappaSTDthreshold)
                     end
                 end
             end
@@ -885,7 +885,7 @@ if doWL
                     b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                     b_session = b{b_ind};
                     wd = [whisker_d, mouseName, sessionName];
-                    buildWL_2pad(wd, b_session, rInMm, 'whiskingAmpThreshold', whiskingAmpThreshold, 'stdHistogramThreshold', stdHistogramThreshold, 'distanceHistogramBin', distanceHistogramBin, 'touchBoundaryThickness', touchBoundaryThickness, 'touchBoundaryBuffer', touchBoundaryBuffer, 'maxPointsNearHyperplane', maxPointsNearHyperplane, 'touchKappaSTDthreshold', touchKappaSTDthreshold)
+                    buildWL_2pad(wd, rInMm, 'b_session', b_session, 'whiskingAmpThreshold', whiskingAmpThreshold, 'stdHistogramThreshold', stdHistogramThreshold, 'distanceHistogramBin', distanceHistogramBin, 'touchBoundaryThickness', touchBoundaryThickness, 'touchBoundaryBuffer', touchBoundaryBuffer, 'maxPointsNearHyperplane', maxPointsNearHyperplane, 'touchKappaSTDthreshold', touchKappaSTDthreshold)
                 end
             end
 
@@ -896,7 +896,7 @@ if doWL
                 if sn_piezo(si).isdir
                     [mouseName, sessionName] = strtok(sn_piezo(si).name,'piezo');
                     wd = [whisker_d, mouseName, sessionName];
-                    buildWL_2pad(wd, [], rInMm)
+                    buildWL_2pad(wd, rInMm)
                 end
             end
             
@@ -907,7 +907,7 @@ if doWL
                 if sn_spont(si).isdir
                     [mouseName, sessionName] = strtok(sn_spont(si).name,'piezo');
                     wd = [whisker_d, mouseName, sessionName];
-                    buildWL_2pad(wd, [], rInMm)
+                    buildWL_2pad(wd, rInMm)
                 end
             end
         end
@@ -944,7 +944,7 @@ if doWL
                         end
                         b_session = b{b_ind};
                         wd = [whisker_d, mouseName, sessionName];
-                        buildWL_2pad(wd, b_session, rInMm, 'whiskingAmpThreshold', whiskingAmpThreshold, 'stdHistogramThreshold', stdHistogramThreshold, 'distanceHistogramBin', distanceHistogramBin, 'touchBoundaryThickness', touchBoundaryThickness, 'touchBoundaryBuffer', touchBoundaryBuffer, 'maxPointsNearHyperplane', maxPointsNearHyperplane, 'touchKappaSTDthreshold', touchKappaSTDthreshold)
+                        buildWL_2pad(wd, rInMm, 'b_session', b_session, 'whiskingAmpThreshold', whiskingAmpThreshold, 'stdHistogramThreshold', stdHistogramThreshold, 'distanceHistogramBin', distanceHistogramBin, 'touchBoundaryThickness', touchBoundaryThickness, 'touchBoundaryBuffer', touchBoundaryBuffer, 'maxPointsNearHyperplane', maxPointsNearHyperplane, 'touchKappaSTDthreshold', touchKappaSTDthreshold)
                     end
                 end
             end
@@ -969,7 +969,7 @@ if doWL
                         b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                         b_session = b{b_ind};
                         wd = [whisker_d, mouseName, sessionName];
-                        buildWL_2pad(wd, b_session, rInMm, 'whiskingAmpThreshold', whiskingAmpThreshold, 'stdHistogramThreshold', stdHistogramThreshold, 'distanceHistogramBin', distanceHistogramBin, 'touchBoundaryThickness', touchBoundaryThickness, 'touchBoundaryBuffer', touchBoundaryBuffer, 'maxPointsNearHyperplane', maxPointsNearHyperplane, 'touchKappaSTDthreshold', touchKappaSTDthreshold)
+                        buildWL_2pad(wd, rInMm, 'b_session', b_session, 'whiskingAmpThreshold', whiskingAmpThreshold, 'stdHistogramThreshold', stdHistogramThreshold, 'distanceHistogramBin', distanceHistogramBin, 'touchBoundaryThickness', touchBoundaryThickness, 'touchBoundaryBuffer', touchBoundaryBuffer, 'maxPointsNearHyperplane', maxPointsNearHyperplane, 'touchKappaSTDthreshold', touchKappaSTDthreshold)
                     end
                 end
             end
@@ -980,7 +980,7 @@ if doWL
                     cd(whisker_d)
                     if exist([mouseName, sessionName],'dir')
                         wd = [whisker_d, mouseName, sessionName];
-                        buildWL_2pad(wd, [], rInMm)
+                        buildWL_2pad(wd, rInMm)
                     end
                 end
             end
@@ -991,7 +991,7 @@ if doWL
                     cd(whisker_d)
                     if exist([mouseName, sessionName],'dir')
                         wd = [whisker_d, mouseName, sessionName];
-                        buildWL_2pad(wd, [], rInMm)
+                        buildWL_2pad(wd, rInMm)
                     end
                 end
             end            

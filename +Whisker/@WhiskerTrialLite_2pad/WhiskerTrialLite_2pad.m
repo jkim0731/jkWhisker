@@ -58,7 +58,7 @@ classdef WhiskerTrialLite_2pad < handle
         nof = []; % Number of Frames. Inherited from WhiskerSignalTrial.
         poleUpFrames = []; % Inherited from WhiskerSignalTrial. first timepoint is 1, not 0. 2017/04/13 JK
         poleMovingFrames = [];
-        mirrorAngle = [];
+        mirrorAngle = 0;
         
         touchHP = []; % in 2d
         protractionHP = []; % in 2d
@@ -176,7 +176,7 @@ classdef WhiskerTrialLite_2pad < handle
             p.addParameter('trial_type',{}, @ischar);
             p.addParameter('kappaTouchThreshold',[],@(x) isnumeric(x) && numel(x)==2); % 2 values for top-view and front-view kappa
             p.addParameter('durationThreshold',[], @isnumeric);
-            p.addParameter('mirrorAngle', [], @isnumeric); % averaged from all the trials in the session
+            p.addParameter('mirrorAngle', 0, @isnumeric); % averaged from all the trials in the session
             p.addParameter('rInMm',{}, @isnumeric);
             p.addParameter('touchHP',[], @(x) isnumeric(x) && size(x,1) == 3);
             p.addParameter('touchHPpeaks',[], @(x) isnumeric(x) && numel(x) ==2);
