@@ -509,7 +509,7 @@ if ~isempty(fnall)
                 end
                 
                 outfn = [fn '_WL_2pad.mat'];
-                pctsave(outfn,wl);
+                save(outfn,wl);
             end
         end
     end

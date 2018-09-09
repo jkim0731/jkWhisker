@@ -169,6 +169,7 @@ classdef WhiskerSignalTrial < handle
                 % Copy ROI for each trajectory:
                 if isprop(w, 'whiskerPoleIntersection') && ~isempty(w.whiskerPoleIntersection) ...
                         && ~strcmp(w.trialType,'oo') % just in case
+                    wpo = w.whiskerPadOrigin;
                     for k=1:length(roiAll)
                         roiAll{k} = p.Results.polyRoiInPix;
                         frameNum = w.trackerFrames{1}(k) + 1;
@@ -181,7 +182,7 @@ classdef WhiskerSignalTrial < handle
                                 % c(q_max) is closest to whisker pad origin, so reverse the (x,y) sequence
                                 x = x(end:-1:1);
                                 y = y(end:-1:1);
-                            end                            
+                            end
                             s = cumsum((x - interx).^2 + (y - intery).^2);
                             ind = find(s==min(s),1,'first');
                             s = cumsum(sqrt([0, diff(x)].^2 + [0, diff(y)].^2));                            
