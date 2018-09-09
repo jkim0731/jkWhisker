@@ -105,6 +105,9 @@ for iservo = 1 : length(servo_values)
         tt_ind = intersect(find(cellfun(@(x) (x.servoAngle == servo_values(iservo)),bSession.trials)), find(cellfun(@(x) (x.motorDistance == distance_values(idist)),bSession.trials)));
         tt_wst_ind = find(cellfun(@(x) ismember(x.trialNum, wstNums), bSession.trials));                
         tt_ind = intersect(tt_ind, tt_wst_ind);
+        if isempty(tt_ind)
+            continue
+        end
         temp_files = cell(length(tt_ind),1);
         trial_nums{iservo,idist} = zeros(length(tt_ind),1);
         poleTipCoords = zeros(length(tt_ind),2); % [x coordinates, y coordinates] of poleUpFrames (average them)
@@ -113,7 +116,7 @@ for iservo = 1 : length(servo_values)
             temp_files{j} = num2str(bSession.trials{tt_ind(j)}.trialNum);
             trial_nums{iservo,idist}(j) = bSession.trials{tt_ind(j)}.trialNum;
 
-            load([temp_files{j},'_WST.mat']) % loading ws
+            load([temp_files{j},'_WST.mat'], 'ws') % loading ws
             poleTipCoords(j,:) = mean(ws.topPix(ws.poleUpFrames,:));
             apPosition(j) = bSession.trials{tt_ind(j)}.motorApPosition;
         end
