@@ -87,10 +87,6 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
 % 2018/07/09 JK
 % Intersection is calculated from raw tracker data and pole edge, not from fitted data points since whisker tracking after the pole edge is not reliable
 % So, moved from WST to WT
-% 2018/08/08? JK (at least before 8/11)
-% C = [xall+1; yall+1] is changed to [xall;yall] (this is correct coordinate)
-% Checking if this affects hyperplane calculation (2018/09/09)
-
             if length(obj.trajectoryIDs) ~= 2
                 error('Number of whisker should be 2')
             end            
@@ -107,7 +103,8 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
                             xall = xall';
                             yall = obj.trackerData{i}{frame_ind}{5};
                             yall = yall';
-                            C = [xall;yall]; % [y;x] order is changed to [x;y] for consistency 2018/06/13 JK                        
+                            C = [xall+1;yall+1]; % [y;x] order is changed to [x;y] for consistency 2018/06/13 JK
+                            % whisker tracker's coordinate is based on zero (According to WhiskerTrial comments)
 
                             if ismember(k,obj.poleMovingFrames)
                                 currAxis = obj.poleAxesMoving{obj.poleMovingFrames==k,i};
