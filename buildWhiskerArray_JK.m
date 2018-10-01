@@ -1,7 +1,7 @@
 %% basic information
 % mice = {'JK039','JK041'};
-% mice = {'JK052','JK053','JK054','JK056'};
-mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
+mice = {'JK052','JK053','JK054','JK056'};
+% mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
 % mice = {'JK052'};
 videoloc = 'D:\WhiskerVideo\';
 if strcmp(videoloc(end),filesep)
@@ -11,7 +11,7 @@ else
 end
 behavior_base_dir = 'D:\SoloData\';
 
-ppm = 17.81/2;
+ppm = 17.81;
             % 'pxPerMm': 17.81002608 for telecentric lens
             % /2 for mice <= JK041, because of binning.
 % comment out when doing for all of the sessions in the mouse directory
@@ -40,7 +40,8 @@ touchKappaSTDthreshold = 2;
 %%
 %%
 %%
-sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
+% sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
+sessions = {[3,4,21:23,25,26],[3],[3,4,25,26],[3:5]};
 
 sessions_pre = {[],[],[],[],[],[],[],[],[],[],[],[]};
 sessions_piezo = {[],[],[],[],[],[],[],[],[],[],[],[]};
@@ -54,7 +55,7 @@ doWT = 0;
 testPoleUp = 0;
 doWST = 0;
 makeTouchHyperplane = 0;
-doWL = 1;
+doWL = 0;
 do3D = 1;
 
 %% Define follicle points and masks
