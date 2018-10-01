@@ -1,18 +1,19 @@
 %% basic information
-mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
+% mice = {'JK039','JK041'};
 % mice = {'JK052','JK053','JK054','JK056'};
-% mice = {'JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
+mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
 % mice = {'JK052'};
-videoloc = 'D:\Jinho_works\Data\WhiskerVideo\';
+videoloc = 'D:\WhiskerVideo\';
 if strcmp(videoloc(end),filesep)
     whisker_d = videoloc;
 else
     whisker_d = ([videoloc filesep]);
 end
-behavior_base_dir = 'D:\Jinho_works\Data\SoloData\';
+behavior_base_dir = 'D:\SoloData\';
 
 ppm = 17.81/2;
             % 'pxPerMm': 17.81002608 for telecentric lens
+            % /2 for mice <= JK041, because of binning.
 % comment out when doing for all of the sessions in the mouse directory
 maskmm = 1; % mm from the face to draw the mask
 facePosition = 'bottom';
@@ -39,15 +40,13 @@ touchKappaSTDthreshold = 2;
 %%
 %%
 %%
-% sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
-sessions = {[],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
-% sessions = {[3]};
+sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
 
-sessions_pre = {[],[1,2],[1,2],[1,2],[1,2],[1,2],[1,2],[1,2]};
-sessions_piezo = {[1],[1,2],[1,2],[1,2],[1,2],[1,2],[1,2],[1,2]};
-sessions_spont = {[1,2],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3]};
+sessions_pre = {[],[],[],[],[],[],[],[],[],[],[],[]};
+sessions_piezo = {[],[],[],[],[],[],[],[],[],[],[],[]};
+sessions_spont = {[],[],[],[],[],[],[],[],[],[],[],[]};
 
-all_session = 1; % 1 if using all sessions, 0 if using selected sessions
+all_session = 0; % 1 if using all sessions, 0 if using selected sessions
 
 DoFollicle = 0;
 DoRemeasure = 0;
@@ -55,7 +54,7 @@ doWT = 0;
 testPoleUp = 0;
 doWST = 0;
 makeTouchHyperplane = 0;
-doWL = 0;
+doWL = 1;
 do3D = 1;
 
 %% Define follicle points and masks

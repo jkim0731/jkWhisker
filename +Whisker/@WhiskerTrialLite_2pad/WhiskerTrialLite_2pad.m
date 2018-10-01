@@ -381,8 +381,8 @@ classdef WhiskerTrialLite_2pad < handle
                 tempProtFrames = find(protractionDistance > 0);
                 retractionDistance = obj.distance_and_side_from_line(intersect_2d, obj.retractionHP);
                 tempRetFrames = find(retractionDistance < 0);
-                inFrames = setdiff(1:length(noNaNInd), union(tempProtFrames, tempRetFrames));
-                inChunks = obj.get_chunks(inFrames);
+                inFrames = setdiff(1:length(noNaNInd), union(tempProtFrames, tempRetFrames)); % frames where the whisker-touch plane intersection is inside the touch boundary (candidates for touch frames)
+                inChunks = obj.get_chunks(inFrames); % touch frames are chunked into consecutive frames
                 if ~isempty(inChunks)
 %                     if inChunks{1}(1) == 1
 %                         if abs(obj.distance_and_side_from_line(intersect_2d(inChunks{1}(end),:), obj.protractionHP)) ...
@@ -411,12 +411,12 @@ classdef WhiskerTrialLite_2pad < handle
 %                     end
                     prodist = cellfun(@(x) mean(abs(protractionDistance(x))), inChunks);
                     retdist = cellfun(@(x) mean(abs(retractionDistance(x))), inChunks);
-                    for i = 1 : length(inChunks)
+                    for i = 1 : length(inChunks) % assign each chunks into protraction or retraction area (whether the whisker is past or before the pole)
                         if ismember(inChunks{i}(1)-1, tempProtFrames)
                             tempProtFrames = [tempProtFrames; inChunks{i}];
                         elseif ismember(inChunks{i}(1)-1, tempRetFrames)
                             tempRetFrames = [tempRetFrames; inChunks{i}];
-                        elseif prodist(i) > retdist(i)
+                        elseif prodist(i) > retdist(i) % comparing average distance from either touch boundary
                             tempRetFrames = [tempRetFrames; inChunks{i}];
                         else
                             tempProtFrames = [tempProtFrames; inChunks{i}];
@@ -490,21 +490,22 @@ classdef WhiskerTrialLite_2pad < handle
                     % (1) - 1. Number of points at the distance with the densest population has more than "n" X std of all possible
                     % points between 0 and "touch boundary thickness" pixels from the boundary, when divided into "bin" pixels
                     % In case of protraction, consider only during whisking (amplitude > "amplitude threshold")
-                    closeFrames = find(protractionDistance <= obj.touchBoundaryThicknessInPix);                    
+                    closeFrames = find(protractionDistance <= obj.touchBoundaryThicknessInPix);
                     closeAdjFrames = closeFrames(find([0;diff(closeFrames)] == 1));
                     if ~isempty(closeAdjFrames)
                         [~, amplitude, ~, ~, ~, ~, phase, ~] = jkWhiskerDecomposition(obj.thetaAtBase{1});
-                        whiskingInds = [1;find([0;diff(phase)]<0); length(phase)+1];
-                        if ~isempty(whiskingInds)
+                        whiskingStartInds = [1;find([0;diff(phase)]< pi); length(phase)+1];
+                        % pi is defined as the threshold by observing the histogram of diff(phase)
+                        if ~isempty(whiskingStartInds)
                             whiskingFrames = [];
-                            for i = 1 : length(whiskingInds)-1
-                                if max(amplitude(whiskingInds(i):whiskingInds(i+1)-1)) > obj.whiskingAmpThreshold
-                                    whiskingFrames = [whiskingFrames, whiskingInds(i):whiskingInds(i+1)-1];
+                            for i = 1 : length(whiskingStartInds)-1
+                                if max(amplitude(whiskingStartInds(i):whiskingStartInds(i+1)-1)) > obj.whiskingAmpThreshold
+                                    whiskingFrames = [whiskingFrames, whiskingStartInds(i):whiskingStartInds(i+1)-1];
                                 end
                             end
                             closeProtractionDist = protractionDistance(intersect(closeAdjFrames, whiskingFrames));
                             if length(closeProtractionDist) > 1 && max(closeProtractionDist) - min(closeProtractionDist) > obj.distanceHistogramBin
-                                closeProtractionDist = round(closeProtractionDist / obj.distanceHistogramBin) * obj.distanceHistogramBin;                                
+                                closeProtractionDist = round(closeProtractionDist / obj.distanceHistogramBin) * obj.distanceHistogramBin;
                                 [N, edges] = histcounts(closeProtractionDist, [min(closeProtractionDist) : obj.distanceHistogramBin : max(closeProtractionDist)]);
                                 if max(N) > mean(N) + std(N) * obj.stdHistogramThreshold
                                     [~, maxind] = max(N);
@@ -513,7 +514,7 @@ classdef WhiskerTrialLite_2pad < handle
                                 elseif max(N) > obj.maxPointsNearHyperplane
                                     [~, maxind] = max(N);
                                     obj.prothresholdMethod = 2;
-                                    obj.protractionThreshold = ( edges(maxind) + edges(maxind+1) ) / 2 + obj.touchBoundaryBufferInPix;                                    
+                                    obj.protractionThreshold = ( edges(maxind) + edges(maxind+1) ) / 2 + obj.touchBoundaryBufferInPix;
                                 end
                             end
                         end
@@ -539,7 +540,8 @@ classdef WhiskerTrialLite_2pad < handle
                     obj.protractionTFchunksPre = obj.get_chunks(obj.protractionTouchFramesPre);
                 end
                 
-                % (2) retraction touch
+                % (2) retraction touch. This means the whisker touched the
+                % pole backwards. NOT during retraction!
                 if ~isempty( retractionDistance >= -obj.touchBoundaryThicknessInPix) % meaning when there is possible touch frames                    
                     % (2) - 1. Number of points at the distance with the densest population has more than "n" X std of all possible
                     % points between 0 and "touch boundary thickness" pixels from the boundary, when divided into "bin" pixels
@@ -622,22 +624,24 @@ classdef WhiskerTrialLite_2pad < handle
                     obj.protractionDistance = protractionDistance(tempProtFrames);
                     obj.retractionDistance = retractionDistance(tempRetFrames);
                     if ~isempty(proTF)
-                        obj.protractionTouchFrames = noNaNInd(sort(proTF));
-                        obj.protractionTFchunks = obj.get_chunks(obj.protractionTouchFrames);
+                        obj.protractionTouchFrames = noNaNInd(sort(proTF));                        
                     end
                     if ~isempty(retTF)
                         obj.retractionTouchFrames = noNaNInd(sort(retTF));
-                        obj.retractionTFchunks = obj.get_chunks(obj.retractionTouchFrames);
                     end
                 else
-                    obj.protractionTouchFrames = obj.protractionTouchFramesPre;
-                    obj.protractionTFchunks = obj.protractionTFchunksPre;
+                    obj.protractionTouchFrames = obj.protractionTouchFramesPre;                    
                     obj.retractionTouchFrames = obj.retractionTouchFramesPre;
-                    obj.retractionTFchunks = obj.retractionTFchunksPre;
                 end
-            end
                 
-
+                % final correction. Single-frame correction.
+                % 111011 -> 111111.
+                % 000100 -> 000000.
+                obj.protractionTouchFrames = obj.single_frame_correction(obj.protractionTouchFrames);
+                obj.protractionTFchunks = obj.get_chunks(obj.protractionTouchFrames);
+                obj.retractionTouchFrames = obj.single_frame_correction(obj.retractionTouchFrames);
+                obj.retractionTFchunks = obj.get_chunks(obj.retractionTouchFrames);                
+            end
             %
             %
             % for debugging
@@ -648,6 +652,16 @@ classdef WhiskerTrialLite_2pad < handle
             %
             %
             %           
+        end
+        
+        function frames = single_frame_correction(obj, frames)
+        % 111011 -> 111111. 000100 -> 000000. No change to beginning and end. 
+        % input is a vector of numbers of touch frames.
+            binaryFrames = zeros(max(frames),1);
+            binaryFrames(frames) = 1;
+            flipInds = find(abs(diff(diff(binaryFrames)))>1)+1;
+            binaryFrames(flipInds) = 1 - binaryFrames(flipInds);
+            frames = find(binaryFrames);
         end
         
         function distance = distance_and_side_from_line(obj, points, line)

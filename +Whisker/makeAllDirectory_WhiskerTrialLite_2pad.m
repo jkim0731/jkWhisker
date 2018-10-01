@@ -213,6 +213,9 @@ if ~isempty(fnall)
         end
         
         if contains(wsArray.trials{end}.sessionName, 'S') || contains(wsArray.trials{end}.sessionName, 'pre')
+            % divide into each trial type (pole angle & radial distance
+            % combination), and then assign touch thresholds again. (for
+            % those without it)
             wlArray = Whisker.WhiskerTrialLite_2padArray(wsArray.trials{end}.mouseName, wsArray.trials{end}.sessionName);                        
             protractionThresholdInds = find(cellfun(@(x) ~isempty(x.protractionThreshold), wlArray.trials));
             meanProtractionThreshold = zeros(size(p.Results.servo_distance_pair));
@@ -257,12 +260,12 @@ if ~isempty(fnall)
                     meanRetractionThreshold(i) = mean(retractionThresholds(tempInd));
                 end
             end
-            
+                        
             noProtractionThresholdTns = cellfun(@(x) ~strcmp(x.trialType, 'oo') * isempty(x.protractionThreshold) * ~isempty(x.protractionDistance) * x.trialNum, wlArray.trials);
             noProtractionThresholdTns = noProtractionThresholdTns(noProtractionThresholdTns>0);
             noRetractionThresholdTns = cellfun(@(x) ~strcmp(x.trialType, 'oo') * isempty(x.retractionThreshold) * ~isempty(x.retractionDistance) * x.trialNum, wlArray.trials);
             noRetractionThresholdTns = noRetractionThresholdTns(noRetractionThresholdTns>0);
-            changeInds = union(noProtractionThresholdTns, noRetractionThresholdTns);
+            changeInds = union(noProtractionThresholdTns, noRetractionThresholdTns); % trials that needs to be changed, because there was no threshold calculated.
             sdpair = p.Results.servo_distance_pair;
             parfor k = 1 : length(changeInds)
                 fn = num2str(changeInds(k));
@@ -322,22 +325,27 @@ if ~isempty(fnall)
                     wl.retractionDistance = retractionDistance(tempRetFrames);
                     if ~isempty(proTF)
                         wl.protractionTouchFrames = noNaNInd(sort(proTF));
-                        wl.protractionTFchunks = wl.get_chunks(wl.protractionTouchFrames);
                     end
                     if ~isempty(retTF)
                         wl.retractionTouchFrames = noNaNInd(sort(retTF));
-                        wl.retractionTFchunks = wl.get_chunks(wl.retractionTouchFrames);
                     end
                 else
                     wl.protractionTouchFrames = wl.protractionTouchFramesPre;
-                    wl.protractionTFchunks = wl.protractionTFchunksPre;
                     wl.retractionTouchFrames = wl.retractionTouchFramesPre;
-                    wl.retractionTFchunks = wl.retractionTFchunksPre;
                 end
                 
+                % final correction. Single-frame correction.
+                % 111011 -> 111111.
+                % 000100 -> 000000.
+                wl.protractionTouchFrames = wl.single_frame_correction(wl.protractionTouchFrames);
+                wl.protractionTFchunks = wl.get_chunks(wl.protractionTouchFrames);
+                wl.retractionTouchFrames = wl.single_frame_correction(wl.retractionTouchFrames);
+                wl.retractionTFchunks = wl.get_chunks(wl.retractionTouchFrames);                
+
                 outfn = [fn '_WL_2pad.mat'];
                 pctsave(outfn,wl);
-            end            
+            end
+            
         end
     else
         for k=1:nfiles
@@ -495,18 +503,22 @@ if ~isempty(fnall)
                     wl.retractionDistance = retractionDistance(tempRetFrames);
                     if ~isempty(proTF)
                         wl.protractionTouchFrames = noNaNInd(sort(proTF));
-                        wl.protractionTFchunks = wl.get_chunks(wl.protractionTouchFrames);
                     end
                     if ~isempty(retTF)
                         wl.retractionTouchFrames = noNaNInd(sort(retTF));
-                        wl.retractionTFchunks = wl.get_chunks(wl.retractionTouchFrames);
                     end
                 else
                     wl.protractionTouchFrames = wl.protractionTouchFramesPre;
-                    wl.protractionTFchunks = wl.protractionTFchunksPre;
                     wl.retractionTouchFrames = wl.retractionTouchFramesPre;
-                    wl.retractionTFchunks = wl.retractionTFchunksPre;
                 end
+                
+                % final correction. Single-frame correction.
+                % 111011 -> 111111.
+                % 000100 -> 000000.
+                wl.protractionTouchFrames = wl.single_frame_correction(wl.protractionTouchFrames);
+                wl.protractionTFchunks = wl.get_chunks(wl.protractionTouchFrames);
+                wl.retractionTouchFrames = wl.single_frame_correction(wl.retractionTouchFrames);
+                wl.retractionTFchunks = wl.get_chunks(wl.retractionTouchFrames);
                 
                 outfn = [fn '_WL_2pad.mat'];
                 save(outfn,wl);
