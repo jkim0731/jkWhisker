@@ -656,11 +656,19 @@ classdef WhiskerTrialLite_2pad < handle
         
         function frames = single_frame_correction(obj, frames)
         % 111011 -> 111111. 000100 -> 000000. No change to beginning and end. 
-        % input is a vector of numbers of touch frames.
+        % input is a vector of numbers of touch frames.            
+            % 101->111 first, and then 010->000
             binaryFrames = zeros(max(frames),1);
             binaryFrames(frames) = 1;
-            flipInds = find(abs(diff(diff(binaryFrames)))>1)+1;
-            binaryFrames(flipInds) = 1 - binaryFrames(flipInds);
+            flipInds = find( diff(diff(binaryFrames)) > 1) + 1;
+            binaryFrames(flipInds) = 1 - binaryFrames(flipInds);                
+            frames = find(binaryFrames);
+            
+            % 010->000
+            binaryFrames = zeros(max(frames),1);
+            binaryFrames(frames) = 1;
+            flipInds = find( diff(diff(binaryFrames)) < -1) + 1;
+            binaryFrames(flipInds) = 1 - binaryFrames(flipInds);                
             frames = find(binaryFrames);
         end
         
