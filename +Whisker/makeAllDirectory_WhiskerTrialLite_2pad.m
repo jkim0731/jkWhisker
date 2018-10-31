@@ -116,11 +116,11 @@ if ~isempty(inds)
         for i = 1 : length(tns)
             delfnlist = dir([num2str(tns(i)), '.*']);
             for j = 1 : length(delfnlist)
-                delte(delfnlist(j).name)
+                delete(delfnlist(j).name)
             end
             delfnlist = dir([num2str(tns(i)), '_*.*']);
             for j = 1 : length(delfnlist)
-                delte(delfnlist(j).name)
+                delete(delfnlist(j).name)
             end
         end
         wsArray = Whisker.WhiskerSignalTrialArray_2pad(d);
