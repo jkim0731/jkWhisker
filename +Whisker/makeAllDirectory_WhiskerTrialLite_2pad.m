@@ -109,12 +109,31 @@ currentDir = pwd;
 cd(d)
 
 wsArray = Whisker.WhiskerSignalTrialArray_2pad(d);
-
-if ~isempty(p.Results.behavior) && ~isempty(p.Results.touch_hp)
-    mirrorAngle = nanmean(cellfun(@(x) x.mirrorAngle, wsArray.trials));
-else
-    mirrorAngle = 0;
+inds = union(find(cellfun(@(x) isempty(x.nof), wsArray.trials)), find(cellfun(@(x) isempty(x.poleMovingFrames), wsArray.trials)));
+if ~isempty(inds)
+    if length(inds) < 10
+        tns = cellfun(@(x) x.trialNum, wsArray.trials(inds));
+        for i = 1 : length(tns)
+            delfnlist = dir([num2str(tns(i)), '.*']);
+            for j = 1 : length(delfnlist)
+                delte(delfnlist(j).name)
+            end
+            delfnlist = dir([num2str(tns(i)), '_*.*']);
+            for j = 1 : length(delfnlist)
+                delte(delfnlist(j).name)
+            end
+        end
+        wsArray = Whisker.WhiskerSignalTrialArray_2pad(d);
+    else
+        error('Too many wrong videos')
+    end
 end
+
+%%
+%% Remove this in the future. This doesn't do anything. 2108/10/28 JK
+mirrorAngle = 0;
+%%
+%%
 fwkappa = [];
 if contains(wsArray.trials{end}.sessionName, 'S') || contains(wsArray.trials{end}.sessionName, 'pre')
     for i = 1 : length(wsArray.trials)
