@@ -170,17 +170,18 @@ classdef Whisker3D_2pad < handle
                 for k = i+1:j
                     plot3(obj.trackerData{k}(:,1), obj.trackerData{k}(:,2), obj.trackerData{k}(:,3), 'color', [0.7 0.7 0.7])                    
                 end                
-                plot3(obj.trackerData{i}(:,1), obj.trackerData{i}(:,2), obj.trackerData{i}(:,3), 'k-', 'linewidth', 2),
-                plot3(obj.trackerData{i}(1,1), obj.trackerData{i}(1,2), obj.trackerData{i}(1,3), 'r.', 'markersize', 20),
+                plot3(obj.trackerData{i}(:,1), obj.trackerData{i}(:,2), obj.trackerData{i}(:,3), 'k-', 'linewidth', 4),
+                plot3(obj.trackerData{i}(1,1), obj.trackerData{i}(1,2), obj.trackerData{i}(1,3), 'r.', 'markersize', 25),
                 hold off
                 title({'Navigate using keyboard'; ['Trial # ', obj.trackerFileName]; ['Frame # ', num2str(round(obj.time(i)/obj.framePeriodInSec))]});
                 xlabel('Rostro-caudal'), ylabel('Medio-lateral'), zlabel('Dorso-ventral')
+                set(gca, 'linewidth', 3, 'fontweight', 'bold', 'fontsize', 15)
                 view(az,el), xlim(xl), ylim(yl), zlim(zl);
-                [i, az, el] = keyboard_navigation_3d(i, length(obj.trackerData));
+                [i, az, el] = obj.keyboard_navigation_3d(i, length(obj.trackerData));
             end
         end
         
-        function [next, az, el] = keyboard_navigation_3d(curr, maxnum)
+        function [next, az, el] = keyboard_navigation_3d(obj, curr, maxnum)
             w = 0;
             while w < 1
                 w = waitforbuttonpress;

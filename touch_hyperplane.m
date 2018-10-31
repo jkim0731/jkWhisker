@@ -2,8 +2,8 @@
 
 %% Setup whisker array builder 
 behavior_base_dir = 'Y:\Whiskernas\JK\SoloData\';
-whisker_base_dir = 'L:\tracked\';
-mice = {'JK052'};
+whisker_base_dir = 'Y:\Whiskernas\JK\whisker\tracked\';
+mice = {'JK025'};
 %%%%%%%%%%%%%%%%%%%%%% manual selection
 % steps = {[10:70],[20:80],[140:200],[140:200]};
 %%%%%%%%%%%%%%%%%%%%%% try as short as possible to reduce time next step
@@ -12,7 +12,8 @@ mice = {'JK052'};
 % sessionNum = [7];
 
 % sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};  
-sessions = {[7],[16,17],[21,22],[17,18,91],[],[],[22:25],[]};
+% sessions = {[7],[16,17],[21,22],[17,18,91],[],[],[22:25],[]};
+sessions = {[2]};
 useGPU = 0;
 options.WindowStyle = 'normal';
 optionsFin.WindowStyle = 'normal';
@@ -138,7 +139,7 @@ for mi = 1 : length(mice)
         end
         
         %%
-        for iservo = 2 : length(servo_values)
+        for iservo = 1 : length(servo_values)
 %         for iservo = 4 
             for idist = 1 : length(distance_values)
 %             for idist = 4 : length(distance_values)                
@@ -244,9 +245,9 @@ for mi = 1 : length(mice)
  % 487, 509, 536, 550, 553, 587, 603, 625, 627, 630, 662 
     
     
-                        zvalue = 86500;
-                        tnumHigher = intersect(tt_ind, find(cellfun(@(x) x.motorApPosition < zvalue, bSession.trials)))
-                        tnumLower = intersect(tt_ind, find(cellfun(@(x) x.motorApPosition > zvalue,   bSession.trials)))
+%                         zvalue = 86500;
+%                         tnumHigher = intersect(tt_ind, find(cellfun(@(x) x.motorApPosition < zvalue, bSession.trials)))
+%                         tnumLower = intersect(tt_ind, find(cellfun(@(x) x.motorApPosition > zvalue,   bSession.trials)))
 %                         zvalue = 100800;
 %                         tnum = intersect(tt_ind, find(cellfun(@(x) abs(x.motorApPosition - zvalue) < 50, bSession.trials)))
 %                         tnum_ws = find(cellfun(@(x) x.trialNum == tnum(1), ws.trials))
