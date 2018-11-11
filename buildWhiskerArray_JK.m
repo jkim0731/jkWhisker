@@ -1,15 +1,26 @@
 %% basic information
+
+%%
+%% Error sessions!!
+% 025-22
+% Need to resume from 027-03. for now, run pre sessions first
+%%
+%%
+%%
+
+
 % mice = {'JK039','JK041'};
 mice = {'JK052','JK053','JK054','JK056'};
 % mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
-% mice = {'JK052'};
-videoloc = 'D:\WhiskerVideo\';
+% mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041','JK052','JK053','JK054','JK056'};
+% mice = {'JK030','JK036','JK037','JK038','JK039','JK041'};
+videoloc = 'C:\JK\';
 if strcmp(videoloc(end),filesep)
     whisker_d = videoloc;
 else
     whisker_d = ([videoloc filesep]);
 end
-behavior_base_dir = 'D:\SoloData\';
+behavior_base_dir = 'Y:\Whiskernas\JK\SoloData\';
 
 ppm = 17.81;
             % 'pxPerMm': 17.81002608 for telecentric lens
@@ -20,7 +31,7 @@ facePosition = 'bottom';
 rInMm = 2; % mm from the mask along the whisker to calculate delta kappa
 follicleSkip = 'skip'; % 'skip' or 'noskip'
 remeasureSkip = 'skip'; % 'skip' or 'noskip'
-touchHyperplaneSkip = 'skip';
+touchHyperplaneSkip = 'noskip';
 videoFreq = 311.24; % frequency of whisker video imaging. If 0, then use timestamp file (calculated from .seq file)
 barRadius = 0.3; % in mm
 
@@ -41,9 +52,13 @@ touchKappaSTDthreshold = 2;
 %%
 %%
 % sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
-sessions = {[3,4,21:23,25,26],[3],[3,4,25,26],[3:5]};
+% sessions = {[3,4,21:23,25,26],[3],[3,4,25,26],[3:5]};
 
-sessions_pre = {[],[],[],[],[],[],[],[],[],[],[],[]};
+% sessions = {[],[4:100],[1:100],[1:100],[1:100],[1:100],[1:100],[1:100]};
+sessions_pre = {[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[],[]};
+
+sessions = {[],[],[],[],[],[],[],[]};
+% sessions_pre = {[],[],[],[],[],[],[],[],[],[],[],[]};
 sessions_piezo = {[],[],[],[],[],[],[],[],[],[],[],[]};
 sessions_spont = {[],[],[],[],[],[],[],[],[],[],[],[]};
 
@@ -55,7 +70,7 @@ doWT = 0;
 testPoleUp = 0;
 doWST = 0;
 makeTouchHyperplane = 0;
-doWL = 0;
+doWL = 1;
 do3D = 1;
 
 %% Define follicle points and masks

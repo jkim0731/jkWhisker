@@ -286,6 +286,7 @@ if ~isempty(fnall)
             noRetractionThresholdTns = noRetractionThresholdTns(noRetractionThresholdTns>0);
             changeInds = union(noProtractionThresholdTns, noRetractionThresholdTns); % trials that needs to be changed, because there was no threshold calculated.
             sdpair = p.Results.servo_distance_pair;
+            
             parfor k = 1 : length(changeInds)
                 fn = num2str(changeInds(k));
                 disp(['2nd processing ''_WL_2pad.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
@@ -362,7 +363,7 @@ if ~isempty(fnall)
                 wl.retractionTFchunks = wl.get_chunks(wl.retractionTouchFrames);                
 
                 outfn = [fn '_WL_2pad.mat'];
-                pctsave(outfn,wl);
+                pctsave(outfn,wl)
             end
             
         end

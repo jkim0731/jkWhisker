@@ -3,7 +3,7 @@
 %% Setup whisker array builder 
 behavior_base_dir = 'Y:\Whiskernas\JK\SoloData\';
 whisker_base_dir = 'Y:\Whiskernas\JK\whisker\tracked\';
-mice = {'JK025'};
+mice = {'JK025', 'JK027', 'JK030', 'JK036', 'JK037', 'JK038', 'JK039', 'JK041', 'JK052', 'JK053', 'JK054', 'JK056'};
 %%%%%%%%%%%%%%%%%%%%%% manual selection
 % steps = {[10:70],[20:80],[140:200],[140:200]};
 %%%%%%%%%%%%%%%%%%%%%% try as short as possible to reduce time next step
