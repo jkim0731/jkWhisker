@@ -24,12 +24,12 @@ classdef Whisker3D_2pad < handle
         poleUpFrames = []; % Inherited from WhiskerSignalTrial. first timepoint is 1, not 0. 2017/04/13 JK
         poleMovingFrames = [];
         mirrorAngle = 0;
-        
+        cameraAngle = 0; % for error until JK056 (4.2 degrees)
         
         time = [];
-        topKappa = [];
+        kappaH = []; % horizaontal kappa
         theta = []; % horizontal angle (top angle)
-        frontKappa = [];
+        kappaV = []; % vertical kappa
         phi = []; % elevation angle (front angle)
         zeta = []; % roll angle, calculated by tangent line from the mask
         
@@ -73,6 +73,12 @@ classdef Whisker3D_2pad < handle
             obj.poleUpFrames = ws.poleUpFrames;
             obj.poleMovingFrames = ws.poleMovingFrames;            
             obj.mirrorAngle = ws.mirrorAngle;
+            R = [cosd(-obj.mirrorAngle) -sind(-obj.mirrorAngle); sind(-obj.mirrorAngle) cosd(-obj.mirrorAngle)]; % rotation matrix in top view
+            
+            % Compensating for camera angle error before 2018/11/13
+            if strcmp(obj.mouseName(1:2), 'JK') && str2double(obj.mouseName(3:end)) < 60
+                obj.cameraAngle = 4.2;
+            end
             
             obj.time = intersect(ws.time{1}, ws.time{2});
             
@@ -107,9 +113,11 @@ classdef Whisker3D_2pad < handle
                             dist = Ptop(2) - y(j); % lateral distance from the mask, calculated from the top-view
                             line = [1, vwidth; Pfront(2) - dist, Pfront(2) - dist]; % corresponding line for front-view                            
                             P = Whisker.InterX(line, whiskerFront);
-                            if size(P,2) == 1 % else, there is no intersection or more than 1 intersection, which in that case cannot correctly reconstruct 3D shape
-                                tempData(j,1) = x(j);
-                                tempData(j,2) = y(j);
+                            if size(P,2) == 1 % else, there is no intersection or more than 1 intersection, which in that case cannot correctly reconstruct 3D shape                                
+                                % projection to the axis orthogonal to the body axis. Height (j,3) does not have to change
+                                v = R * [x(j); y(j)];
+                                tempData(j,1) = v(1);
+                                tempData(j,2) = v(2);
                                 tempData(j,3) = P(1);
                             end
                         end
@@ -126,6 +134,57 @@ classdef Whisker3D_2pad < handle
                     obj.trackerData{i} = tempData{ind(i)};
                 end
             end
+            
+            % Calculating whisker kinematics
+            % 1. find the calculation point for kappas            
+            preDist = (obj.rInMm-1) * obj.pxPerMm;
+            postDist = (obj.rInMm+1) * obj.pxPerMm;
+            whiskerPixLengths = zeros(length(obj.trackerData));
+            for i = 2 : length(whiskerPixLengths)
+                whiskerPixLengths(i) = sqrt(sum((obj.trackerData{i} - obj.trackerData{i-1}).^2));
+            end            
+            prePoint = find(cumsum(whiskerPixLengths) > preDist, 1, 'first');
+            postPoint = find(cumsum(whiskerPixLengths) > postDist, 1, 'first');
+            
+            x = zeros(postPoint - prePoint + 1, 1);
+            y = zeros(postPoint - prePoint + 1, 1);
+            z = zeros(postPoint - prePoint + 1, 1);            
+            for i = 1 : size(topTrace,1)
+                x(i) = obj.trackerData{prePoint+i-1}(1);
+                y(i) = obj.trackerData{prePoint+i-1}(2);
+                z(i) = obj.trackerData{prePoint+i-1}(3);
+            end
+            
+            q = linspace(0,1);
+            px = polyfit(q,x,2);
+            py = polyfit(q,y,2);
+            pz = polyfit(q,z,2);
+            
+            % horizontal & vertical kappa
+            pxDot = polyder(px);
+            pxDoubleDot = polyder(pxDot);
+
+            pyDot = polyder(py);
+            pyDoubleDot = polyder(pyDot);
+            
+            pzDot = polyder(pz);
+            pzDoubleDot = polyder(pzDot);
+            
+            xDot = polyval(pxDot,q);
+            xDoubleDot = polyval(pxDoubleDot,q);
+
+            yDot = polyval(pyDot,q);
+            yDoubleDot = polyval(pyDoubleDot,q);
+
+            zDot = polyval(pzDot,q);
+            zDoubleDot = polyval(pzDoubleDot,q);
+            
+            obj.kappaH = (xDot.*yDoubleDot - yDot.*xDoubleDot) ./ ((xDot.^2 + yDot.^2).^(3/2)) * obj.pxPerMm; % SIGNED CURVATURE, in 1/mm.
+            obj.kappaV = (zDot.*yDoubleDot - yDot.*zDoubleDot) ./ ((zDot.^2 + yDot.^2).^(3/2)) * obj.pxPerMm; % SIGNED CURVATURE, in 1/mm.
+            
+            obj.theta = ws.get_theta_at_base(1) - obj.mirrorAngle;
+            obj.phi = ws.get_theta_at_base(2) - obj.cameraAngle;
+            
             
             % 3D fitting of the tracked Data
             obj.fit3Data = cell(length(obj.trackerData),1);
