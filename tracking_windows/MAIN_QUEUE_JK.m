@@ -13,13 +13,13 @@ DISPLAY_STATISTICS = true;
 CONVERT_ALL_VIDEOS = true;
 NUMBER_OF_RESERVED_CORES = 1;
 USE_ERROR_CHECK = true;
-base_dir = 'D:\';
+base_dir = 'L:\';
 
 % DIRECTORY LIST ----------------------------------------------------------
 %Directory to find files to convert or track
 cd(base_dir)
 dirlist = dir('JK*');
-convertVid = {true, false, true, false};
+convertVid = {false, false, false, false};
 % =========================================================================
 % Queue settings should only be changed above this line
 % =========================================================================

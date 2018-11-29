@@ -1,4 +1,4 @@
-function [nof, poleUpFrames, poleMovingFrames, poleAxesUp, poleAxesMoving, topPix, frontPix, barPos, binvavg] = pole_edge_detection(videoFn, angle, radius)
+function [nof, poleUpFrames, poleMovingFrames, poleAxesUp, poleAxesMoving, topPix, frontPix, barPos, binvavg] = pole_edge_detection(videoFn, angle, radius, pxPerMm)
 
 % Automatic detection of pole_edge from video. Both front and top view.
 % Currently only for 2pad 2017 JK
@@ -16,6 +16,9 @@ function [nof, poleUpFrames, poleMovingFrames, poleAxesUp, poleAxesMoving, topPi
 % 2018/03/06 Added automatic pole_available_frames 
 % 2018/04/11 Using imbinarize, calculating bottom-left tip pixel point for
 % pole_position estimation and calculating pole available timepoints
+% 2018/11/28 Added compensation for pole up ringing (when it hit hard,
+% which is better than soft landing because of too much time delay). 300 um
+% determined empirically (from JK070S05). It affects on and after JK070.
 %% Fixed parameters
 % targeting right top 1/4 of the whole FOV for top-view pole tracking
 wFactorTop = 0.5;
@@ -35,6 +38,8 @@ frontLinkPad = 50;
 topLinkPad = 20;
 % topExPad = 40; % sometimes top pole is divided into two, and linker gets chosen because of bulky body. To solve this, pad 0 at the top (only for top pole part)
 % Instead, choose the lower one when there are multiple objects on the top view
+
+poleRingingBuff = 0.3; % in mm
 %% Initialization
 if isnumeric(videoFn)
     v = VideoReader([num2str(videoFn),'.mp4']);
@@ -184,9 +189,11 @@ end
 
 %%        
 [n, edges] = histcounts(topPix(:,1), floor(min(topPix(:,1))):ceil(max(topPix(:,1))));
-edgeInd = find(n > max(n)/2, 1, 'last');
-poleUpPix = edges(edgeInd+1);
-% poleUpPix = mode(topPix(:,1));
+% edgeInd = find(n > max(n)/2, 1, 'last');
+% poleUpPix = edges(edgeInd+1);
+% % poleUpPix = mode(topPix(:,1));
+[~, edgeInd] = max(n);
+poleUpPix = edges(edgeInd) + poleRingingBuff * pxPerMm;
 
 poleUpFrames = find(topPix(:,1) <= poleUpPix, 1, 'first') : find(topPix(:,1) <= poleUpPix, 1, 'last'); % for just in case where pixel values are noisy
 poleMovingFrames = setdiff(     find(topPix(:,1)),    union(poleUpFrames,  union( find(isnan(topPix(:,1))), find(isnan(frontPix(:,1))) )  )     );

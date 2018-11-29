@@ -9,12 +9,8 @@
 %%
 
 
-% mice = {'JK039','JK041'};
-mice = {'JK052','JK053','JK054','JK056'};
-% mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
-% mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041','JK052','JK053','JK054','JK056'};
-% mice = {'JK030','JK036','JK037','JK038','JK039','JK041'};
-videoloc = 'C:\JK\';
+mice = {'JK070'};
+videoloc = 'L:\tracked\';
 if strcmp(videoloc(end),filesep)
     whisker_d = videoloc;
 else
@@ -55,11 +51,11 @@ touchKappaSTDthreshold = 2;
 % sessions = {[3,4,21:23,25,26],[3],[3,4,25,26],[3:5]};
 
 % sessions = {[],[4:100],[1:100],[1:100],[1:100],[1:100],[1:100],[1:100]};
-sessions_pre = {[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[],[]};
+sessions_pre = {[],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[],[]};
 
-sessions = {[],[],[],[],[],[],[],[]};
+sessions = {[2:6],[],[],[],[],[],[],[]};
 % sessions_pre = {[],[],[],[],[],[],[],[],[],[],[],[]};
-sessions_piezo = {[],[],[],[],[],[],[],[],[],[],[],[]};
+sessions_piezo = {[2],[],[],[],[],[],[],[],[],[],[],[]};
 sessions_spont = {[],[],[],[],[],[],[],[],[],[],[],[]};
 
 all_session = 0; % 1 if using all sessions, 0 if using selected sessions
@@ -68,10 +64,10 @@ DoFollicle = 0;
 DoRemeasure = 0;
 doWT = 0;
 testPoleUp = 0;
-doWST = 0;
-makeTouchHyperplane = 0;
+doWST = 1;
+makeTouchHyperplane = 1;
 doWL = 1;
-do3D = 1;
+do3D = 0;
 
 %% Define follicle points and masks
 % saves follicle_n_mask.mat file consists of variables 'maskx','masky','width', 'height', and 'follicle_first'

@@ -1,4 +1,4 @@
-function [copyTime, convertTime, totalFiles] = start_mp4_conversion2(varargin)
+function [copyTime, convertTime, totalFiles] = start_mp4_conversion_ae(varargin)
     % START_WHISKER_TRACKING An improved version of the mp4 converter and Janelia farm whisker tracking script
     % START_WHISKER_TRACKING(STARTDIR, ENDDIR) specifies location of current files and where to send them, defaults to working directory
     % START_WHISKER_TRACKING(STARTDIR, ENDDIR, CONVERTVIDEO) CONVERTVIDEO = 1 will convert seq -> mp4, = 0 will skip conversion

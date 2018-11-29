@@ -92,6 +92,7 @@ if totalFrameNumber > nframes_threshold
 else
     %Create and open mp4 file
     newVid = VideoWriter(mp4Name, 'MPEG-4');
+    newVid.Quality = 100;
     open(newVid)
 
     %Jump to first frame

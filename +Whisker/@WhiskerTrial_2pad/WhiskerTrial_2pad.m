@@ -56,7 +56,9 @@ classdef WhiskerTrial_2pad < Whisker.WhiskerTrial
             obj.barRadius = p.Results.barRadius; % in mm
             obj.pxPerMm = p.Results.pxPerMm; 
             if ~strcmp(p.Results.trialType, 'oo') && ~contains(p.Results.sessionName, 'piezo') && ~contains(p.Results.sessionName, 'spont') && ~isempty(obj.angle)
-                [obj.nof, obj.poleUpFrames, obj.poleMovingFrames, obj.poleAxesUp, obj.poleAxesMoving, obj.topPix, obj.frontPix, obj.barPos, obj.binvavg] = Whisker.pole_edge_detection(obj.trackerFileName, obj.angle, obj.barRadius * obj.pxPerMm); % bar radius in # of pixels
+                [obj.nof, obj.poleUpFrames, obj.poleMovingFrames, obj.poleAxesUp, obj.poleAxesMoving, obj.topPix, obj.frontPix, obj.barPos, obj.binvavg] = Whisker.pole_edge_detection(obj.trackerFileName, obj.angle, obj.barRadius * obj.pxPerMm, obj.pxPerMm); % bar radius in # of pixels
+                % Added obj.pxPerMm to compensate for pole ringing at the
+                % beginning of Up 2018/11/28 JK
             else
                 try
                     v = VideoReader([obj.trackerFileName, '.mp4']);

@@ -28,7 +28,7 @@ if nargin >= 1
 end
 totalTStart = tic;
 
-ppm = 17.81002608/2; % for TPM telecentric lens  
+ppm = 17.81002608; % for TPM telecentric lens  
 pixDen = 1/ppm; %This is the default pixel density
 whiskerNum = 2;
 vidType = '.mp4';
