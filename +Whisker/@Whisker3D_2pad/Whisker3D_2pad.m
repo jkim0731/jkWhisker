@@ -86,6 +86,7 @@ classdef Whisker3D_2pad < handle
             [~,tdtopind] = ismember(obj.time, ws.time{1});
             [~,tdfrontind] = ismember(obj.time, ws.time{2});
             obj.trackerData = cell(length(tdtopind),1);
+            
             wpo = ws.whiskerPadOrigin;
             vwidth = ws.imagePixelDimsXY(1);
             for i = 1 : length(tdtopind)
@@ -126,14 +127,16 @@ classdef Whisker3D_2pad < handle
                         obj.trackerData{i} = tempData(isfinite(sum(tempData,2)),:);
                     end
                 end
-            end
+            end            
             ind = find(cellfun(@(x) length(x), obj.trackerData));
+            obj.follicle = zeros(ind, 3);
             if length(ind) < length(obj.time)
                 obj.time = obj.time(ind);
                 tempData = obj.trackerData;
                 obj.trackerData = cell(length(ind),1);
                 for i = 1 : length(ind)
                     obj.trackerData{i} = tempData{ind(i)};
+                    obj.follicle(i,:) = obj.trackerData{i}(1,:);
                 end
             end
             
