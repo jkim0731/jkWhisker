@@ -23,7 +23,7 @@ classdef WhiskerTrialArray_2pad < handle
         % Make another constructer that takes simply a cell array of strings, each of which gives file name
         % (minus extensions) for each trial of trial array.
         
-        function obj = WhiskerTrialArray(tracker_file_name_base, file_nums, behav_trial_nums, trajectory_nums, varargin)
+        function obj = WhiskerTrialArray_2pad(tracker_file_name_base, file_nums, behav_trial_nums, trajectory_nums, varargin)
            % USAGE:
            %    obj = WhiskerTrialArray(cell_array_of_file_name_bases_with_last_element_traj_ids)
            %    obj = WhiskerTrialArray(tracker_file_name_base, file_nums, behav_trial_nums, trajectory_nums, varargin)

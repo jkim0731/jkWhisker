@@ -101,6 +101,7 @@ thPolygon = cell(length(servo_values),length(distance_values));
 
 %%
 for iservo = 1 : length(servo_values)
+% for iservo = 5
     for idist = 1 : length(distance_values) 
         %%
         tt_ind = intersect(find(cellfun(@(x) (x.servoAngle == servo_values(iservo)),bSession.trials)), find(cellfun(@(x) (x.motorDistance == distance_values(idist)),bSession.trials)));

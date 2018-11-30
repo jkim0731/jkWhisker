@@ -10,7 +10,7 @@
 
 
 mice = {'JK070'};
-videoloc = 'L:\tracked\';
+videoloc = 'E:\tracked\';
 if strcmp(videoloc(end),filesep)
     whisker_d = videoloc;
 else
@@ -64,8 +64,8 @@ DoFollicle = 0;
 DoRemeasure = 0;
 doWT = 0;
 testPoleUp = 0;
-doWST = 1;
-makeTouchHyperplane = 1;
+doWST = 0;
+makeTouchHyperplane = 0;
 doWL = 1;
 do3D = 0;
 

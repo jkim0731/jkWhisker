@@ -109,7 +109,7 @@ currentDir = pwd;
 cd(d)
 
 wsArray = Whisker.WhiskerSignalTrialArray_2pad(d);
-inds = union(find(cellfun(@(x) isempty(x.nof), wsArray.trials)), find(cellfun(@(x) isempty(x.poleMovingFrames), wsArray.trials)));
+inds = union(find(cellfun(@(x) isempty(x.nof), wsArray.trials)), setdiff(find(cellfun(@(x) isempty(x.poleMovingFrames), wsArray.trials)), find(cellfun(@(x) strcmp(x.trialType, 'oo'), wsArray.trials)) ));
 if ~isempty(inds)
     if length(inds) < 10
         tns = cellfun(@(x) x.trialNum, wsArray.trials(inds));
@@ -541,7 +541,7 @@ if ~isempty(fnall)
                 wl.retractionTFchunks = wl.get_chunks(wl.retractionTouchFrames);
                 
                 outfn = [fn '_WL_2pad.mat'];
-                save(outfn,wl);
+                save(outfn,'wl');
             end
         end
     end

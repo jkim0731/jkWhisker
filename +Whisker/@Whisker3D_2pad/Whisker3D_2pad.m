@@ -88,41 +88,43 @@ classdef Whisker3D_2pad < handle
             obj.trackerData = cell(length(tdtopind),1);
             wpo = ws.whiskerPadOrigin;
             vwidth = ws.imagePixelDimsXY(1);
-            for i = 1 : length(tdtopind)                
-                x = ws.trackerData{1}{tdtopind(i)}{4};
-                y = ws.trackerData{1}{tdtopind(i)}{5};
-                z = ws.trackerData{2}{tdfrontind(i)}{4};
-                w = ws.trackerData{2}{tdfrontind(i)}{5};
-                whiskerTop = [x'; y'];
-                maskTop = [polyval(ws.polyFitsMask{1}{1},linspace(-0.3,1.3)); polyval(ws.polyFitsMask{1}{2},linspace(-0.3,1.3))];
-                whiskerFront = [z'; w'];
-                maskFront = [polyval(ws.polyFitsMask{2}{1},linspace(-0.3,1.3)); polyval(ws.polyFitsMask{2}{2},linspace(-0.3,1.3))];
-                
-                Ptop = Whisker.InterX(whiskerTop, maskTop);
-                Pfront = Whisker.InterX(whiskerFront, maskFront);
-                
-                tempData = NaN(length(x),3);
-                if ~isempty(Ptop) && ~isempty(Pfront) % only consider where tracking data intersects with the mask in both views                    
-                    if sqrt(sum((wpo-[x(end) y(end)]).^2)) < sqrt(sum((wpo-[x(1) y(1)]).^2))
-                        % c(q_max) is closest to whisker pad origin, so reverse the (x,y) sequence
-                        x = x(end:-1:1);
-                        y = y(end:-1:1);
-                    end
-                    for j = 1 : length(x)
-                        if y(j) <= Ptop(2)                            
-                            dist = Ptop(2) - y(j); % lateral distance from the mask, calculated from the top-view
-                            line = [1, vwidth; Pfront(2) - dist, Pfront(2) - dist]; % corresponding line for front-view                            
-                            P = Whisker.InterX(line, whiskerFront);
-                            if size(P,2) == 1 % else, there is no intersection or more than 1 intersection, which in that case cannot correctly reconstruct 3D shape                                
-                                % projection to the axis orthogonal to the body axis. Height (j,3) does not have to change
-                                v = R * [x(j); y(j)];
-                                tempData(j,1) = v(1);
-                                tempData(j,2) = v(2);
-                                tempData(j,3) = P(1);
+            for i = 1 : length(tdtopind)
+                if tdtopind(i) && tdfrontind(i)
+                    x = ws.trackerData{1}{tdtopind(i)}{4};
+                    y = ws.trackerData{1}{tdtopind(i)}{5};
+                    z = ws.trackerData{2}{tdfrontind(i)}{4};
+                    w = ws.trackerData{2}{tdfrontind(i)}{5};
+                    whiskerTop = [x'; y'];
+                    maskTop = [polyval(ws.polyFitsMask{1}{1},linspace(-0.3,1.3)); polyval(ws.polyFitsMask{1}{2},linspace(-0.3,1.3))];
+                    whiskerFront = [z'; w'];
+                    maskFront = [polyval(ws.polyFitsMask{2}{1},linspace(-0.3,1.3)); polyval(ws.polyFitsMask{2}{2},linspace(-0.3,1.3))];
+
+                    Ptop = Whisker.InterX(whiskerTop, maskTop);
+                    Pfront = Whisker.InterX(whiskerFront, maskFront);
+
+                    tempData = NaN(length(x),3);
+                    if ~isempty(Ptop) && ~isempty(Pfront) % only consider where tracking data intersects with the mask in both views                    
+                        if sqrt(sum((wpo-[x(end) y(end)]).^2)) < sqrt(sum((wpo-[x(1) y(1)]).^2))
+                            % c(q_max) is closest to whisker pad origin, so reverse the (x,y) sequence
+                            x = x(end:-1:1);
+                            y = y(end:-1:1);
+                        end
+                        for j = 1 : length(x)
+                            if y(j) <= Ptop(2)                            
+                                dist = Ptop(2) - y(j); % lateral distance from the mask, calculated from the top-view
+                                line = [1, vwidth; Pfront(2) - dist, Pfront(2) - dist]; % corresponding line for front-view                            
+                                P = Whisker.InterX(line, whiskerFront);
+                                if size(P,2) == 1 % else, there is no intersection or more than 1 intersection, which in that case cannot correctly reconstruct 3D shape                                
+                                    % projection to the axis orthogonal to the body axis. Height (j,3) does not have to change
+                                    v = R * [x(j); y(j)];
+                                    tempData(j,1) = v(1);
+                                    tempData(j,2) = v(2);
+                                    tempData(j,3) = P(1);
+                                end
                             end
                         end
+                        obj.trackerData{i} = tempData(isfinite(sum(tempData,2)),:);
                     end
-                    obj.trackerData{i} = tempData(isfinite(sum(tempData,2)),:);
                 end
             end
             ind = find(cellfun(@(x) length(x), obj.trackerData));
@@ -136,55 +138,61 @@ classdef Whisker3D_2pad < handle
             end
             
             % Calculating whisker kinematics
-            % 1. find the calculation point for kappas            
-            preDist = (obj.rInMm-1) * obj.pxPerMm;
-            postDist = (obj.rInMm+1) * obj.pxPerMm;
-            whiskerPixLengths = zeros(length(obj.trackerData));
-            for i = 2 : length(whiskerPixLengths)
-                whiskerPixLengths(i) = sqrt(sum((obj.trackerData{i} - obj.trackerData{i-1}).^2));
-            end            
-            prePoint = find(cumsum(whiskerPixLengths) > preDist, 1, 'first');
-            postPoint = find(cumsum(whiskerPixLengths) > postDist, 1, 'first');
+            % 1. find the calculation point for kappas 
+            obj.kappaH = nan(length(ind),1);
+            obj.kappaV = nan(length(ind),1);
+            obj.theta = nan(length(ind),1);
+            obj.phi = nan(length(ind),1);
             
-            x = zeros(postPoint - prePoint + 1, 1);
-            y = zeros(postPoint - prePoint + 1, 1);
-            z = zeros(postPoint - prePoint + 1, 1);            
-            for i = 1 : size(topTrace,1)
-                x(i) = obj.trackerData{prePoint+i-1}(1);
-                y(i) = obj.trackerData{prePoint+i-1}(2);
-                z(i) = obj.trackerData{prePoint+i-1}(3);
+            for fi = 1 : length(ind)
+                preDist = (obj.rInMm-1) * obj.pxPerMm;
+                postDist = (obj.rInMm+1) * obj.pxPerMm;
+                whiskerPixLengths = zeros(length(obj.trackerData{fi}),1);
+                for i = 2 : length(whiskerPixLengths)
+                    whiskerPixLengths(i) = sqrt(sum((obj.trackerData{fi}(i,:) - obj.trackerData{fi}(i-1,:)).^2));
+                end            
+                prePoint = find(cumsum(whiskerPixLengths) > preDist, 1, 'first');
+                postPoint = find(cumsum(whiskerPixLengths) > postDist, 1, 'first');
+
+                if ~isempty(prePoint) && ~isempty(postPoint)
+                    x = obj.trackerData{fi}(prePoint:postPoint,1);
+                    y = obj.trackerData{fi}(prePoint:postPoint,2);
+                    z = obj.trackerData{fi}(prePoint:postPoint,3);
+
+                    q = linspace(0,1, postPoint-prePoint+1);
+                    px = polyfit(q',x,2);
+                    py = polyfit(q',y,2);
+                    pz = polyfit(q',z,2);
+
+                    % horizontal & vertical kappa
+                    pxDot = polyder(px);
+                    pxDoubleDot = polyder(pxDot);
+
+                    pyDot = polyder(py);
+                    pyDoubleDot = polyder(pyDot);
+
+                    pzDot = polyder(pz);
+                    pzDoubleDot = polyder(pzDot);
+
+                    xDot = polyval(pxDot,q);
+                    xDoubleDot = polyval(pxDoubleDot,q);
+
+                    yDot = polyval(pyDot,q);
+                    yDoubleDot = polyval(pyDoubleDot,q);
+
+                    zDot = polyval(pzDot,q);
+                    zDoubleDot = polyval(pzDoubleDot,q);
+
+                    kappasH = (xDot.*yDoubleDot - yDot.*xDoubleDot) ./ ((xDot.^2 + yDot.^2).^(3/2)) * obj.pxPerMm; % SIGNED CURVATURE, in 1/mm.
+                    kappasV = (zDot.*yDoubleDot - yDot.*zDoubleDot) ./ ((zDot.^2 + yDot.^2).^(3/2)) * obj.pxPerMm; % SIGNED CURVATURE, in 1/mm.
+                    midpoint = round((postPoint - prePoint)/2);
+                    obj.kappaH(fi) = kappasH(midpoint);
+                    obj.kappaV(fi) = kappasV(midpoint);
+                end
             end
             
-            q = linspace(0,1);
-            px = polyfit(q,x,2);
-            py = polyfit(q,y,2);
-            pz = polyfit(q,z,2);
-            
-            % horizontal & vertical kappa
-            pxDot = polyder(px);
-            pxDoubleDot = polyder(pxDot);
-
-            pyDot = polyder(py);
-            pyDoubleDot = polyder(pyDot);
-            
-            pzDot = polyder(pz);
-            pzDoubleDot = polyder(pzDot);
-            
-            xDot = polyval(pxDot,q);
-            xDoubleDot = polyval(pxDoubleDot,q);
-
-            yDot = polyval(pyDot,q);
-            yDoubleDot = polyval(pyDoubleDot,q);
-
-            zDot = polyval(pzDot,q);
-            zDoubleDot = polyval(pzDoubleDot,q);
-            
-            obj.kappaH = (xDot.*yDoubleDot - yDot.*xDoubleDot) ./ ((xDot.^2 + yDot.^2).^(3/2)) * obj.pxPerMm; % SIGNED CURVATURE, in 1/mm.
-            obj.kappaV = (zDot.*yDoubleDot - yDot.*zDoubleDot) ./ ((zDot.^2 + yDot.^2).^(3/2)) * obj.pxPerMm; % SIGNED CURVATURE, in 1/mm.
-            
-            obj.theta = ws.get_theta_at_base(1) - obj.mirrorAngle;
-            obj.phi = ws.get_theta_at_base(2) - obj.cameraAngle;
-            
+            obj.theta = ws.get_theta_at_base(0) - obj.mirrorAngle;
+            obj.phi = ws.get_theta_at_base(1) - obj.cameraAngle;
             
             % 3D fitting of the tracked Data
             obj.fit3Data = cell(length(obj.trackerData),1);

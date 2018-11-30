@@ -126,8 +126,26 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
                                 obj.whiskerPoleIntersection{k,i} = temp; % This is not changed, (for analysis of JK025~041), since the important one is just whiskerEdgeCoord, calculated symmetrically. 2018/06/13 JK
                                 obj.whiskerEdgeCoord(k,i) = sqrt(sum((temp'-currAxis(:,1)).^2)); % the distances from each axis origin
                             else  % extrapolate the whisker and find the intersection with pole edge
+                                q = linspace(0,1.3); % 30% stretching out. If longer is needed, it would not fit well anyway.
+                                x = polyval(obj.polyFits{i}{1}(frame_ind,:), q);
+                                y = polyval(obj.polyFits{i}{2}(frame_ind,:), q);
+                                if size(x,1) > size(x,2)
+                                    x = x'; y = y';
+                                end
+                                C = [x+1; y+1];
+                                temp = Whisker.InterX(currAxis,C);
+                                if ~isempty(temp)
+                                    temp = temp'; % row vector
+                                    if size(temp,1) > 1
+                                        temp = sortrows(temp,-2); % sort temp descending order of the second column, which is 1st dim (or ty). Changed from 1st column to 2nd 2018/06/13 JK                                    
+                                        temp = temp(1,:); % select the largest value (lowest in the video)
+                                    end
+                                    obj.whiskerPoleIntersection{k,i} = temp; % This is not changed, (for analysis of JK025~041), since the important one is just whiskerEdgeCoord, calculated symmetrically. 2018/06/13 JK
+                                    obj.whiskerEdgeCoord(k,i) = sqrt(sum((temp'-currAxis(:,1)).^2)); % the distances from each axis origin
+                                else
                                     obj.whiskerPoleIntersection{k,i} = [];
                                     obj.whiskerEdgeCoord(k,i) = NaN;
+                                end
                             end
                         else
                             obj.whiskerPoleIntersection{k,i} = [];
