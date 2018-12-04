@@ -1,11 +1,34 @@
-function [hh, amplitude, filteredSignal, midpoint, amplitudeS, midpointS, phase, phaseS] =  jkWhiskerDecomposition(theta)
+function [hh, amplitude, filteredSignal, midpoint, amplitudeS, midpointS, phase, phaseS] =  jkWhiskerDecomposition(theta, varargin)
 %% calculate whisker amplitude and midpoint
+% varargin{1} = time;
+% varargin{2} = sampleRate;
 
 sampleRate = 311;
+time = [0:length(theta)-1]/sampleRate;
 
-% make any nan thetaAtBase = mean of the surrounding points (10 on each side)
+if nargin == 2
+    time = varargin{1};
+    if length(time) ~= length(theta)
+        error('Theta and time should be same length')
+    end
+    sampleRate = 1/min(diff(time));
+elseif nargin == 3
+    sampleRate = varargin{2};
+end
+
+if abs(max(diff(time)) - 1/sampleRate) > 0.5/sampleRate
+    targetTime = 0:1/sampleRate:max(time);
+    inputTheta = theta;
+    theta = nan(length(targetTime),1);
+    inds = zeros(length(time),1);
+    for i = 1 : length(inds)
+        [~, inds(i)] = min(abs(targetTime - time(i)));
+    end
+    theta(inds) = inputTheta;
+end
+% make any nan thetaAtBase = mean of the surrounding points (3 on each side)
 try
-    theta(isnan(theta)) = nanmean(theta(repmat(find(isnan(theta)),21,1)+repmat([-10:10]',1,length(find(isnan(theta))))));
+    theta(isnan(theta)) = nanmean(theta(repmat(find(isnan(theta)),7,1)+repmat([-3:3]',1,length(find(isnan(theta))))));
 catch
     theta(isnan(theta)) = nanmean(theta);
 end

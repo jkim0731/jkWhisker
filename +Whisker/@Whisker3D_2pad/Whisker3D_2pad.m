@@ -244,8 +244,8 @@ classdef Whisker3D_2pad < handle
                 plot3(obj.trackerData{i}(1,1), obj.trackerData{i}(1,2), obj.trackerData{i}(1,3), 'r.', 'markersize', 25),
                 hold off
                 title({'Navigate using keyboard'; ['Trial # ', obj.trackerFileName]; ['Frame # ', num2str(round(obj.time(i)/obj.framePeriodInSec))]});
-                xlabel('Rostro-caudal'), ylabel('Medio-lateral'), zlabel('Dorso-ventral')
-                set(gca, 'linewidth', 3, 'fontweight', 'bold', 'fontsize', 15)
+                xlabel('Rostro-caudal'), ylabel('Medio-lateral'), zlabel('Dorso-ventral')                
+                set(gca, 'linewidth', 3, 'fontweight', 'bold', 'fontsize', 15, 'style', 'equal')
                 view(az,el), xlim(xl), ylim(yl), zlim(zl);
                 [i, az, el] = obj.keyboard_navigation_3d(i, length(obj.trackerData));
             end
