@@ -134,6 +134,8 @@ if ~isempty(fnall)
         end
         if sum(errorfn) > 0 
             errors = fnall{find(errorfn)};
+        else
+            errors = [];
         end
     else
         for k=1:nfiles
