@@ -152,7 +152,7 @@ end
 % % % %     trial_nums = p.Results.trial_nums;
 % % % % end
 
-% fnall = {'86'};
+% fnall = {'2','3'};
 nfiles = numel(fnall);
 
 

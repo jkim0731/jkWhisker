@@ -8,9 +8,10 @@
 %%
 %%
 
+mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
+% mice = {'JK025'};
 
-mice = {'JK070'};
-videoloc = 'E:\tracked\';
+videoloc = 'Y:\Whiskernas\JK\whisker\tracked\';
 if strcmp(videoloc(end),filesep)
     whisker_d = videoloc;
 else
@@ -18,7 +19,7 @@ else
 end
 behavior_base_dir = 'Y:\Whiskernas\JK\SoloData\';
 
-ppm = 17.81;
+ppm = 17.81/2;
             % 'pxPerMm': 17.81002608 for telecentric lens
             % /2 for mice <= JK041, because of binning.
 % comment out when doing for all of the sessions in the mouse directory
@@ -50,13 +51,14 @@ touchKappaSTDthreshold = 2;
 % sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
 % sessions = {[3,4,21:23,25,26],[3],[3,4,25,26],[3:5]};
 
-% sessions = {[],[4:100],[1:100],[1:100],[1:100],[1:100],[1:100],[1:100]};
+sessions = {[],[16:100],[1:100],[1:100],[1:100],[1:100],[1:100],[1:100]};
 sessions_pre = {[],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[],[]};
+sessions_spont = {[],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[],[],[],[]};
 
-sessions = {[2:6],[],[],[],[],[],[],[]};
+% sessions = {[5],[],[],[],[],[],[],[]};
 % sessions_pre = {[],[],[],[],[],[],[],[],[],[],[],[]};
-sessions_piezo = {[2],[],[],[],[],[],[],[],[],[],[],[]};
-sessions_spont = {[],[],[],[],[],[],[],[],[],[],[],[]};
+sessions_piezo = {[],[],[],[],[],[],[],[],[],[],[],[]};
+% sessions_spont = {[],[],[],[],[],[],[],[],[],[],[],[]};
 
 all_session = 0; % 1 if using all sessions, 0 if using selected sessions
 
@@ -66,8 +68,8 @@ doWT = 0;
 testPoleUp = 0;
 doWST = 0;
 makeTouchHyperplane = 0;
-doWL = 1;
-do3D = 0;
+doWL = 0;
+do3D = 1;
 
 %% Define follicle points and masks
 % saves follicle_n_mask.mat file consists of variables 'maskx','masky','width', 'height', and 'follicle_first'
@@ -1013,6 +1015,9 @@ end
 
 %% Build 3D reconstruction
 
+errorsession = {};
+errorfn = {};
+
 if do3D
     cd(whisker_d)
     if all_session == 1
@@ -1038,16 +1043,16 @@ if do3D
                 end
             end
 
-            cd(whisker_d)
-            sn_piezo = dir([mice{mi},'piezo*']);
-            for si = 1 : length(sn_piezo)
-                cd(whisker_d)
-                if sn_piezo(si).isdir
-                    [mouseName, sessionName] = strtok(sn_piezo(si).name,'piezo');
-                    wd = [whisker_d, mouseName, sessionName];
-                    Whisker.makeAllDirectory_Whisker3D_2pad(wd, 'rInMm', rInMm);
-                end
-            end
+%             cd(whisker_d)
+%             sn_piezo = dir([mice{mi},'piezo*']);
+%             for si = 1 : length(sn_piezo)
+%                 cd(whisker_d)
+%                 if sn_piezo(si).isdir
+%                     [mouseName, sessionName] = strtok(sn_piezo(si).name,'piezo');
+%                     wd = [whisker_d, mouseName, sessionName];
+%                     Whisker.makeAllDirectory_Whisker3D_2pad(wd, 'rInMm', rInMm);
+%                 end
+%             end
             
             cd(whisker_d)
             sn_spont= dir([mice{mi},'spont*']);
@@ -1069,7 +1074,11 @@ if do3D
                     sessionName = sprintf('S%02d',sessions{mi}(j));
                     if exist([mouseName, sessionName],'dir')
                         wd = [whisker_d, mouseName, sessionName];
-                        Whisker.makeAllDirectory_Whisker3D_2pad(wd, 'rInMm', rInMm);
+                        errors = Whisker.makeAllDirectory_Whisker3D_2pad(wd, 'rInMm', rInMm);
+                        if ~isempty(errors)
+                            errorsession{end+1} = sessionName;
+                            errorfn{end+1} = errors;
+                        end
                     end
                 end
             end
@@ -1080,21 +1089,25 @@ if do3D
                     cd(whisker_d)
                     if exist([mouseName, sessionName],'dir')                       
                         wd = [whisker_d, mouseName, sessionName];
-                        Whisker.makeAllDirectory_Whisker3D_2pad(wd, 'rInMm', rInMm);
+                        errors = Whisker.makeAllDirectory_Whisker3D_2pad(wd, 'rInMm', rInMm);
+                        if ~isempty(errors)
+                            errorsession{end+1} = sessionName;
+                            errorfn{end+1} = errors;
+                        end
                     end
                 end
             end
             
-            if ~isempty(sessions_piezo{mi})
-                for j = 1 : length(sessions_piezo{mi})
-                    sessionName = sprintf('piezo%d',sessions_piezo{mi}(j));
-                    cd(whisker_d)
-                    if exist([mouseName, sessionName],'dir')
-                        wd = [whisker_d, mouseName, sessionName];
-                        Whisker.makeAllDirectory_Whisker3D_2pad(wd, 'rInMm', rInMm);
-                    end
-                end
-            end
+%             if ~isempty(sessions_piezo{mi})
+%                 for j = 1 : length(sessions_piezo{mi})
+%                     sessionName = sprintf('piezo%d',sessions_piezo{mi}(j));
+%                     cd(whisker_d)
+%                     if exist([mouseName, sessionName],'dir')
+%                         wd = [whisker_d, mouseName, sessionName];
+%                         Whisker.makeAllDirectory_Whisker3D_2pad(wd, 'rInMm', rInMm);
+%                     end
+%                 end
+%             end
             
             if ~isempty(sessions_spont{mi})
                 for j = 1 : length(sessions_spont{mi})
@@ -1102,7 +1115,11 @@ if do3D
                     cd(whisker_d)
                     if exist([mouseName, sessionName],'dir')
                         wd = [whisker_d, mouseName, sessionName];
-                        Whisker.makeAllDirectory_Whisker3D_2pad(wd, 'rInMm', rInMm);
+                        errors = Whisker.makeAllDirectory_Whisker3D_2pad(wd, 'rInMm', rInMm);
+                        if ~isempty(errors)
+                            errorsession{end+1} = sessionName;
+                            errorfn{end+1} = errors;
+                        end
                     end
                 end
             end            

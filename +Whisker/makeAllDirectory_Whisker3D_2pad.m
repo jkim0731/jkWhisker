@@ -1,4 +1,4 @@
-function makeAllDirectory_Whisker3D_2pad(d,varargin)
+function errors = makeAllDirectory_Whisker3D_2pad(d,varargin)
 %
 %
 %
@@ -117,17 +117,23 @@ nfiles = length(fnall);
 
 if ~isempty(fnall)
     if exist('parfor','builtin') % Parallel Computing Toolbox is installed.
-        for k=1:nfiles
-%         parfor k=1:nfiles
+        errorfn = zeros(length(fnall),1);
+%         for k=1:nfiles
+        parfor k=1:nfiles
             fn = fnall{k};
             disp(['Processing ''_WST.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
 
             ws = pctload([fn '_WST.mat']);
-
-            w3 = Whisker.Whisker3D_2pad(ws);
-            
-            outfn = [fn '_W3_2pad.mat'];
-            pctsave(outfn,w3);
+            try
+                w3 = Whisker.Whisker3D_2pad(ws);
+                outfn = [fn '_W3_2pad.mat'];
+                pctsave(outfn,w3);
+            catch
+                errorfn(k) = 1;
+            end
+        end
+        if sum(errorfn) > 0 
+            errors = fnall{find(errorfn)};
         end
     else
         for k=1:nfiles

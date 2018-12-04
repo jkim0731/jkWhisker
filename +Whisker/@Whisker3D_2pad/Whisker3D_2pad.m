@@ -129,7 +129,7 @@ classdef Whisker3D_2pad < handle
                 end
             end            
             ind = find(cellfun(@(x) length(x), obj.trackerData));
-            obj.follicle = zeros(ind, 3);
+            obj.follicle = zeros(length(ind), 3);
             if length(ind) < length(obj.time)
                 obj.time = obj.time(ind);
                 tempData = obj.trackerData;
@@ -157,7 +157,7 @@ classdef Whisker3D_2pad < handle
                 prePoint = find(cumsum(whiskerPixLengths) > preDist, 1, 'first');
                 postPoint = find(cumsum(whiskerPixLengths) > postDist, 1, 'first');
 
-                if ~isempty(prePoint) && ~isempty(postPoint)
+                if ~isempty(prePoint) && ~isempty(postPoint) && postPoint - prePoint > 3
                     x = obj.trackerData{fi}(prePoint:postPoint,1);
                     y = obj.trackerData{fi}(prePoint:postPoint,2);
                     z = obj.trackerData{fi}(prePoint:postPoint,3);
