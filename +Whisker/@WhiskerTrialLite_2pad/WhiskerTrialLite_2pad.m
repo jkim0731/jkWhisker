@@ -531,7 +531,7 @@ classdef WhiskerTrialLite_2pad < handle
                                     obj.deltaKappa{1}(obj.protractionFrames(minDistInds)) > obj.fwkappamean + obj.touchKappaSTDthreshold * obj.fwkappastd); % meaning there IS (ARE) protraction touch frames. There can be multiple frames with min value
                                 if ~isempty(candid)
                                     obj.prothresholdMethod = 3;
-                                    obj.protractionThreshold = mode(proDist(minDistInds(candid))) + obj.touchBoundaryBufferInPix;                            
+                                    obj.protractionThreshold = mode(proDist(minDistInds(candid))) + obj.touchBoundaryBufferInPix;
                                 end
                             end
                         end

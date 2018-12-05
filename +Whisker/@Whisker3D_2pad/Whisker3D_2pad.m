@@ -193,10 +193,11 @@ classdef Whisker3D_2pad < handle
                     obj.kappaV(fi) = kappasV(midpoint);
                 end
             end
-            
-            obj.theta = ws.get_theta_at_base(0) - obj.mirrorAngle;
-            obj.phi = ws.get_theta_at_base(1) - obj.cameraAngle;
-            
+                        
+            theta = ws.get_theta_at_base(0) - obj.mirrorAngle;
+            obj.theta = theta(tdtopind);
+            phi = ws.get_theta_at_base(1) - obj.cameraAngle;
+            obj.phi = phi(tdfrontind);
             % 3D fitting of the tracked Data
             obj.fit3Data = cell(length(obj.trackerData),1);
 %             for i = 1 : length(obj.trackerData)
