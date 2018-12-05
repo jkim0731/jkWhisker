@@ -59,7 +59,7 @@ classdef Whisker3D_2pad < handle
             p.addRequired('wl', @(x) isa(x,'Whisker.WhiskerTrialLite_2pad'));
             p.addParameter('rInMm', 3, @(x) isnumeric(x) && numel(x)==1 );
        
-            p.parse(ws,varargin{:});
+            p.parse(ws,wl,varargin{:});
             
             obj.rInMm = p.Results.rInMm;
             
@@ -78,8 +78,8 @@ classdef Whisker3D_2pad < handle
             obj.poleUpFrames = ws.poleUpFrames;
             obj.poleMovingFrames = ws.poleMovingFrames;            
             
-            obj.protractionTouchChunks = wl.protractionTouchChunks;
-            obj.retractionTouchChunks = wl.retractionTouchChunks; 
+            obj.protractionTouchChunks = wl.protractionTFchunks;
+            obj.retractionTouchChunks = wl.retractionTFchunks;
 
             obj.mirrorAngle = ws.mirrorAngle;
             R = [cosd(-obj.mirrorAngle) -sind(-obj.mirrorAngle); sind(-obj.mirrorAngle) cosd(-obj.mirrorAngle)]; % rotation matrix in top view
@@ -91,7 +91,7 @@ classdef Whisker3D_2pad < handle
             end
             
             obj.time = intersect(ws.time{1}, ws.time{2});
-            
+
             % calculating 3D tracker Data
             [~,tdtopind] = ismember(obj.time, ws.time{1});
             [~,tdfrontind] = ismember(obj.time, ws.time{2});
@@ -135,12 +135,17 @@ classdef Whisker3D_2pad < handle
                                 end
                             end
                         end
-                        obj.trackerData{i} = tempData(isfinite(sum(tempData,2)),:);
-                        q = linspace(0,1);
-                        px = polyfit(q',tempData(:,1),obj.fitorder);
-                        py = polyfit(q',tempData(:,2),obj.fitorder);
-                        pz = polyfit(q',tempData(:,3),obj.fitorder);
-                        obj.fit3Data{i} = [px, py, pz];
+                        tempData = tempData(isfinite(sum(tempData,2)),:);
+                        s = cumsum(sqrt([0; diff(tempData(:,1))].^2 + [0; diff(tempData(:,2))].^2) + [0; diff(tempData(:,3))].^2);
+                        q = s ./ max(s);
+                        
+                        if max(s) > obj.rInMm * obj.pxPerMm % 3D tracking should be at least rInMm long
+                            obj.trackerData{i} = tempData;
+                            px = polyfit(q',tempData(:,1)',obj.fitorder);
+                            py = polyfit(q',tempData(:,2)',obj.fitorder);
+                            pz = polyfit(q',tempData(:,3)',obj.fitorder);
+                            obj.fit3Data{i} = [px', py', pz'];
+                        end
                     end
                 end
             end            
@@ -149,11 +154,16 @@ classdef Whisker3D_2pad < handle
             if length(ind) < length(obj.time)
                 obj.time = obj.time(ind);
                 tempData = obj.trackerData;
+                tempFit = obj.fit3Data;
                 obj.trackerData = cell(length(ind),1);
+                obj.fit3Data = cell(length(ind),1);
                 for i = 1 : length(ind)
                     obj.trackerData{i} = tempData{ind(i)};
-                    obj.follicle(i,:) = obj.trackerData{i}(1,:);
+                    obj.fit3Data{i} = tempFit{ind(i)};
                 end
+            end
+            for i = 1 : length(ind)
+                obj.follicle(i,:) = obj.trackerData{i}(1,:);
             end
             
             % Calculating whisker kinematics
@@ -264,6 +274,56 @@ classdef Whisker3D_2pad < handle
             figure, hold on,
             for i = 1 : length(obj.trackerData)
                 plot3(obj.trackerData{i}(:,1), obj.trackerData{i}(:,2), obj.trackerData{i}(:,3), '-')
+            end
+            axis equal
+        end
+        
+        function show_all_3D_polyfit(obj)
+            q = linspace(0,1);
+            figure, hold on,
+            for i = 1 : length(obj.trackerData)
+                plot3(polyval(q,obj.fit3Data{i}(:,1)), polyval(q,obj.fit3Data{i}(:,2)), polyval(q,obj.fit3Data{i}(:,3)), '-')
+            end
+            axis equal
+        end        
+        
+        function show_onebyone_3D_polyfit(obj)
+            q = linspace(0,1);
+            figure, 
+            i = 1; plot3(polyval(q,obj.fit3Data{i}(:,1)), polyval(q,obj.fit3Data{i}(:,2)), polyval(q,obj.fit3Data{i}(:,3)), 'k-'); hold on, 
+            plot3(polyval(q,obj.fit3Data{i}(1,1)), polyval(q,obj.fit3Data{i}(1,2)), polyval(q,obj.fit3Data{i}(1,3)), 'r.', 'markersize', 20); 
+            hold off, 
+            view(3);
+            [az, el] = view;
+            xl = [min(polyval(q,obj.fit3Data{i}(:,1))), max(polyval(q,obj.fit3Data{i}(:,1)))];
+            yl = [min(polyval(q,obj.fit3Data{i}(:,2))), max(polyval(q,obj.fit3Data{i}(:,2)))]; 
+            zl = [min(polyval(q,obj.fit3Data{i}(:,3))), max(polyval(q,obj.fit3Data{i}(:,3)))];
+            while( i > 0 )                
+                plot3(polyval(q,obj.fit3Data{i}(:,1)), polyval(q,obj.fit3Data{i}(:,2)), polyval(q,obj.fit3Data{i}(:,3)), 'k-', 'linewidth', 2), hold on
+                if i < 51
+                    j = 1;
+                else
+                    j = i - 50;
+                end
+                for k = j : i-1
+                    plot3(polyval(q,obj.fit3Data{k}(:,1)), polyval(q,obj.fit3Data{k}(:,2)), polyval(q,obj.fit3Data{k}(:,3)), 'color', [0.7 0.7 0.7])
+                end
+                if i > length(obj.trackerData) - 50
+                    j = length(obj.trackerData);
+                else
+                    j = i + 50;
+                end
+                for k = i+1:j
+                    plot3(polyval(q,obj.fit3Data{k}(:,1)), polyval(q,obj.fit3Data{k}(:,2)), polyval(q,obj.fit3Data{k}(:,3)), 'color', [0.7 0.7 0.7])                    
+                end                
+                plot3(polyval(q,obj.fit3Data{i}(:,1)), polyval(q,obj.fit3Data{i}(:,2)), polyval(q,obj.fit3Data{i}(:,3)), 'k-', 'linewidth', 4),
+                plot3(polyval(q,obj.fit3Data{i}(1,1)), polyval(q,obj.fit3Data{i}(1,2)), polyval(q,obj.fit3Data{i}(1,3)), 'r.', 'markersize', 25),
+                hold off
+                title({'Navigate using keyboard'; ['Trial # ', obj.trackerFileName]; ['Frame # ', num2str(round(obj.time(i)/obj.framePeriodInSec))]});
+                xlabel('Rostro-caudal'), ylabel('Medio-lateral'), zlabel('Dorso-ventral')                
+                set(gca, 'linewidth', 3, 'fontweight', 'bold', 'fontsize', 15, 'style', 'equal')
+                view(az,el), xlim(xl), ylim(yl), zlim(zl);
+                [i, az, el] = obj.keyboard_navigation_3d(i, length(obj.trackerData));
             end
         end
         

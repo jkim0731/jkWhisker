@@ -235,7 +235,7 @@ if ~isempty(fnall)
             % divide into each trial type (pole angle & radial distance
             % combination), and then assign touch thresholds again. (for
             % those without it)
-            wlArray = Whisker.WhiskerTrialLite_2padArray(wsArray.trials{end}.mouseName, wsArray.trials{end}.sessionName);                        
+            wlArray = Whisker.WhiskerTrialLite_2padArray(wsArray.trials{end}.mouseName, wsArray.trials{end}.sessionName);
             protractionThresholdInds = find(cellfun(@(x) ~isempty(x.protractionThreshold), wlArray.trials));
             meanProtractionThreshold = zeros(size(p.Results.servo_distance_pair));
             if isempty(protractionThresholdInds)

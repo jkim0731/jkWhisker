@@ -124,8 +124,9 @@ if ~isempty(fnall)
             disp(['Processing ''_WST.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
 
             ws = pctload([fn '_WST.mat']);
+            wl = pctloadwl([fn, '_WL_2pad.mat']);
             try
-                w3 = Whisker.Whisker3D_2pad(ws);
+                w3 = Whisker.Whisker3D_2pad(ws,wl);
                 outfn = [fn '_W3_2pad.mat'];
                 pctsave(outfn,w3);
             catch
@@ -143,8 +144,8 @@ if ~isempty(fnall)
             disp(['Processing ''_WST.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
 
             ws = pctload([fn '_WST.mat']);
-
-            w3 = Whisker.Whisker3D_2pad(ws);
+            wl = pctloadwl([fn, '_WL_2pad.mat']);
+            w3 = Whisker.Whisker3D_2pad(ws, wl);
             
             outfn = [fn '_W3_2pad.mat'];
             save(outfn,'w3');
@@ -159,8 +160,12 @@ function pctsave(outfn,w3)
 save(outfn,'w3');
 end
 
+
 function ws = pctload(loadfn)
 load(loadfn,'ws');
+end
+function wl = pctloadwl(loadfn)
+load(loadfn,'wl');
 end
 
 
