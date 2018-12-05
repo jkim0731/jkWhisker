@@ -237,28 +237,28 @@ classdef Whisker3D_2pad < handle
                 % Theta is 0 when perpendicular to the midline of the mouse.
                 if strcmp(ws.faceSideInImage,'top') && strcmp(ws.protractionDirection,'rightward')
                     obj.theta(fi) = atand(xDot(1) ./ yDot(1));
-                    obj.phi(fi) = atand(yDot(1) ./ zDot(1));
+                    obj.phi(fi) = atand(zDot(1) ./ yDot(1));
                 elseif strcmp(ws.faceSideInImage,'top') && strcmp(ws.protractionDirection,'leftward')
                     obj.theta(fi) = -atand(xDot(1) ./ yDot(1));
-                    obj.phi(fi) = -atand(yDot(1) ./ zDot(1));
+                    obj.phi(fi) = -atand(zDot(1) ./ yDot(1));
                 elseif strcmp(ws.faceSideInImage,'left') && strcmp(ws.protractionDirection,'downward')
                     obj.theta(fi) = atand(yDot(1) ./ xDot(1));
-                    obj.phi(fi) = atand(zDot(1) ./ yDot(1));
+                    obj.phi(fi) = atand(yDot(1) ./ zDot(1));
                 elseif strcmp(ws.faceSideInImage,'left') && strcmp(ws.protractionDirection,'upward')
                     obj.theta(fi) = -atand(yDot(1) ./ xDot(1));
-                    obj.phi(fi) = -atand(zDot(1) ./ yDot(1));
+                    obj.phi(fi) = -atand(yDot(1) ./ zDot(1));
                 elseif strcmp(ws.faceSideInImage,'right') && strcmp(ws.protractionDirection,'upward')
                     obj.theta(fi) = atand(yDot(1) ./ xDot(1)); 
-                    obj.phi(fi) = atand(zDot(1) ./ yDot(1));
+                    obj.phi(fi) = atand(yDot(1) ./ zDot(1));
                 elseif strcmp(ws.faceSideInImage,'right') && strcmp(ws.protractionDirection,'downward')
                     obj.theta(fi) = -atand(yDot(1) ./ xDot(1));
-                    obj.phi(fi) = -atand(zDot(1) ./ yDot(1));
+                    obj.phi(fi) = -atand(yDot(1) ./ zDot(1));
                 elseif strcmp(ws.faceSideInImage,'bottom') && strcmp(ws.protractionDirection,'rightward')
                     obj.theta(fi) = -atand(xDot(1) ./ yDot(1));
-                    obj.phi(fi) = -atand(yDot(1) ./ zDot(1));
+                    obj.phi(fi) = -atand(zDot(1) ./ yDot(1));
                 elseif strcmp(ws.faceSideInImage,'bottom') && strcmp(ws.protractionDirection,'leftward')
                     obj.theta(fi) = atand(xDot(1) ./ yDot(1));
-                    obj.phi(fi) = atand(yDot(1) ./ zDot(1));
+                    obj.phi(fi) = atand(zDot(1) ./ yDot(1));
                 else
                     error('Invalid value of property ''faceSideInImage'' or ''protractionDirection''')
                 end                
@@ -282,31 +282,35 @@ classdef Whisker3D_2pad < handle
             q = linspace(0,1);
             figure, hold on,
             for i = 1 : length(obj.trackerData)
-                plot3(polyval(q,obj.fit3Data{i}(:,1)), polyval(q,obj.fit3Data{i}(:,2)), polyval(q,obj.fit3Data{i}(:,3)), '-')
+                plot3(polyval(obj.fit3Data{i}(:,1),q), polyval(obj.fit3Data{i}(:,2),q), polyval(obj.fit3Data{i}(:,3),q), '-')
             end
             axis equal
         end        
         
         function show_onebyone_3D_polyfit(obj)
             q = linspace(0,1);
-            figure, 
-            i = 1; plot3(polyval(q,obj.fit3Data{i}(:,1)), polyval(q,obj.fit3Data{i}(:,2)), polyval(q,obj.fit3Data{i}(:,3)), 'k-'); hold on, 
-            plot3(polyval(q,obj.fit3Data{i}(1,1)), polyval(q,obj.fit3Data{i}(1,2)), polyval(q,obj.fit3Data{i}(1,3)), 'r.', 'markersize', 20); 
+            figure,
+            i = 1;
+            x = polyval(obj.fit3Data{i}(:,1),q);
+            y = polyval(obj.fit3Data{i}(:,2),q);
+            z = polyval(obj.fit3Data{i}(:,3),q);
+            plot3(x, y, z, 'k-'); hold on, 
+            plot3(x(1), y(1), z(1), 'r.', 'markersize', 20); 
             hold off, 
             view(3);
             [az, el] = view;
-            xl = [min(polyval(q,obj.fit3Data{i}(:,1))), max(polyval(q,obj.fit3Data{i}(:,1)))];
-            yl = [min(polyval(q,obj.fit3Data{i}(:,2))), max(polyval(q,obj.fit3Data{i}(:,2)))]; 
-            zl = [min(polyval(q,obj.fit3Data{i}(:,3))), max(polyval(q,obj.fit3Data{i}(:,3)))];
+            xl = [min(cellfun(@(x) min(x(:,1)), obj.trackerData)), max(cellfun(@(x) max(x(:,1)), obj.trackerData))];
+            yl = [min(cellfun(@(x) min(x(:,2)), obj.trackerData)), max(cellfun(@(x) max(x(:,2)), obj.trackerData))]; 
+            zl = [min(cellfun(@(x) min(x(:,3)), obj.trackerData)), max(cellfun(@(x) max(x(:,3)), obj.trackerData))];
             while( i > 0 )                
-                plot3(polyval(q,obj.fit3Data{i}(:,1)), polyval(q,obj.fit3Data{i}(:,2)), polyval(q,obj.fit3Data{i}(:,3)), 'k-', 'linewidth', 2), hold on
+                plot3(polyval(obj.fit3Data{i}(:,1),q), polyval(obj.fit3Data{i}(:,2),q), polyval(obj.fit3Data{i}(:,3),q), 'k-', 'linewidth', 2), hold on
                 if i < 51
                     j = 1;
                 else
                     j = i - 50;
                 end
                 for k = j : i-1
-                    plot3(polyval(q,obj.fit3Data{k}(:,1)), polyval(q,obj.fit3Data{k}(:,2)), polyval(q,obj.fit3Data{k}(:,3)), 'color', [0.7 0.7 0.7])
+                    plot3(polyval(obj.fit3Data{k}(:,1),q), polyval(obj.fit3Data{k}(:,2),q), polyval(obj.fit3Data{k}(:,3),q), 'color', [0.7 0.7 0.7])
                 end
                 if i > length(obj.trackerData) - 50
                     j = length(obj.trackerData);
@@ -314,14 +318,18 @@ classdef Whisker3D_2pad < handle
                     j = i + 50;
                 end
                 for k = i+1:j
-                    plot3(polyval(q,obj.fit3Data{k}(:,1)), polyval(q,obj.fit3Data{k}(:,2)), polyval(q,obj.fit3Data{k}(:,3)), 'color', [0.7 0.7 0.7])                    
+                    plot3(polyval(obj.fit3Data{k}(:,1),q), polyval(obj.fit3Data{k}(:,2),q), polyval(obj.fit3Data{k}(:,3),q), 'color', [0.7 0.7 0.7])                    
                 end                
-                plot3(polyval(q,obj.fit3Data{i}(:,1)), polyval(q,obj.fit3Data{i}(:,2)), polyval(q,obj.fit3Data{i}(:,3)), 'k-', 'linewidth', 4),
-                plot3(polyval(q,obj.fit3Data{i}(1,1)), polyval(q,obj.fit3Data{i}(1,2)), polyval(q,obj.fit3Data{i}(1,3)), 'r.', 'markersize', 25),
+                x = polyval(obj.fit3Data{i}(:,1),q);
+                y = polyval(obj.fit3Data{i}(:,2),q);
+                z = polyval(obj.fit3Data{i}(:,3),q);
+                plot3(x, y, z, 'k-', 'linewidth', 4); hold on, 
+                plot3(x(1), y(1), z(1), 'r.', 'markersize', 25);
                 hold off
                 title({'Navigate using keyboard'; ['Trial # ', obj.trackerFileName]; ['Frame # ', num2str(round(obj.time(i)/obj.framePeriodInSec))]});
                 xlabel('Rostro-caudal'), ylabel('Medio-lateral'), zlabel('Dorso-ventral')                
-                set(gca, 'linewidth', 3, 'fontweight', 'bold', 'fontsize', 15, 'style', 'equal')
+                set(gca, 'linewidth', 3, 'fontweight', 'bold', 'fontsize', 15)
+                axis equal
                 view(az,el), xlim(xl), ylim(yl), zlim(zl);
                 [i, az, el] = obj.keyboard_navigation_3d(i, length(obj.trackerData));
             end
@@ -360,7 +368,8 @@ classdef Whisker3D_2pad < handle
                 hold off
                 title({'Navigate using keyboard'; ['Trial # ', obj.trackerFileName]; ['Frame # ', num2str(round(obj.time(i)/obj.framePeriodInSec))]});
                 xlabel('Rostro-caudal'), ylabel('Medio-lateral'), zlabel('Dorso-ventral')                
-                set(gca, 'linewidth', 3, 'fontweight', 'bold', 'fontsize', 15, 'style', 'equal')
+                set(gca, 'linewidth', 3, 'fontweight', 'bold', 'fontsize', 15)
+                axis equal
                 view(az,el), xlim(xl), ylim(yl), zlim(zl);
                 [i, az, el] = obj.keyboard_navigation_3d(i, length(obj.trackerData));
             end
