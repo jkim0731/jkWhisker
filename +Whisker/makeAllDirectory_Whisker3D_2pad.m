@@ -84,7 +84,9 @@ end
 currentDir = pwd;
 cd(d)
 
-fnall = arrayfun(@(x) x.name(1:(end-8)), dir([d '*_WST.mat']),'UniformOutput',false);
+fnallwst = arrayfun(@(x) x.name(1:(end-8)), dir([d '*_WST.mat']),'UniformOutput',false);
+fnallwl = arrayfun(@(x) x.name(1:(end-12)), dir([d '*_WL_2pad.mat']),'UniformOutput',false);
+fnall = intersect(fnallwst,fnallwl);
 if ~isempty(p.Results.include_files) % Make sure files are found. If not, ignored.
     ind = ismember(p.Results.include_files,fnall);
     fnall = p.Results.include_files(ind);
@@ -105,13 +107,13 @@ if ~isempty(inBoth)
     disp(inBoth)
 end
 
-% %%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-%
-% fnall = {'163'};
-%
-%
-% %%%%%%%%%%%%%%%%%%%%%%%%%%
+% % %%%%%%%%%%%%%%%%%%%%%%%%%%
+% % 
+% % 
+% fnall = {'324','325','326','327','328','329','330','331','332','334','364'};
+% % 
+% % 
+% % %%%%%%%%%%%%%%%%%%%%%%%%%%
 
 nfiles = length(fnall);
 
@@ -134,7 +136,7 @@ if ~isempty(fnall)
             end
         end
         if sum(errorfn) > 0 
-            errors = fnall{find(errorfn)};
+            errors = fnall(find(errorfn));
         else
             errors = [];
         end

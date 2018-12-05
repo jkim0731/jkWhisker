@@ -122,23 +122,24 @@ classdef Whisker3D_2pad < handle
                     Pfront = Whisker.InterX(whiskerFront, maskFront);
 
                     tempData = NaN(length(x),3);
-                    if ~isempty(Ptop) && ~isempty(Pfront) % only consider where tracking data intersects with the mask in both views                    
+                    if ~isempty(Ptop) && ~isempty(Pfront) % only consider where tracking data intersects with the mask in both views
                         if sqrt(sum((wpo-[x(end) y(end)]).^2)) < sqrt(sum((wpo-[x(1) y(1)]).^2))
                             % c(q_max) is closest to whisker pad origin, so reverse the (x,y) sequence
                             x = x(end:-1:1);
                             y = y(end:-1:1);
                         end
                         if sqrt(sum((wpo-[z(end) w(end)]).^2)) < sqrt(sum((wpo-[z(1) w(1)]).^2))
-                            % c(q_max) is closest to whisker pad origin, so reverse the (z,w) sequence                            
+                            % c(q_max) is closest to whisker pad origin, so reverse the (z,w) sequence
                             w = w(end:-1:1);
-                        end                        
+                        end
                         if Ptop(2) - y(1) < 0 && Pfront(2) - w(1) < 0 % only when the whisker crosses the mask, from both views
                             distFromBase = zeros(length(x),1);
-                            for j = 1 : length(x)                            
+                            for j = 1 : length(x)
                                 distFromBase(j) = Ptop(2) - y(j); % lateral distance from the mask, calculated from the top-view
-                                line = [1, vwidth; Pfront(2) - distFromBase(j), Pfront(2) - distFromBase(j)]; % corresponding line for front-view                            
+                                line = [1, vwidth; Pfront(2) - distFromBase(j), Pfront(2) - distFromBase(j)]; % corresponding line for front-view
                                 P = Whisker.InterX(line, whiskerFront);
-                                if size(P,2) == 1 % else, there is no intersection or more than 1 intersection, which in that case cannot correctly reconstruct 3D shape                                
+%                                 if size(P,2) == 1 % else, there is no intersection or more than 1 intersection, which in that case cannot correctly reconstruct 3D shape
+                                if size(P,2) > 0
                                     % projection to the axis orthogonal to the body axis. Height (j,3) does not have to change
                                     v = R * [x(j); y(j)];
                                     tempData(j,1) = v(1);
@@ -148,7 +149,7 @@ classdef Whisker3D_2pad < handle
                             end
                             [~,baseInd] = nanmin(abs(distFromBase));
                             obj.base(i,:) = tempData(baseInd,:);
-                            finiteInds = find(isfinite(sum(tempData,2)));                            
+                            finiteInds = find(isfinite(sum(tempData,2)));
                             tempData = tempData(finiteInds,:);
                             obj.baseInd(i) = find(finiteInds == baseInd,1);
                             s = cumsum(sqrt([0; diff(tempData(:,1))].^2 + [0; diff(tempData(:,2))].^2) + [0; diff(tempData(:,3))].^2);
@@ -203,43 +204,45 @@ classdef Whisker3D_2pad < handle
                 end
                 % length from the first pixel of tracker data to the intersection with the mask (i.e., "base")
                 baseLength = sum(whiskerPixLengths(1:obj.baseInd(fi)));
-                obj.prePoint(fi) = find(cumsum(whiskerPixLengths) - baseLength >= preDist, 1, 'first');
-                obj.postPoint(fi) = find(cumsum(whiskerPixLengths) - baseLength >= postDist, 1, 'first');
+                if ~isempty(find(cumsum(whiskerPixLengths) - baseLength >= preDist, 1, 'first')) && ~isempty(find(cumsum(whiskerPixLengths) - baseLength >= postDist, 1, 'first'))
+                    obj.prePoint(fi) = find(cumsum(whiskerPixLengths) - baseLength >= preDist, 1, 'first');
+                    obj.postPoint(fi) = find(cumsum(whiskerPixLengths) - baseLength >= postDist, 1, 'first');
 
-                if ~isempty(obj.prePoint(fi)) && ~isempty(obj.postPoint(fi)) && obj.postPoint(fi) - obj.prePoint(fi) > 3
-                    x = obj.trackerData{fi}(obj.prePoint(fi):obj.postPoint(fi),1);
-                    y = obj.trackerData{fi}(obj.prePoint(fi):obj.postPoint(fi),2);
-                    z = obj.trackerData{fi}(obj.prePoint(fi):obj.postPoint(fi),3);
+                    if ~isempty(obj.prePoint(fi)) && ~isempty(obj.postPoint(fi)) && obj.postPoint(fi) - obj.prePoint(fi) > 3
+                        x = obj.trackerData{fi}(obj.prePoint(fi):obj.postPoint(fi),1);
+                        y = obj.trackerData{fi}(obj.prePoint(fi):obj.postPoint(fi),2);
+                        z = obj.trackerData{fi}(obj.prePoint(fi):obj.postPoint(fi),3);
 
-                    q = linspace(0,1, obj.postPoint(fi)-obj.prePoint(fi)+1);
-                    px = polyfit(q',x,2);
-                    py = polyfit(q',y,2);
-                    pz = polyfit(q',z,2);
+                        q = linspace(0,1, obj.postPoint(fi)-obj.prePoint(fi)+1);
+                        px = polyfit(q',x,2);
+                        py = polyfit(q',y,2);
+                        pz = polyfit(q',z,2);
 
-                    % 2. horizontal & vertical kappa
-                    pxDot = polyder(px);
-                    pxDoubleDot = polyder(pxDot);
+                        % 2. horizontal & vertical kappa
+                        pxDot = polyder(px);
+                        pxDoubleDot = polyder(pxDot);
 
-                    pyDot = polyder(py);
-                    pyDoubleDot = polyder(pyDot);
+                        pyDot = polyder(py);
+                        pyDoubleDot = polyder(pyDot);
 
-                    pzDot = polyder(pz);
-                    pzDoubleDot = polyder(pzDot);
+                        pzDot = polyder(pz);
+                        pzDoubleDot = polyder(pzDot);
 
-                    xDot = polyval(pxDot,q);
-                    xDoubleDot = polyval(pxDoubleDot,q);
+                        xDot = polyval(pxDot,q);
+                        xDoubleDot = polyval(pxDoubleDot,q);
 
-                    yDot = polyval(pyDot,q);
-                    yDoubleDot = polyval(pyDoubleDot,q);
+                        yDot = polyval(pyDot,q);
+                        yDoubleDot = polyval(pyDoubleDot,q);
 
-                    zDot = polyval(pzDot,q);
-                    zDoubleDot = polyval(pzDoubleDot,q);
+                        zDot = polyval(pzDot,q);
+                        zDoubleDot = polyval(pzDoubleDot,q);
 
-                    kappasH = (xDot.*yDoubleDot - yDot.*xDoubleDot) ./ ((xDot.^2 + yDot.^2).^(3/2)) * obj.pxPerMm; % SIGNED CURVATURE, in 1/mm.
-                    kappasV = (zDot.*yDoubleDot - yDot.*zDoubleDot) ./ ((zDot.^2 + yDot.^2).^(3/2)) * obj.pxPerMm; % SIGNED CURVATURE, in 1/mm.
-                    midpoint = round((obj.postPoint(fi) - obj.prePoint(fi))/2);
-                    obj.kappaH(fi) = kappasH(midpoint);
-                    obj.kappaV(fi) = kappasV(midpoint);
+                        kappasH = (xDot.*yDoubleDot - yDot.*xDoubleDot) ./ ((xDot.^2 + yDot.^2).^(3/2)) * obj.pxPerMm; % SIGNED CURVATURE, in 1/mm.
+                        kappasV = (zDot.*yDoubleDot - yDot.*zDoubleDot) ./ ((zDot.^2 + yDot.^2).^(3/2)) * obj.pxPerMm; % SIGNED CURVATURE, in 1/mm.
+                        midpoint = round((obj.postPoint(fi) - obj.prePoint(fi))/2);
+                        obj.kappaH(fi) = kappasH(midpoint);
+                        obj.kappaV(fi) = kappasV(midpoint);
+                    end
                 end
                 
                 % 3. theta and phi at the base                
@@ -473,7 +476,7 @@ classdef Whisker3D_2pad < handle
                             next = curr - 100;
                         end
 
-                    case 27 % when pressing esc                
+                    case 27 % when pressing esc
                         next = 0;
                 end
             end
