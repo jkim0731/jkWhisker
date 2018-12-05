@@ -7,8 +7,8 @@ classdef WhiskerTrialLite_2padArray < handle
     end
     
     methods
-        function obj = WhiskerTrialLite_2padArray(mouseName, sessionName)
-            
+        function obj = WhiskerTrialLite_2padArray(d, mouseName, sessionName)
+            cd(d)            
             obj.mouseName = mouseName;
             obj.sessionName = sessionName;
             fnlist = dir('*_WL_2pad.mat');

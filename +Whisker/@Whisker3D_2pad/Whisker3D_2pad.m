@@ -39,8 +39,13 @@ classdef Whisker3D_2pad < handle
         trackerData = {}; % {n}(:,1) for anterior-posterior axis, {n}(:,2) for radial axis, and {n}(:,3) for vertical axis. Starts from the mask.        
         fit3Data = {}; % same as in trackerData, except that it's for polynomial fitting (using polyfitn by John D'Errico (https://www.mathworks.com/matlabcentral/fileexchange/34765-polyfitn)
         fitorder = 5;
-        follicle = []; % (:,1) for anterior-posterior axis, (:,2) for radial axis, and (:,3) for vertical axis.
-        
+        base = []; % Base of the whisker. It is the point where whisker crosses with the mask. (:,1) for anterior-posterior axis, (:,2) for radial axis, and (:,3) for vertical axis.
+        baseInd = []; % index of the base in each trackerData frame
+%         fitBase = []; % base position with fitted 3D data
+
+        prePoint = []; % for visual confirmation
+        postPoint = [];
+
     end
     
     properties (Dependent = true)
@@ -95,9 +100,11 @@ classdef Whisker3D_2pad < handle
             % calculating 3D tracker Data
             [~,tdtopind] = ismember(obj.time, ws.time{1});
             [~,tdfrontind] = ismember(obj.time, ws.time{2});
-            obj.trackerData = cell(length(tdtopind),1);            
+            obj.trackerData = cell(length(tdtopind),1);
+            obj.base = zeros(length(obj.trackerData), 3);
+            obj.baseInd = zeros(length(obj.trackerData), 1);
             obj.fit3Data = cell(length(obj.trackerData),1);
-            
+%             obj.fitBase = zeros(length(obj.trackerData), 3);
             wpo = ws.whiskerPadOrigin;
             vwidth = ws.imagePixelDimsXY(1);
             for i = 1 : length(tdtopind)
@@ -121,10 +128,15 @@ classdef Whisker3D_2pad < handle
                             x = x(end:-1:1);
                             y = y(end:-1:1);
                         end
-                        for j = 1 : length(x)
-                            if y(j) <= Ptop(2)                            
-                                dist = Ptop(2) - y(j); % lateral distance from the mask, calculated from the top-view
-                                line = [1, vwidth; Pfront(2) - dist, Pfront(2) - dist]; % corresponding line for front-view                            
+                        if sqrt(sum((wpo-[z(end) w(end)]).^2)) < sqrt(sum((wpo-[z(1) w(1)]).^2))
+                            % c(q_max) is closest to whisker pad origin, so reverse the (z,w) sequence                            
+                            w = w(end:-1:1);
+                        end                        
+                        if Ptop(2) - y(1) < 0 && Pfront(2) - w(1) < 0 % only when the whisker crosses the mask, from both views
+                            distFromBase = zeros(length(x),1);
+                            for j = 1 : length(x)                            
+                                distFromBase(j) = Ptop(2) - y(j); % lateral distance from the mask, calculated from the top-view
+                                line = [1, vwidth; Pfront(2) - distFromBase(j), Pfront(2) - distFromBase(j)]; % corresponding line for front-view                            
                                 P = Whisker.InterX(line, whiskerFront);
                                 if size(P,2) == 1 % else, there is no intersection or more than 1 intersection, which in that case cannot correctly reconstruct 3D shape                                
                                     % projection to the axis orthogonal to the body axis. Height (j,3) does not have to change
@@ -134,66 +146,77 @@ classdef Whisker3D_2pad < handle
                                     tempData(j,3) = P(1);
                                 end
                             end
-                        end
-                        tempData = tempData(isfinite(sum(tempData,2)),:);
-                        s = cumsum(sqrt([0; diff(tempData(:,1))].^2 + [0; diff(tempData(:,2))].^2) + [0; diff(tempData(:,3))].^2);
-                        q = s ./ max(s);
-                        
-                        if max(s) > obj.rInMm * obj.pxPerMm % 3D tracking should be at least rInMm long
-                            obj.trackerData{i} = tempData;
-                            px = polyfit(q',tempData(:,1)',obj.fitorder);
-                            py = polyfit(q',tempData(:,2)',obj.fitorder);
-                            pz = polyfit(q',tempData(:,3)',obj.fitorder);
-                            obj.fit3Data{i} = [px', py', pz'];
+                            [~,baseInd] = nanmin(abs(distFromBase));
+                            obj.base(i,:) = tempData(baseInd,:);
+                            finiteInds = find(isfinite(sum(tempData,2)));                            
+                            tempData = tempData(finiteInds,:);
+                            obj.baseInd(i) = find(finiteInds == baseInd,1);
+                            s = cumsum(sqrt([0; diff(tempData(:,1))].^2 + [0; diff(tempData(:,2))].^2) + [0; diff(tempData(:,3))].^2);
+                            q = s ./ max(s);
+
+                            if max(s) > obj.rInMm * obj.pxPerMm % 3D tracking should be at least rInMm long
+                                obj.trackerData{i} = tempData;
+                                px = polyfit(q',tempData(:,1)',obj.fitorder);
+                                py = polyfit(q',tempData(:,2)',obj.fitorder);
+                                pz = polyfit(q',tempData(:,3)',obj.fitorder);
+                                obj.fit3Data{i} = [px', py', pz'];
+                            end
                         end
                     end
                 end
             end            
             ind = find(cellfun(@(x) length(x), obj.trackerData));
-            obj.follicle = zeros(length(ind), 3);
+            
             if length(ind) < length(obj.time)
                 obj.time = obj.time(ind);
                 tempData = obj.trackerData;
                 tempFit = obj.fit3Data;
+                tempBase = obj.base;
+                tempBaseInd = obj.baseInd;
                 obj.trackerData = cell(length(ind),1);
                 obj.fit3Data = cell(length(ind),1);
+                obj.base = zeros(length(ind),3);
+                obj.baseInd = zeros(length(ind),1);
                 for i = 1 : length(ind)
                     obj.trackerData{i} = tempData{ind(i)};
                     obj.fit3Data{i} = tempFit{ind(i)};
+                    obj.base(i,:) = tempBase(ind(i),:);
+                    obj.baseInd(i) = tempBaseInd(ind(i));
                 end
-            end
-            for i = 1 : length(ind)
-                obj.follicle(i,:) = obj.trackerData{i}(1,:);
             end
             
             % Calculating whisker kinematics
-            % 1. find the calculation point for kappas 
             obj.kappaH = nan(length(ind),1);
             obj.kappaV = nan(length(ind),1);
             obj.theta = nan(length(ind),1);
             obj.phi = nan(length(ind),1);
+            obj.prePoint = nan(length(ind),1);
+            obj.postPoint = nan(length(ind),1);
             
             for fi = 1 : length(ind)
+                % 1. find the calculation point for kappas 
                 preDist = (obj.rInMm-1) * obj.pxPerMm;
                 postDist = (obj.rInMm+1) * obj.pxPerMm;
                 whiskerPixLengths = zeros(length(obj.trackerData{fi}),1);
                 for i = 2 : length(whiskerPixLengths)
                     whiskerPixLengths(i) = sqrt(sum((obj.trackerData{fi}(i,:) - obj.trackerData{fi}(i-1,:)).^2));
-                end            
-                prePoint = find(cumsum(whiskerPixLengths) > preDist, 1, 'first');
-                postPoint = find(cumsum(whiskerPixLengths) > postDist, 1, 'first');
+                end
+                % length from the first pixel of tracker data to the intersection with the mask (i.e., "base")
+                baseLength = sum(whiskerPixLengths(1:obj.baseInd(fi)));
+                obj.prePoint(fi) = find(cumsum(whiskerPixLengths) - baseLength >= preDist, 1, 'first');
+                obj.postPoint(fi) = find(cumsum(whiskerPixLengths) - baseLength >= postDist, 1, 'first');
 
-                if ~isempty(prePoint) && ~isempty(postPoint) && postPoint - prePoint > 3
-                    x = obj.trackerData{fi}(prePoint:postPoint,1);
-                    y = obj.trackerData{fi}(prePoint:postPoint,2);
-                    z = obj.trackerData{fi}(prePoint:postPoint,3);
+                if ~isempty(obj.prePoint(fi)) && ~isempty(obj.postPoint(fi)) && obj.postPoint(fi) - obj.prePoint(fi) > 3
+                    x = obj.trackerData{fi}(obj.prePoint(fi):obj.postPoint(fi),1);
+                    y = obj.trackerData{fi}(obj.prePoint(fi):obj.postPoint(fi),2);
+                    z = obj.trackerData{fi}(obj.prePoint(fi):obj.postPoint(fi),3);
 
-                    q = linspace(0,1, postPoint-prePoint+1);
+                    q = linspace(0,1, obj.postPoint(fi)-obj.prePoint(fi)+1);
                     px = polyfit(q',x,2);
                     py = polyfit(q',y,2);
                     pz = polyfit(q',z,2);
 
-                    % horizontal & vertical kappa
+                    % 2. horizontal & vertical kappa
                     pxDot = polyder(px);
                     pxDoubleDot = polyder(pxDot);
 
@@ -214,11 +237,12 @@ classdef Whisker3D_2pad < handle
 
                     kappasH = (xDot.*yDoubleDot - yDot.*xDoubleDot) ./ ((xDot.^2 + yDot.^2).^(3/2)) * obj.pxPerMm; % SIGNED CURVATURE, in 1/mm.
                     kappasV = (zDot.*yDoubleDot - yDot.*zDoubleDot) ./ ((zDot.^2 + yDot.^2).^(3/2)) * obj.pxPerMm; % SIGNED CURVATURE, in 1/mm.
-                    midpoint = round((postPoint - prePoint)/2);
+                    midpoint = round((obj.postPoint(fi) - obj.prePoint(fi))/2);
                     obj.kappaH(fi) = kappasH(midpoint);
                     obj.kappaV(fi) = kappasV(midpoint);
                 end
                 
+                % 3. theta and phi at the base                
                 q = linspace(0,1);
                 px = obj.fit3Data{fi}(:,1);
                 py = obj.fit3Data{fi}(:,2);
@@ -232,48 +256,57 @@ classdef Whisker3D_2pad < handle
                 yDot = polyval(pyDot,q);
                 zDot = polyval(pzDot,q);
                 
+                dq = [0 diff(q)];
+                
+                % Arc length as a function of q, after integration below:
+                R = cumsum(sqrt(xDot.^2 + yDot.^2 + zDot.^2) .* dq); % arc length segments, in pixels, times dq.
+                rind = find(R >= baseLength, 1, 'first');
+                
                 % Angle (in degrees) as a function of q:
                 % Protraction means theta is increasing.
                 % Theta is 0 when perpendicular to the midline of the mouse.
                 if strcmp(ws.faceSideInImage,'top') && strcmp(ws.protractionDirection,'rightward')
-                    obj.theta(fi) = atand(xDot(1) ./ yDot(1));
-                    obj.phi(fi) = atand(zDot(1) ./ yDot(1));
+                    thetas = atand(xDot ./ yDot);
+                    phis = atand(zDot ./ yDot);
                 elseif strcmp(ws.faceSideInImage,'top') && strcmp(ws.protractionDirection,'leftward')
-                    obj.theta(fi) = -atand(xDot(1) ./ yDot(1));
-                    obj.phi(fi) = -atand(zDot(1) ./ yDot(1));
+                    thetas = -atand(xDot ./ yDot);
+                    phis = -atand(zDot ./ yDot);
                 elseif strcmp(ws.faceSideInImage,'left') && strcmp(ws.protractionDirection,'downward')
-                    obj.theta(fi) = atand(yDot(1) ./ xDot(1));
-                    obj.phi(fi) = atand(yDot(1) ./ zDot(1));
+                    thetas = atand(yDot ./ xDot);
+                    phis = atand(yDot ./ zDot);
                 elseif strcmp(ws.faceSideInImage,'left') && strcmp(ws.protractionDirection,'upward')
-                    obj.theta(fi) = -atand(yDot(1) ./ xDot(1));
-                    obj.phi(fi) = -atand(yDot(1) ./ zDot(1));
+                    thetas = -atand(yDot ./ xDot);
+                    phis = -atand(yDot ./ zDot);
                 elseif strcmp(ws.faceSideInImage,'right') && strcmp(ws.protractionDirection,'upward')
-                    obj.theta(fi) = atand(yDot(1) ./ xDot(1)); 
-                    obj.phi(fi) = atand(yDot(1) ./ zDot(1));
+                    thetas = atand(yDot ./ xDot); 
+                    phis = atand(yDot ./ zDot);
                 elseif strcmp(ws.faceSideInImage,'right') && strcmp(ws.protractionDirection,'downward')
-                    obj.theta(fi) = -atand(yDot(1) ./ xDot(1));
-                    obj.phi(fi) = -atand(yDot(1) ./ zDot(1));
+                    thetas = -atand(yDot ./ xDot);
+                    phis = -atand(yDot ./ zDot);
                 elseif strcmp(ws.faceSideInImage,'bottom') && strcmp(ws.protractionDirection,'rightward')
-                    obj.theta(fi) = -atand(xDot(1) ./ yDot(1));
-                    obj.phi(fi) = -atand(zDot(1) ./ yDot(1));
+                    thetas = -atand(xDot ./ yDot);
+                    phis = -atand(zDot ./ yDot);
                 elseif strcmp(ws.faceSideInImage,'bottom') && strcmp(ws.protractionDirection,'leftward')
-                    obj.theta(fi) = atand(xDot(1) ./ yDot(1));
-                    obj.phi(fi) = atand(zDot(1) ./ yDot(1));
+                    thetas = atand(xDot ./ yDot);
+                    phis = atand(zDot ./ yDot);
                 else
                     error('Invalid value of property ''faceSideInImage'' or ''protractionDirection''')
-                end                
+                end
+                obj.theta(fi) = thetas(rind);
+                obj.phi(fi) = phis(rind);
             end
-            
-%             for i = 1 : length(obj.trackerData)
-%                 obj.fit3Data{i} = polyfitn(obj.trackerData{1});
-%             end
-            
         end
         
         function show_all_3D(obj)
             figure, hold on,
             for i = 1 : length(obj.trackerData)
-                plot3(obj.trackerData{i}(:,1), obj.trackerData{i}(:,2), obj.trackerData{i}(:,3), '-')
+                plot3(obj.trackerData{i}(:,1), obj.trackerData{i}(:,2), obj.trackerData{i}(:,3), 'k-')
+            end
+            for i = 1 : length(obj.trackerData)
+                plot3(obj.trackerData{i}(obj.prePoint(i):obj.postPoint(i),1), obj.trackerData{i}(obj.prePoint(i):obj.postPoint(i),2), obj.trackerData{i}(obj.prePoint(i):obj.postPoint(i),3), 'm-')
+            end
+            for i = 1 : length(obj.trackerData)
+                plot3(obj.base(i,1), obj.base(i,2), obj.base(i,3), 'r.')
             end
             axis equal
         end
@@ -282,8 +315,22 @@ classdef Whisker3D_2pad < handle
             q = linspace(0,1);
             figure, hold on,
             for i = 1 : length(obj.trackerData)
-                plot3(polyval(obj.fit3Data{i}(:,1),q), polyval(obj.fit3Data{i}(:,2),q), polyval(obj.fit3Data{i}(:,3),q), '-')
+                plot3(polyval(obj.fit3Data{i}(:,1),q), polyval(obj.fit3Data{i}(:,2),q), polyval(obj.fit3Data{i}(:,3),q), 'k-')
             end
+            for i = 1 : length(obj.trackerData)
+                x = obj.trackerData{i}(obj.prePoint(i):obj.postPoint(i),1);
+                y = obj.trackerData{i}(obj.prePoint(i):obj.postPoint(i),2);
+                z = obj.trackerData{i}(obj.prePoint(i):obj.postPoint(i),3);
+
+                q = linspace(0,1, obj.postPoint(i)-obj.prePoint(i)+1);
+                px = polyfit(q',x,2);
+                py = polyfit(q',y,2);
+                pz = polyfit(q',z,2);
+                plot3(polyval(px,q), polyval(py,q), polyval(pz,q), 'm-');
+            end
+            for i = 1 : length(obj.trackerData)
+                plot3(obj.base(i,1), obj.base(i,2), obj.base(i,3), 'r.')
+            end                    
             axis equal
         end        
         
@@ -295,7 +342,7 @@ classdef Whisker3D_2pad < handle
             y = polyval(obj.fit3Data{i}(:,2),q);
             z = polyval(obj.fit3Data{i}(:,3),q);
             plot3(x, y, z, 'k-'); hold on, 
-            plot3(x(1), y(1), z(1), 'r.', 'markersize', 20); 
+            plot3(obj.base(i,1), obj.base(i,2), obj.base(i,3), 'r.', 'markersize', 20); 
             hold off, 
             view(3);
             [az, el] = view;
@@ -324,7 +371,7 @@ classdef Whisker3D_2pad < handle
                 y = polyval(obj.fit3Data{i}(:,2),q);
                 z = polyval(obj.fit3Data{i}(:,3),q);
                 plot3(x, y, z, 'k-', 'linewidth', 4); hold on, 
-                plot3(x(1), y(1), z(1), 'r.', 'markersize', 25);
+                plot3(obj.base(i,1), obj.base(i,2), obj.base(i,3), 'r.', 'markersize', 25);
                 hold off
                 title({'Navigate using keyboard'; ['Trial # ', obj.trackerFileName]; ['Frame # ', num2str(round(obj.time(i)/obj.framePeriodInSec))]});
                 xlabel('Rostro-caudal'), ylabel('Medio-lateral'), zlabel('Dorso-ventral')                
@@ -338,7 +385,7 @@ classdef Whisker3D_2pad < handle
         function show_onebyone_3D(obj)
             figure, 
             i = 1; plot3(obj.trackerData{i}(:,1), obj.trackerData{i}(:,2), obj.trackerData{i}(:,3), 'k-'); hold on, 
-            plot3(obj.trackerData{i}(1,1), obj.trackerData{i}(1,2), obj.trackerData{i}(1,3), 'r.', 'markersize', 20); 
+            plot3(obj.base(i,1), obj.base(i,2), obj.base(i,3), 'r.', 'markersize', 20); 
             hold off, 
             view(3);
             [az, el] = view;
@@ -364,7 +411,7 @@ classdef Whisker3D_2pad < handle
                     plot3(obj.trackerData{k}(:,1), obj.trackerData{k}(:,2), obj.trackerData{k}(:,3), 'color', [0.7 0.7 0.7])                    
                 end                
                 plot3(obj.trackerData{i}(:,1), obj.trackerData{i}(:,2), obj.trackerData{i}(:,3), 'k-', 'linewidth', 4),
-                plot3(obj.trackerData{i}(1,1), obj.trackerData{i}(1,2), obj.trackerData{i}(1,3), 'r.', 'markersize', 25),
+                plot3(obj.base(i,1), obj.base(i,2), obj.base(i,3), 'r.', 'markersize', 25),
                 hold off
                 title({'Navigate using keyboard'; ['Trial # ', obj.trackerFileName]; ['Frame # ', num2str(round(obj.time(i)/obj.framePeriodInSec))]});
                 xlabel('Rostro-caudal'), ylabel('Medio-lateral'), zlabel('Dorso-ventral')                

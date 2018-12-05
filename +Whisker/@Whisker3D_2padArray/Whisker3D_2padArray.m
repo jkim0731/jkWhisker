@@ -7,7 +7,8 @@ classdef Whisker3D_2padArray < handle
     end
     
     methods
-        function obj = Whisker3D_2padArray(mouseName, sessionName)
+        function obj = Whisker3D_2padArray(d, mouseName, sessionName)
+            cd(d)
             obj.mouseName = mouseName;
             obj.sessionName = sessionName;
             fnlist = dir('*_W3_2pad.mat');
