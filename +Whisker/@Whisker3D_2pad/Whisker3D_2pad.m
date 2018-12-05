@@ -37,7 +37,8 @@ classdef Whisker3D_2pad < handle
         retractionTouchChunks = {};% Inherited from WhiskerLiteTrial_2pad. in frame numbers (not as same as in obj.time)
         
         trackerData = {}; % {n}(:,1) for anterior-posterior axis, {n}(:,2) for radial axis, and {n}(:,3) for vertical axis. Starts from the mask.        
-%         fit3Data = {}; % same as in trackerData, except that it's for polynomial fitting (using polyfitn by John D'Errico (https://www.mathworks.com/matlabcentral/fileexchange/34765-polyfitn)
+        fit3Data = {}; % same as in trackerData, except that it's for polynomial fitting (using polyfitn by John D'Errico (https://www.mathworks.com/matlabcentral/fileexchange/34765-polyfitn)
+        fitorder = 5;
         follicle = []; % (:,1) for anterior-posterior axis, (:,2) for radial axis, and (:,3) for vertical axis.
         
     end
@@ -84,7 +85,6 @@ classdef Whisker3D_2pad < handle
             R = [cosd(-obj.mirrorAngle) -sind(-obj.mirrorAngle); sind(-obj.mirrorAngle) cosd(-obj.mirrorAngle)]; % rotation matrix in top view
             
             
-            
             % Compensating for camera angle error before 2018/11/13
             if strcmp(obj.mouseName(1:2), 'JK') && str2double(obj.mouseName(3:end)) < 60
                 obj.cameraAngle = 4.2;
@@ -95,7 +95,8 @@ classdef Whisker3D_2pad < handle
             % calculating 3D tracker Data
             [~,tdtopind] = ismember(obj.time, ws.time{1});
             [~,tdfrontind] = ismember(obj.time, ws.time{2});
-            obj.trackerData = cell(length(tdtopind),1);
+            obj.trackerData = cell(length(tdtopind),1);            
+            obj.fit3Data = cell(length(obj.trackerData),1);
             
             wpo = ws.whiskerPadOrigin;
             vwidth = ws.imagePixelDimsXY(1);
@@ -135,6 +136,11 @@ classdef Whisker3D_2pad < handle
                             end
                         end
                         obj.trackerData{i} = tempData(isfinite(sum(tempData,2)),:);
+                        q = linspace(0,1);
+                        px = polyfit(q',tempData(:,1),obj.fitorder);
+                        py = polyfit(q',tempData(:,2),obj.fitorder);
+                        pz = polyfit(q',tempData(:,3),obj.fitorder);
+                        obj.fit3Data{i} = [px, py, pz];
                     end
                 end
             end            
@@ -202,14 +208,52 @@ classdef Whisker3D_2pad < handle
                     obj.kappaH(fi) = kappasH(midpoint);
                     obj.kappaV(fi) = kappasV(midpoint);
                 end
+                
+                q = linspace(0,1);
+                px = obj.fit3Data{fi}(:,1);
+                py = obj.fit3Data{fi}(:,2);
+                pz = obj.fit3Data{fi}(:,3);
+                
+                pxDot = polyder(px);                
+                pyDot = polyder(py);
+                pzDot = polyder(pz);
+                
+                xDot = polyval(pxDot,q);                
+                yDot = polyval(pyDot,q);
+                zDot = polyval(pzDot,q);
+                
+                % Angle (in degrees) as a function of q:
+                % Protraction means theta is increasing.
+                % Theta is 0 when perpendicular to the midline of the mouse.
+                if strcmp(ws.faceSideInImage,'top') && strcmp(ws.protractionDirection,'rightward')
+                    obj.theta(fi) = atand(xDot(1) ./ yDot(1));
+                    obj.phi(fi) = atand(yDot(1) ./ zDot(1));
+                elseif strcmp(ws.faceSideInImage,'top') && strcmp(ws.protractionDirection,'leftward')
+                    obj.theta(fi) = -atand(xDot(1) ./ yDot(1));
+                    obj.phi(fi) = -atand(yDot(1) ./ zDot(1));
+                elseif strcmp(ws.faceSideInImage,'left') && strcmp(ws.protractionDirection,'downward')
+                    obj.theta(fi) = atand(yDot(1) ./ xDot(1));
+                    obj.phi(fi) = atand(zDot(1) ./ yDot(1));
+                elseif strcmp(ws.faceSideInImage,'left') && strcmp(ws.protractionDirection,'upward')
+                    obj.theta(fi) = -atand(yDot(1) ./ xDot(1));
+                    obj.phi(fi) = -atand(zDot(1) ./ yDot(1));
+                elseif strcmp(ws.faceSideInImage,'right') && strcmp(ws.protractionDirection,'upward')
+                    obj.theta(fi) = atand(yDot(1) ./ xDot(1)); 
+                    obj.phi(fi) = atand(zDot(1) ./ yDot(1));
+                elseif strcmp(ws.faceSideInImage,'right') && strcmp(ws.protractionDirection,'downward')
+                    obj.theta(fi) = -atand(yDot(1) ./ xDot(1));
+                    obj.phi(fi) = -atand(zDot(1) ./ yDot(1));
+                elseif strcmp(ws.faceSideInImage,'bottom') && strcmp(ws.protractionDirection,'rightward')
+                    obj.theta(fi) = -atand(xDot(1) ./ yDot(1));
+                    obj.phi(fi) = -atand(yDot(1) ./ zDot(1));
+                elseif strcmp(ws.faceSideInImage,'bottom') && strcmp(ws.protractionDirection,'leftward')
+                    obj.theta(fi) = atand(xDot(1) ./ yDot(1));
+                    obj.phi(fi) = atand(yDot(1) ./ zDot(1));
+                else
+                    error('Invalid value of property ''faceSideInImage'' or ''protractionDirection''')
+                end                
             end
-                        
-            theta = ws.get_theta_at_base(0) - obj.mirrorAngle;
-            obj.theta = theta(tdtopind);
-            phi = ws.get_theta_at_base(1) - obj.cameraAngle;
-            obj.phi = phi(tdfrontind);
-            % 3D fitting of the tracked Data % not yet.
-%             obj.fit3Data = cell(length(obj.trackerData),1);
+            
 %             for i = 1 : length(obj.trackerData)
 %                 obj.fit3Data{i} = polyfitn(obj.trackerData{1});
 %             end

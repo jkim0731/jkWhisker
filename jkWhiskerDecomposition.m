@@ -26,14 +26,14 @@ if abs(max(diff(time)) - 1/sampleRate) > 0.5/sampleRate
     end
     theta(inds) = inputTheta;
 end
-% make any nan thetaAtBase = mean of the surrounding points (3 on each side)
+% make any nan thetaAtBase = mean of the surrounding points (10 on each side)
 try
-    theta(isnan(theta)) = nanmean(theta(repmat(find(isnan(theta)),7,1)+repmat([-3:3]',1,length(find(isnan(theta))))));
+    theta(isnan(theta)) = nanmean(theta(repmat(find(isnan(theta)),21,1)+repmat([-10:10]',1,length(find(isnan(theta))))));
 catch
     theta(isnan(theta)) = nanmean(theta);
 end
 
-BandPassCutOffsInHz = [8 30];  %%check filter parameters!!!
+BandPassCutOffsInHz = [6 30];  %%check filter parameters!!!
 % From Sofroniew 2014, which sites Hill 2011
 W1 = BandPassCutOffsInHz(1) / (sampleRate/2);
 W2 = BandPassCutOffsInHz(2) / (sampleRate/2);
