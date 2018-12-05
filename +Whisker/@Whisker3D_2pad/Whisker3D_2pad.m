@@ -33,8 +33,11 @@ classdef Whisker3D_2pad < handle
         phi = []; % elevation angle (front angle)
         zeta = []; % roll angle, calculated by tangent line from the mask
         
+        protractionTouchChunks = {}; % Inherited from WhiskerLiteTrial_2pad. in frame numbers (not as same as in obj.time)
+        retractionTouchChunks = {};% Inherited from WhiskerLiteTrial_2pad. in frame numbers (not as same as in obj.time)
+        
         trackerData = {}; % {n}(:,1) for anterior-posterior axis, {n}(:,2) for radial axis, and {n}(:,3) for vertical axis. Starts from the mask.        
-        fit3Data = {}; % same as in trackerData, except that it's for polynomial fitting (using polyfitn by John D'Errico (https://www.mathworks.com/matlabcentral/fileexchange/34765-polyfitn)
+%         fit3Data = {}; % same as in trackerData, except that it's for polynomial fitting (using polyfitn by John D'Errico (https://www.mathworks.com/matlabcentral/fileexchange/34765-polyfitn)
         follicle = []; % (:,1) for anterior-posterior axis, (:,2) for radial axis, and (:,3) for vertical axis.
         
     end
@@ -45,13 +48,14 @@ classdef Whisker3D_2pad < handle
     
         
     methods (Access = public)
-        function obj = Whisker3D_2pad(ws, varargin)
+        function obj = Whisker3D_2pad(ws, wl, varargin)
             if nargin==0
                 return
             end
             
             p = inputParser;
             p.addRequired('ws', @(x) isa(x,'Whisker.WhiskerSignalTrial_2pad'));
+            p.addRequired('wl', @(x) isa(x,'Whisker.WhiskerTrialLite_2pad'));
             p.addParameter('rInMm', 3, @(x) isnumeric(x) && numel(x)==1 );
        
             p.parse(ws,varargin{:});
@@ -72,8 +76,14 @@ classdef Whisker3D_2pad < handle
             obj.nof = ws.nof;
             obj.poleUpFrames = ws.poleUpFrames;
             obj.poleMovingFrames = ws.poleMovingFrames;            
+            
+            obj.protractionTouchChunks = wl.protractionTouchChunks;
+            obj.retractionTouchChunks = wl.retractionTouchChunks; 
+
             obj.mirrorAngle = ws.mirrorAngle;
             R = [cosd(-obj.mirrorAngle) -sind(-obj.mirrorAngle); sind(-obj.mirrorAngle) cosd(-obj.mirrorAngle)]; % rotation matrix in top view
+            
+            
             
             % Compensating for camera angle error before 2018/11/13
             if strcmp(obj.mouseName(1:2), 'JK') && str2double(obj.mouseName(3:end)) < 60
@@ -198,8 +208,8 @@ classdef Whisker3D_2pad < handle
             obj.theta = theta(tdtopind);
             phi = ws.get_theta_at_base(1) - obj.cameraAngle;
             obj.phi = phi(tdfrontind);
-            % 3D fitting of the tracked Data
-            obj.fit3Data = cell(length(obj.trackerData),1);
+            % 3D fitting of the tracked Data % not yet.
+%             obj.fit3Data = cell(length(obj.trackerData),1);
 %             for i = 1 : length(obj.trackerData)
 %                 obj.fit3Data{i} = polyfitn(obj.trackerData{1});
 %             end
