@@ -185,8 +185,8 @@ nfiles = length(fnall);
 
 if ~isempty(fnall)
     if exist('parfor','builtin') % Parallel Computing Toolbox is installed.
-%         for k=1:nfiles
-        parfor k=1:nfiles
+        for k=1:nfiles
+%         parfor k=1:nfiles
             fn = fnall{k};
             disp(['Processing ''_WST.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
 

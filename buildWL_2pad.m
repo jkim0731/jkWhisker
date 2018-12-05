@@ -21,6 +21,19 @@ wstTrialFn = cell(length(wstFnList),1);
 for i = 1 : length(wstFnList)
     wstTrialFn{i} = wstFnList(i).name(1:end-8);
 end
+
+
+wlFnList = dir('*_WL_2pad.mat');
+wlTrialFn = cell(length(wlFnList),1);
+for i = 1 : length(wlFnList)
+    wlTrialFn{i} = wlFnList(i).name(1:end-12);
+end
+fnind = find(~ismember(wstTrialFn, wlTrialFn));
+wstTrialFn = wstTrialFn(fnind);
+
+
+
+
 loadfn = dir('*_touch_hp.mat');
 if ~isempty(loadfn)
     load(loadfn(1).name)
