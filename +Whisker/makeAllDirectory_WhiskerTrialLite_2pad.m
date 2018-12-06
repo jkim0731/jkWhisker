@@ -185,8 +185,8 @@ nfiles = length(fnall);
 
 if ~isempty(fnall)
     if exist('parfor','builtin') % Parallel Computing Toolbox is installed.
-        for k=1:nfiles
-%         parfor k=1:nfiles
+%         for k=1:nfiles
+        parfor k=1:nfiles
             fn = fnall{k};
             disp(['Processing ''_WST.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
 
@@ -235,7 +235,7 @@ if ~isempty(fnall)
             % divide into each trial type (pole angle & radial distance
             % combination), and then assign touch thresholds again. (for
             % those without it)
-            wlArray = Whisker.WhiskerTrialLite_2padArray(wsArray.trials{end}.mouseName, wsArray.trials{end}.sessionName);
+            wlArray = Whisker.WhiskerTrialLite_2padArray(d, wsArray.trials{end}.mouseName, wsArray.trials{end}.sessionName);
             protractionThresholdInds = find(cellfun(@(x) ~isempty(x.protractionThreshold), wlArray.trials));
             meanProtractionThreshold = zeros(size(p.Results.servo_distance_pair));
             if isempty(protractionThresholdInds)

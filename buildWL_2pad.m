@@ -23,13 +23,13 @@ for i = 1 : length(wstFnList)
 end
 
 
-wlFnList = dir('*_WL_2pad.mat');
-wlTrialFn = cell(length(wlFnList),1);
-for i = 1 : length(wlFnList)
-    wlTrialFn{i} = wlFnList(i).name(1:end-12);
-end
-fnind = find(~ismember(wstTrialFn, wlTrialFn));
-wstTrialFn = wstTrialFn(fnind);
+% wlFnList = dir('*_WL_2pad.mat');
+% wlTrialFn = cell(length(wlFnList),1);
+% for i = 1 : length(wlFnList)
+%     wlTrialFn{i} = wlFnList(i).name(1:end-12);
+% end
+% fnind = find(~ismember(wstTrialFn, wlTrialFn));
+% wstTrialFn = wstTrialFn(fnind);
 
 
 
