@@ -86,23 +86,38 @@ if ~isempty(bSession) && ~contains(sessionName,'piezo') &&~contains(sessionName,
 
                 p = polyfit(pixelDistances , positionDiff, 1); % linear fitting
                 slope = p(1);        
-                for k = 1 : length(wsArray)
+                parfor k = 1 : length(wsArray)
                     apPosition = NaN(wsArray.trials{k}.nof,1);
                     apPosition(wsArray.trials{k}.poleUpFrames) = wsArray.trials{k}.apUpPosition;
                     for m = 1 : length(wsArray.trials{k}.poleMovingFrames)
                         apPosition(wsArray.trials{k}.poleMovingFrames(m)) = wsArray.trials{k}.apUpPosition + slope * sqrt(sum((wsArray.trials{k}.topPix(wsArray.trials{k}.poleMovingFrames(m))...
                                                                                                                      - wsArray.trials{k}.topPix(wsArray.trials{k}.poleUpFrames(round(length(wsArray.trials{k}.poleUpFrames)/2)))).^2));
                     end
-                    load([wsArray.trials{k}.trackerFileName, '_WST.mat']) % loading ws
+                    wsdat = load([wsArray.trials{k}.trackerFileName, '_WST.mat']) % loading ws
+                    ws = wsdat.ws;
                     ws.apPosition = apPosition;
                     ws.mirrorAngle = mirrorAngle;
-                    save([wsArray.trials{k}.trackerFileName, '_WST.mat'], 'ws') % saving ws            
+                    pfsavews([wsArray.trials{k}.trackerFileName, '_WST.mat'], ws) % saving ws
                 end
             end
         end
+    end
+    
+    % last ad hoc - take the mean mirrorAngle for the whole session.
+    wsArray = Whisker.WhiskerSignalTrialArray_2pad(whisker_d);
+    mirrorAngle = nanmean(cellfun(@(x) x.mirrorAngle, wsArray.trials));
+    parfor wsi = 1 : length(wstList)
+        wsdat = load(wstList(wsi).name);
+        ws = wsdat.ws;
+        ws.mirrorAngle = mirrorAngle;
+        pfsavews(wstList(wsi).name, ws);
     end
 end
 
 cd(curr_d)
 
+end
+
+function pfsavews(fn, ws)
+    save(fn, 'ws')
 end

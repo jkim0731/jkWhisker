@@ -87,7 +87,10 @@ classdef Whisker3D_2pad < handle
             obj.retractionTouchChunks = wl.retractionTFchunks;
 
             obj.mirrorAngle = ws.mirrorAngle;
-            R = [cosd(-obj.mirrorAngle) -sind(-obj.mirrorAngle); sind(-obj.mirrorAngle) cosd(-obj.mirrorAngle)]; % rotation matrix in top view
+            R = [cosd(obj.mirrorAngle) -sind(obj.mirrorAngle); sind(obj.mirrorAngle) cosd(obj.mirrorAngle)]; % rotation matrix in top view
+            % Caution: the rotation is based on 'plot function coordinate
+            % system', which in 'imshow coordiate' should be in different
+            % direction, hence omitting the negative sign 2018/12/10 JK
             
             
             % Compensating for camera angle error before 2018/11/13
@@ -123,6 +126,7 @@ classdef Whisker3D_2pad < handle
 
                     tempData = NaN(length(x),3);
                     if ~isempty(Ptop) && ~isempty(Pfront) % only consider where tracking data intersects with the mask in both views
+                        Ptop = Ptop(:,1); Pfront = Pfront(:,1);
                         if sqrt(sum((wpo-[x(end) y(end)]).^2)) < sqrt(sum((wpo-[x(1) y(1)]).^2))
                             % c(q_max) is closest to whisker pad origin, so reverse the (x,y) sequence
                             x = x(end:-1:1);
@@ -134,6 +138,7 @@ classdef Whisker3D_2pad < handle
                         end
                         if Ptop(2) - y(1) < 0 && Pfront(2) - w(1) < 0 % only when the whisker crosses the mask, from both views
                             distFromBase = zeros(length(x),1);
+                            tempData(:,1:2) = (R * [x' - Ptop(1); y' - Ptop(2)] + Ptop)'; % rotate in regard to the base (intersection between whisker and mask)
                             for j = 1 : length(x)
                                 distFromBase(j) = Ptop(2) - y(j); % lateral distance from the mask, calculated from the top-view
                                 line = [1, vwidth; Pfront(2) - distFromBase(j), Pfront(2) - distFromBase(j)]; % corresponding line for front-view
@@ -141,17 +146,14 @@ classdef Whisker3D_2pad < handle
 %                                 if size(P,2) == 1 % else, there is no intersection or more than 1 intersection, which in that case cannot correctly reconstruct 3D shape
                                 if size(P,2) > 0
                                     % projection to the axis orthogonal to the body axis. Height (j,3) does not have to change
-                                    v = R * [x(j); y(j)];
-                                    tempData(j,1) = v(1);
-                                    tempData(j,2) = v(2);
                                     tempData(j,3) = P(1);
                                 end
                             end
                             [~,baseInd] = nanmin(abs(distFromBase));
-                            obj.base(i,:) = tempData(baseInd,:);
                             finiteInds = find(isfinite(sum(tempData,2)));
+                            [~, obj.baseInd(i)] = min(abs(finiteInds - baseInd));
                             tempData = tempData(finiteInds,:);
-                            obj.baseInd(i) = find(finiteInds == baseInd,1);
+                            obj.base(i,:) = tempData(obj.baseInd(i),:);
                             s = cumsum(sqrt([0; diff(tempData(:,1))].^2 + [0; diff(tempData(:,2))].^2) + [0; diff(tempData(:,3))].^2);
                             q = s ./ max(s);
 
@@ -296,7 +298,7 @@ classdef Whisker3D_2pad < handle
                     error('Invalid value of property ''faceSideInImage'' or ''protractionDirection''')
                 end
                 obj.theta(fi) = thetas(rind);
-                obj.phi(fi) = phis(rind);
+                obj.phi(fi) = phis(rind) - obj.cameraAngle;
             end
         end
         

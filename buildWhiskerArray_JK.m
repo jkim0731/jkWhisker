@@ -53,17 +53,24 @@ touchKappaSTDthreshold = 2;
 % sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
 % sessions = {[3,4,21:23,25,26],[3],[3,4,25,26],[3:5]};
 
-sessions = {[1:3,5:22],[1:22,99],[1:22],[1:20,91],[1:24],[1:31],[1:25],[1:30]};
-sessions_pre = {[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3]};
-sessions_spont = {[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5]};
+% sessions = {[1:22],[1:22,99],[1:22],[1:20,91],[1:24],[1:31],[1:25],[1:30]};
+% sessions_pre = {[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3]};
+% sessions_spont = {[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5]};
+
+sessions = {[],[],[],[1:20,91],[1:24],[1:31],[1:25],[1:30]};
+sessions_pre = {[],[],[],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3]};
+sessions_spont = {[],[],[],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5]};
+
+% sessions = {[],[],[],[1],[],[],[],[]};
 
 
-sessions = {[4],[],[],[],[],[],[],[]};
+
+% sessions = {[4],[],[],[],[],[],[],[]};
 
 % sessions = {[],[],[],[],[],[],[],[],[],[],[],[]};
-sessions_pre = {[],[],[],[],[],[],[],[],[],[],[],[]};
-sessions_piezo = {[],[],[],[],[],[],[],[],[],[],[],[]};
-sessions_spont = {[],[],[],[],[],[],[],[],[],[],[],[]};
+% sessions_pre = {[],[],[],[],[],[],[],[],[],[],[],[]};
+% sessions_piezo = {[],[],[],[],[],[],[],[],[],[],[],[]};
+% sessions_spont = {[],[],[],[],[],[],[],[],[],[],[],[]};
 
 all_session = 0; % 1 if using all sessions, 0 if using selected sessions
 
@@ -1081,7 +1088,7 @@ if do3D
                         wd = [whisker_d, mouseName, sessionName];
                         errors = Whisker.makeAllDirectory_Whisker3D_2pad(wd, 'rInMm', rInMm);
                         if ~isempty(errors)
-                            errorsession{end+1} = sessionName;
+                            errorsession{end+1} = [mouseName,sessionName];
                             errorfn{end+1} = errors;
                         end
                     end
@@ -1096,7 +1103,7 @@ if do3D
                         wd = [whisker_d, mouseName, sessionName];
                         errors = Whisker.makeAllDirectory_Whisker3D_2pad(wd, 'rInMm', rInMm);
                         if ~isempty(errors)
-                            errorsession{end+1} = sessionName;
+                            errorsession{end+1} = [mouseName,sessionName];
                             errorfn{end+1} = errors;
                         end
                     end
@@ -1122,7 +1129,7 @@ if do3D
                         wd = [whisker_d, mouseName, sessionName];
                         errors = Whisker.makeAllDirectory_Whisker3D_2pad(wd, 'rInMm', rInMm);
                         if ~isempty(errors)
-                            errorsession{end+1} = sessionName;
+                            errorsession{end+1} = [mouseName,sessionName];
                             errorfn{end+1} = errors;
                         end
                     end
@@ -1132,5 +1139,5 @@ if do3D
     end
 end
 
-
+save('w3errorlist.mat', 'errorsession', 'errorfn')
 

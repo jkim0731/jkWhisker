@@ -110,7 +110,7 @@ end
 % % %%%%%%%%%%%%%%%%%%%%%%%%%%
 % % 
 % % 
-% fnall = {'324','325','326','327','328','329','330','331','332','334','364'};
+% fnall = {'256'};
 % % 
 % % 
 % % %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -120,20 +120,20 @@ nfiles = length(fnall);
 if ~isempty(fnall)
     if exist('parfor','builtin') % Parallel Computing Toolbox is installed.
         errorfn = zeros(length(fnall),1);
-%         for k=1:nfiles
-        parfor k=1:nfiles
+        for k=1:nfiles
+%         parfor k=1:nfiles
             fn = fnall{k};
             disp(['Processing ''_WST.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
 
             ws = pctload([fn '_WST.mat']);
             wl = pctloadwl([fn, '_WL_2pad.mat']);
-            try
+%             try
                 w3 = Whisker.Whisker3D_2pad(ws,wl);
                 outfn = [fn '_W3_2pad.mat'];
                 pctsave(outfn,w3);
-            catch
-                errorfn(k) = 1;
-            end
+%             catch
+%                 errorfn(k) = 1;
+%             end
         end
         if sum(errorfn) > 0 
             errors = fnall(find(errorfn));

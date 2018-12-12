@@ -176,8 +176,7 @@ classdef WhiskerTrialLite_2pad < handle
             
             p.addParameter('trial_type',{}, @ischar);
             p.addParameter('kappaTouchThreshold',[],@(x) isnumeric(x) && numel(x)==2); % 2 values for top-view and front-view kappa
-            p.addParameter('durationThreshold',[], @isnumeric);
-            p.addParameter('mirrorAngle', 0, @isnumeric); % averaged from all the trials in the session
+            p.addParameter('durationThreshold',[], @isnumeric);            
             p.addParameter('rInMm',{}, @isnumeric);
             p.addParameter('touchHP',[], @(x) isnumeric(x) && size(x,1) == 3);
             p.addParameter('touchHPpeaks',[], @(x) isnumeric(x) && numel(x) ==2);
@@ -220,7 +219,7 @@ classdef WhiskerTrialLite_2pad < handle
             obj.Flateral = cell(1,ntraj);
             obj.M0 = cell(1,ntraj); % Moment at the follicle.
             obj.meanKappa = cell(1,ntraj); % Mean kappa over the ROI.
-            obj.mirrorAngle = p.Results.mirrorAngle;
+            obj.mirrorAngle = ws.mirrorAngle;
           
             obj.barPos = ws.barPos; %  Inherited from WhiskerSignalTrial. [frameNum XPosition YPosition]
             obj.barPosOffset = ws.barPosOffset; % Inherited from WhiskerSignalTrial. [x y], either 1X2 or nframesX2
