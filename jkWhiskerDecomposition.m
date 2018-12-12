@@ -3,7 +3,7 @@ function [hh, amplitude, filteredSignal, midpoint, amplitudeS, midpointS, phase,
 % varargin{1} = time;
 % varargin{2} = sampleRate;
 
-sampleRate = 311;
+sampleRate = 311.24;
 time = [0:length(theta)-1]/sampleRate;
 
 if nargin == 2
