@@ -83,8 +83,8 @@ classdef WhiskerTrialLite_2pad < handle
         obviousNoTouchFrames = []; % just for check
         fwkappamean = []; % just for check
         fwkappastd = []; % just for check
-        protractionDistance = []; % just for check
-        retractionDistance = []; % just for check
+        protractionDistance = []; % just for check. In pix, not um
+        retractionDistance = []; % just for check. In pix, not um
         protractionFrames = [];
         retractionFrames = [];
         
@@ -288,7 +288,7 @@ classdef WhiskerTrialLite_2pad < handle
                         obj.deltaKappa{k} = nan(obj.nof,1);
                         obj.deltaKappa{k}(inds) = dk;
                         obj.thetaAtBase{k} = nan(obj.nof,1);
-                        obj.thetaAtBase{k}(inds) = tab + p.Results.mirrorAngle;
+                        obj.thetaAtBase{k}(inds) = tab + obj.mirrorAngle;
                     else % k == 2
                         [dk,~,~,~] = ws.get_kappa_at_roi_point(tid,obj.frontRInMm);
                         [tab,~] = ws.get_theta_at_base(tid);
@@ -319,9 +319,12 @@ classdef WhiskerTrialLite_2pad < handle
                     height = size(ws.binvavg,1);
                     width = size(ws.binvavg,2);
                     topViewPole = zeros([height, width],'logical');
-                    targetH = 0.6; targetW = 0.5; targetArea = zeros(size(ws.binvavg), 'logical'); targetArea(1:round(height*targetH), round((1-targetW)*width):end) = deal(1);
-                    targetInd = find(targetArea);
-                    bw = bwconncomp(ws.binvavg);
+                    targetH = 0.6; targetW = 0.7; targetArea = zeros(size(ws.binvavg), 'logical'); targetArea(1:round(height*targetH), round((1-targetW)*width):end) = deal(1);
+                    tempBinvavg = ws.binvavg;
+                    tempBinvavg(:,1:round(width*(1-targetW))) = deal(0);
+                    tempBinvavg(round(height*targetH):end, :) = deal(0);
+                    targetInd = find(targetArea);                    
+                    bw = bwconncomp(tempBinvavg);
                     bwInd = find(cellfun(@(x) length(intersect(x,targetInd)),bw.PixelIdxList));
                     if isempty(bwInd)
                         error(['no top-view pole detected at mouse ', obj.mouseName, ' session ', obj.sessionName, ' trial # ', num2str(obj.trialNum)]);
@@ -496,7 +499,7 @@ classdef WhiskerTrialLite_2pad < handle
                         if ~isempty(closeAdjFrames)
                             [~, amplitude, ~, ~, ~, ~, phase, ~] = jkWhiskerDecomposition(obj.thetaAtBase{1});
                             whiskingStartInds = [1;find([0;diff(phase)]< pi); length(phase)+1];
-                            % pi is defined as the threshold by observing the histogram of diff(phase)
+                            % pi (~3.41) is defined as the threshold by observing the histogram of diff(phase)
                             if ~isempty(whiskingStartInds)
                                 whiskingFrames = [];
                                 for i = 1 : length(whiskingStartInds)-1
