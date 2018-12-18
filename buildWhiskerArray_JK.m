@@ -12,17 +12,25 @@
 
 mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
 
-% {'JK037 S21','JK038 S29','JK053 S08','JK056 S06','JK056 S07'}
-% {'JK025 S05','JK025 pre1','JK027 pre1','JK030 S08','JK030 pre1','JK030 pre2','JK036 S16','JK037 S21','JK038 S29','JK039 S02','JK039 S18','JK039 S19','JK041 S29','JK052 pre1','JK054 S04'}
-% mice = {'JK053', 'JK056'};
+% Error sessions for length(protraction frames) ~= length(prtraction distance) -> Run WL on these first
+% {'JK030S10','JK030S13','JK030pre1','JK030pre2','JK036S09','JK036pre1','JK037S03','JK037pre1','JK039S24','JK039S25','JK052S02','JK052S03','JK052S08','JK052S14','JK053S07','JK054S26'}
+% and then run 2nd processing of WL. 
+% Then check proportion of trials without touch frames again, except for these sessions.
 
-videoloc = 'Y:\Whiskernas\JK\whisker\tracked\';
+
+
+% mice = {'JK052', 'JK053','JK054'};
+
+
+
+
+videoloc = 'D:\WhiskerVideo\';
 if strcmp(videoloc(end),filesep)
     whisker_d = videoloc;
 else
     whisker_d = ([videoloc filesep]);
 end
-behavior_base_dir = 'Y:\Whiskernas\JK\SoloData\';
+behavior_base_dir = 'D:\SoloData\';
 
 ppm = 17.81/2;
             % 'pxPerMm': 17.81002608 for telecentric lens
@@ -56,26 +64,17 @@ touchKappaSTDthreshold = 2;
 % sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
 % sessions = {[3,4,21:23,25,26],[3],[3,4,25,26],[3:5]};
 
-sessions = {[1:22],[1:22,99],[1:22],[1:20,91],[1:24],[1:31],[1:25],[1:30]};
-sessions_pre = {[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3]};
-sessions_spont = {[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5]};
+sessions = {[],[],[],[],[],[1:31],[1:25],[1:30]};
+sessions_pre = {[],[],[],[],[],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3]};
+sessions_spont = {[],[],[],[],[],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5]};
 
-% sessions = {[],[],[],[1:20,91],[1:24],[1:31],[1:25],[1:30]};
-% sessions_pre = {[],[],[],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3]};
-% sessions_spont = {[],[],[],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5]};
-
-% sessions = {[],[],[],[1],[],[],[],[]};
-
-
-
-% sessions = {[4],[],[],[],[],[],[],[]};
-
-% sessions = {[8],[6,7],[],[],[],[],[],[],[],[]};
+% 
+% sessions = {[],[],[],[],[],[],[],[],[],[]};
 % sessions_pre = {[],[],[],[],[],[],[],[],[],[],[],[]};
-% sessions_piezo = {[],[],[],[],[],[],[],[],[],[],[],[]};
+sessions_piezo = {[],[],[],[],[],[],[],[],[],[],[],[]};
 % sessions_spont = {[],[],[],[],[],[],[],[],[],[],[],[]};
 
-all_session = 0; % 1 if using all sessions, 0 if using selected sessions
+all_session = 1; % 1 if using all sessions, 0 if using selected sessions
 
 DoFollicle = 0;
 DoRemeasure = 0;
@@ -83,8 +82,8 @@ doWT = 0;
 testPoleUp = 0;
 doWST = 0;
 makeTouchHyperplane = 0;
-doWL = 1;
-do3D = 0;
+doWL = 0;
+do3D = 1;
 
 %% Define follicle points and masks
 % saves follicle_n_mask.mat file consists of variables 'maskx','masky','width', 'height', and 'follicle_first'
@@ -917,17 +916,6 @@ if doWL
                     buildWL_2pad(wd, rInMm, 'b_session', b_session, 'whiskingAmpThreshold', whiskingAmpThreshold, 'stdHistogramThreshold', stdHistogramThreshold, 'distanceHistogramBin', distanceHistogramBin, 'touchBoundaryThickness', touchBoundaryThickness, 'touchBoundaryBuffer', touchBoundaryBuffer, 'maxPointsNearHyperplane', maxPointsNearHyperplane, 'touchKappaSTDthreshold', touchKappaSTDthreshold)
                 end
             end
-
-            cd(whisker_d)
-            sn_piezo = dir([mice{mi},'piezo*']);
-            for si = 1 : length(sn_piezo)
-                cd(whisker_d)
-                if sn_piezo(si).isdir
-                    [mouseName, sessionName] = strtok(sn_piezo(si).name,'piezo');
-                    wd = [whisker_d, mouseName, sessionName];
-                    buildWL_2pad(wd, rInMm)
-                end
-            end
             
             cd(whisker_d)
             sn_spont= dir([mice{mi},'spont*']);
@@ -1058,17 +1046,6 @@ if do3D
                 end
             end
 
-%             cd(whisker_d)
-%             sn_piezo = dir([mice{mi},'piezo*']);
-%             for si = 1 : length(sn_piezo)
-%                 cd(whisker_d)
-%                 if sn_piezo(si).isdir
-%                     [mouseName, sessionName] = strtok(sn_piezo(si).name,'piezo');
-%                     wd = [whisker_d, mouseName, sessionName];
-%                     Whisker.makeAllDirectory_Whisker3D_2pad(wd, 'rInMm', rInMm);
-%                 end
-%             end
-            
             cd(whisker_d)
             sn_spont= dir([mice{mi},'spont*']);
             for si = 1 : length(sn_spont)

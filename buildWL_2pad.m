@@ -31,13 +31,11 @@ end
 % fnind = find(~ismember(wstTrialFn, wlTrialFn));
 % wstTrialFn = wstTrialFn(fnind);
 
+load(wstFnList(1).name)
 
+loadfn = [ws.mouseName, ws.sessionName, '_touch_hp.mat'];
+load(loadfn)
 
-
-loadfn = dir('*_touch_hp.mat');
-if ~isempty(loadfn)
-    load(loadfn(1).name)
-end
 if ~isempty(p.Results.b_session)
     Whisker.makeAllDirectory_WhiskerTrialLite_2pad(whisker_d, 'include_files', wstTrialFn, 'calc_forces', false, 'rInMm', rInMm, ...
         'behavior', p.Results.b_session, 'hp_peaks', hp_peaks, 'touch_hp', touch_hp, 'psi1', psi1, 'psi2', psi2, ...

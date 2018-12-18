@@ -180,51 +180,51 @@ nfiles = length(fnall);
 
 if ~isempty(fnall)
     if exist('parfor','builtin') % Parallel Computing Toolbox is installed.
-% %         for k=1:nfiles
-%         parfor k=1:nfiles
-%             fn = fnall{k};
-%             disp(['Processing ''_WST.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
-% 
-%             ws = pctload([fn '_WST.mat']);
-% 
-%             if isempty(p.Results.touch_hp) || isempty(p.Results.hp_peaks) || isempty(p.Results.behavior)
-%                 wl = Whisker.WhiskerTrialLite_2pad(ws,'calc_forces',p.Results.calc_forces,...
-%                     'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
-%                     'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
-%                     'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
-%                     'proximity_threshold',p.Results.proximity_threshold, 'rInMm', p.Results.rInMm);
-%             else                    
-%                 b_ind = find(cellfun(@(x) x.trialNum,p.Results.behavior.trials)==str2double(fn));
-%                 if strcmp(p.Results.behavior.trials{b_ind}.trialType, 'oo')
-%                     wl = Whisker.WhiskerTrialLite_2pad(ws,'calc_forces',p.Results.calc_forces,...
-%                         'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
-%                         'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
-%                         'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
-%                         'proximity_threshold',p.Results.proximity_threshold, 'rInMm', p.Results.rInMm);
-%                 else
-% 
-%                     angle = p.Results.behavior.trials{b_ind}.servoAngle;
-%                     distance = p.Results.behavior.trials{b_ind}.motorDistance;
-%                     if angle < 90
-%                         kappaSTDthreshold = p.Results.touchKappaSTDthreshold/2;
-%                     else
-%                         kappaSTDthreshold = p.Results.touchKappaSTDthreshold;
-%                     end
-% 
-%                     th_ind = find(cellfun(@(x) isequal(x, [angle, distance]), p.Results.servo_distance_pair));
-%                     wl = Whisker.WhiskerTrialLite_2pad(ws,'calc_forces',p.Results.calc_forces,...
-%                         'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
-%                         'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
-%                         'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value, 'proximity_threshold',p.Results.proximity_threshold, ...
-%                         'touchHPpeaks', p.Results.hp_peaks{th_ind}, 'touchHP', p.Results.touch_hp{th_ind}, 'touchPsi1', p.Results.psi1(th_ind), 'touchPsi2', p.Results.psi2(th_ind), ...
-%                         'rInMm', p.Results.rInMm, 'touchKappaSTDthreshold', kappaSTDthreshold, 'whiskingAmpThreshold', p.Results.whiskingAmpThreshold, 'fwkappamean', fwkappamean, 'fwkappastd', fwkappastd, ...
-%                         'touchBoundaryThickness', p.Results.touchBoundaryThickness, 'touchBoundaryBuffer', p.Results.touchBoundaryBuffer, 'distanceHistogramBin', p.Results.distanceHistogramBin, 'maxPointsNearHyperplane', p.Results.maxPointsNearHyperplane);
-%                 end
-%             end
-%             
-%             outfn = [fn '_WL_2pad.mat'];
-%             pctsave(outfn,wl);
-%         end
+%         for k=1:nfiles
+        parfor k=1:nfiles
+            fn = fnall{k};
+            disp(['Processing ''_WST.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
+
+            ws = pctload([fn '_WST.mat']);
+
+            if isempty(p.Results.touch_hp) || isempty(p.Results.hp_peaks) || isempty(p.Results.behavior)
+                wl = Whisker.WhiskerTrialLite_2pad(ws,'calc_forces',p.Results.calc_forces,...
+                    'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
+                    'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
+                    'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
+                    'proximity_threshold',p.Results.proximity_threshold, 'rInMm', p.Results.rInMm);
+            else                    
+                b_ind = find(cellfun(@(x) x.trialNum,p.Results.behavior.trials)==str2double(fn));
+                if strcmp(p.Results.behavior.trials{b_ind}.trialType, 'oo')
+                    wl = Whisker.WhiskerTrialLite_2pad(ws,'calc_forces',p.Results.calc_forces,...
+                        'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
+                        'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
+                        'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value,...
+                        'proximity_threshold',p.Results.proximity_threshold, 'rInMm', p.Results.rInMm);
+                else
+
+                    angle = p.Results.behavior.trials{b_ind}.servoAngle;
+                    distance = p.Results.behavior.trials{b_ind}.motorDistance;
+                    if angle < 90
+                        kappaSTDthreshold = p.Results.touchKappaSTDthreshold/2;
+                    else
+                        kappaSTDthreshold = p.Results.touchKappaSTDthreshold;
+                    end
+
+                    th_ind = find(cellfun(@(x) isequal(x, [angle, distance]), p.Results.servo_distance_pair));
+                    wl = Whisker.WhiskerTrialLite_2pad(ws,'calc_forces',p.Results.calc_forces,...
+                        'whisker_radius_at_base',p.Results.whisker_radius_at_base,...
+                        'whisker_length',p.Results.whisker_length,'youngs_modulus',p.Results.youngs_modulus,...
+                        'baseline_time_or_kappa_value',p.Results.baseline_time_or_kappa_value, 'proximity_threshold',p.Results.proximity_threshold, ...
+                        'touchHPpeaks', p.Results.hp_peaks{th_ind}, 'touchHP', p.Results.touch_hp{th_ind}, 'touchPsi1', p.Results.psi1(th_ind), 'touchPsi2', p.Results.psi2(th_ind), ...
+                        'rInMm', p.Results.rInMm, 'touchKappaSTDthreshold', kappaSTDthreshold, 'whiskingAmpThreshold', p.Results.whiskingAmpThreshold, 'fwkappamean', fwkappamean, 'fwkappastd', fwkappastd, ...
+                        'touchBoundaryThickness', p.Results.touchBoundaryThickness, 'touchBoundaryBuffer', p.Results.touchBoundaryBuffer, 'distanceHistogramBin', p.Results.distanceHistogramBin, 'maxPointsNearHyperplane', p.Results.maxPointsNearHyperplane);
+                end
+            end
+            
+            outfn = [fn '_WL_2pad.mat'];
+            pctsave(outfn,wl);
+        end
         
         touchBoundaryBufferInPix = p.Results.touchBoundaryBuffer * wsArray.trials{1}.pxPerMm;
         
@@ -234,7 +234,7 @@ if ~isempty(fnall)
             % those without it)
             wlArray = Whisker.WhiskerTrialLite_2padArray(d, wsArray.trials{end}.mouseName, wsArray.trials{end}.sessionName);
 %             protractionThresholdInds = find(cellfun(@(x) ~isempty(x.protractionThreshold), wlArray.trials));
-            protractionThresholdInds = find(cellfun(@(x) x.protractionMethod, wlArray.trials));
+            protractionThresholdInds = find(cellfun(@(x) x.prothresholdMethod, wlArray.trials));
             meanProtractionThreshold = zeros(size(p.Results.servo_distance_pair));
             if isempty(protractionThresholdInds)
                 for i = 1 : size(meanProtractionThreshold,1)
@@ -257,7 +257,7 @@ if ~isempty(fnall)
             end
             
 %             retractionThresholdInds = find(cellfun(@(x) ~isempty(x.retractionThreshold), wlArray.trials));
-            retractionThresholdInds = find(cellfun(@(x) x.retractionMethod, wlArray.trials));
+            retractionThresholdInds = find(cellfun(@(x) x.rethresholdMethod, wlArray.trials));
             meanRetractionThreshold = zeros(size(p.Results.servo_distance_pair));
             if isempty(retractionThresholdInds)
                 for i = 1 : size(meanRetractionThreshold,1)
@@ -280,15 +280,16 @@ if ~isempty(fnall)
             end
                         
 %             noProtractionThresholdTns = cellfun(@(x) ~strcmp(x.trialType, 'oo') * isempty(x.protractionThreshold) * ~isempty(x.protractionDistance) * x.trialNum, wlArray.trials);
-            noProtractionThresholdTns = cellfun(@(x) ~strcmp(x.trialType, 'oo') * x.protractionMethod * ~isempty(x.protractionDistance) * x.trialNum, wlArray.trials);
+            noProtractionThresholdTns = cellfun(@(x) ~strcmp(x.trialType, 'oo') * length(find(x.prothresholdMethod)) * ~isempty(x.protractionDistance) * x.trialNum, wlArray.trials);
             noProtractionThresholdTns = noProtractionThresholdTns(noProtractionThresholdTns>0);
 %             noRetractionThresholdTns = cellfun(@(x) ~strcmp(x.trialType, 'oo') * isempty(x.retractionThreshold) * ~isempty(x.retractionDistance) * x.trialNum, wlArray.trials);
-            noRetractionThresholdTns = cellfun(@(x) ~strcmp(x.trialType, 'oo') * x.retractionMethod * ~isempty(x.protractionDistance) * x.trialNum, wlArray.trials);
+            noRetractionThresholdTns = cellfun(@(x) ~strcmp(x.trialType, 'oo') * length(find(x.rethresholdMethod)) * ~isempty(x.protractionDistance) * x.trialNum, wlArray.trials);
             noRetractionThresholdTns = noRetractionThresholdTns(noRetractionThresholdTns>0);
             changeInds = union(noProtractionThresholdTns, noRetractionThresholdTns); % trials that needs to be changed, because there was no threshold calculated.
             sdpair = p.Results.servo_distance_pair;
             
             parfor k = 1 : length(changeInds)
+%             for k = 1 : length(changeInds)
                 fn = num2str(changeInds(k));
                 disp(['2nd processing ''_WL_2pad.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
 

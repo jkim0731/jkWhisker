@@ -625,8 +625,8 @@ classdef WhiskerTrialLite_2pad < handle
                         end
                         obj.protractionFrames = noNaNInd(unique(tempProtFrames));
                         obj.retractionFrames = noNaNInd(unique(tempRetFrames));
-                        obj.protractionDistance = protractionDistance(tempProtFrames);
-                        obj.retractionDistance = retractionDistance(tempRetFrames);
+                        obj.protractionDistance = protractionDistance(unique(tempProtFrames));
+                        obj.retractionDistance = retractionDistance(unique(tempRetFrames));
                         if ~isempty(proTF)
                             obj.protractionTouchFrames = noNaNInd(sort(proTF));                        
                         end
