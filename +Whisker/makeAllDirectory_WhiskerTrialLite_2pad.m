@@ -232,7 +232,7 @@ if ~isempty(fnall)
             % divide into each trial type (pole angle & radial distance
             % combination), and then assign touch thresholds again. (for
             % those without it)
-            wlArray = Whisker.WhiskerTrialLite_2padArray(d, wsArray.trials{end}.mouseName, wsArray.trials{end}.sessionName);
+            wlArray = Whisker.WhiskerTrialLite_2padArray(d);
 %             protractionThresholdInds = find(cellfun(@(x) ~isempty(x.protractionThreshold), wlArray.trials));
             protractionThresholdInds = find(cellfun(@(x) x.prothresholdMethod, wlArray.trials));
             meanProtractionThreshold = zeros(size(p.Results.servo_distance_pair));
@@ -252,7 +252,7 @@ if ~isempty(fnall)
                 pairInds = unique(pairNums);
                 for i = 1 : length(pairInds)
                     tempInd = find(pairNums == pairInds(i));
-                    meanProtractionThreshold(pairInds(i)) = max(mean(protractionThresholds(tempInd)), touchBoundaryBufferInPix);
+                    meanProtractionThreshold(i) = max(mean(protractionThresholds(tempInd)), touchBoundaryBufferInPix);
                 end
             end
             
@@ -275,33 +275,29 @@ if ~isempty(fnall)
                 pairInds = unique(pairNums);
                 for i = 1 : length(pairInds)
                     tempInd = find(pairNums == pairInds(i));
-                    meanRetractionThreshold(pairInds(i)) = min(mean(retractionThresholds(tempInd)), - touchBoundaryBufferInPix);
+                    meanRetractionThreshold(i) = min(mean(retractionThresholds(tempInd)), - touchBoundaryBufferInPix);
                 end
             end
                         
-%             noProtractionThresholdTns = cellfun(@(x) ~strcmp(x.trialType, 'oo') * isempty(x.protractionThreshold) * ~isempty(x.protractionDistance) * x.trialNum, wlArray.trials);
-            noProtractionThresholdTns = cellfun(@(x) ~strcmp(x.trialType, 'oo') * length(find(x.prothresholdMethod)) * ~isempty(x.protractionDistance) * x.trialNum, wlArray.trials);
-            noProtractionThresholdTns = noProtractionThresholdTns(noProtractionThresholdTns>0);
-%             noRetractionThresholdTns = cellfun(@(x) ~strcmp(x.trialType, 'oo') * isempty(x.retractionThreshold) * ~isempty(x.retractionDistance) * x.trialNum, wlArray.trials);
-            noRetractionThresholdTns = cellfun(@(x) ~strcmp(x.trialType, 'oo') * length(find(x.rethresholdMethod)) * ~isempty(x.protractionDistance) * x.trialNum, wlArray.trials);
-            noRetractionThresholdTns = noRetractionThresholdTns(noRetractionThresholdTns>0);
-            changeInds = union(noProtractionThresholdTns, noRetractionThresholdTns); % trials that needs to be changed, because there was no threshold calculated.
+            noProtractionThresholdInds = find(cellfun(@(x) ~strcmp(x.trialType, 'oo') * isempty(x.protractionThreshold) * ~isempty(x.protractionDistance), wlArray.trials));            
+            noRetractionThresholdInds = find(cellfun(@(x) ~strcmp(x.trialType, 'oo') * isempty(x.retractionThreshold) * ~isempty(x.retractionDistance), wlArray.trials));            
+            changeInds = union(noProtractionThresholdInds, noRetractionThresholdInds); % trials that needs to be changed, because there was no threshold calculated.
             sdpair = p.Results.servo_distance_pair;
-            
+            fnlist = cellfun(@(x) x.trackerFileName, wlArray.trials(changeInds), 'uniformoutput', 'false');
             parfor k = 1 : length(changeInds)
 %             for k = 1 : length(changeInds)
-                fn = num2str(changeInds(k));
+                fn = fnlist{k};
                 disp(['2nd processing ''_WL_2pad.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
 
                 wl = pctloadwl([fn '_WL_2pad.mat']);
                 tempInd = find(cellfun(@(x) isequal(x, [wl.servoAngle, wl.radialDistance]), sdpair));
-                if ismember(changeInds(k), noProtractionThresholdTns)
+                if ismember(changeInds(k), noProtractionThresholdInds)
                     wl.protractionThreshold = meanProtractionThreshold(tempInd);
                     wl.protractionTouchFramesPre = wl.protractionFrames(wl.protractionDistance <= wl.protractionThreshold);
                     wl.protractionTouchFramesPre = setdiff(wl.protractionTouchFramesPre, wl.obviousNoTouchFrames);
                     wl.protractionTFchunksPre = wl.get_chunks(wl.protractionTouchFramesPre);
                 end
-                if ismember(changeInds(k), noRetractionThresholdTns)
+                if ismember(changeInds(k), noRetractionThresholdInds)
                     wl.retractionThreshold = meanRetractionThreshold(tempInd);
                     wl.retractionTouchFramesPre = wl.retractionFrames(wl.retractionDistance >= wl.retractionThreshold);
                     wl.retractionTouchFramesPre = setdiff(wl.retractionTouchFramesPre, wl.obviousNoTouchFrames);
@@ -413,15 +409,20 @@ if ~isempty(fnall)
 
             save(outfn,'wl');
         end
+        touchBoundaryBufferInPix = p.Results.touchBoundaryBuffer * wsArray.trials{1}.pxPerMm;
         
         if contains(wsArray.trials{end}.sessionName, 'S') || contains(wsArray.trials{end}.sessionName, 'pre')
-            wlArray = Whisker.WhiskerTrialLite_2padArray(wsArray.trials{end}.mouseName, wsArray.trials{end}.sessionName);                        
-            protractionThresholdInds = find(cellfun(@(x) ~isempty(x.protractionThreshold), wlArray.trials));
+            % divide into each trial type (pole angle & radial distance
+            % combination), and then assign touch thresholds again. (for
+            % those without it)
+            wlArray = Whisker.WhiskerTrialLite_2padArray(d);
+%             protractionThresholdInds = find(cellfun(@(x) ~isempty(x.protractionThreshold), wlArray.trials));
+            protractionThresholdInds = find(cellfun(@(x) x.prothresholdMethod, wlArray.trials));
             meanProtractionThreshold = zeros(size(p.Results.servo_distance_pair));
             if isempty(protractionThresholdInds)
                 for i = 1 : size(meanProtractionThreshold,1)
                     for j  = 1 : size(meanProtractionThreshold,2)
-                        meanProtractionThreshold(i,j) = p.Results.touchBoundaryBuffer;
+                        meanProtractionThreshold(i,j) = touchBoundaryBufferInPix;
                     end
                 end
             else
@@ -434,16 +435,17 @@ if ~isempty(fnall)
                 pairInds = unique(pairNums);
                 for i = 1 : length(pairInds)
                     tempInd = find(pairNums == pairInds(i));
-                    meanProtractionThreshold(i) = mean(protractionThresholds(tempInd));
+                    meanProtractionThreshold(i) = max(mean(protractionThresholds(tempInd)), touchBoundaryBufferInPix);
                 end
             end
             
-            retractionThresholdInds = find(cellfun(@(x) ~isempty(x.retractionThreshold), wlArray.trials));
+%             retractionThresholdInds = find(cellfun(@(x) ~isempty(x.retractionThreshold), wlArray.trials));
+            retractionThresholdInds = find(cellfun(@(x) x.rethresholdMethod, wlArray.trials));
             meanRetractionThreshold = zeros(size(p.Results.servo_distance_pair));
             if isempty(retractionThresholdInds)
                 for i = 1 : size(meanRetractionThreshold,1)
                     for j  = 1 : size(meanRetractionThreshold,2)
-                        meanRetractionThreshold(i,j) = p.Results.touchBoundaryBuffer;
+                        meanRetractionThreshold(i,j) = -touchBoundaryBufferInPix;
                     end
                 end
             else
@@ -456,30 +458,28 @@ if ~isempty(fnall)
                 pairInds = unique(pairNums);
                 for i = 1 : length(pairInds)
                     tempInd = find(pairNums == pairInds(i));
-                    meanRetractionThreshold(i) = mean(retractionThresholds(tempInd));
+                    meanRetractionThreshold(i) = min(mean(retractionThresholds(tempInd)), - touchBoundaryBufferInPix);
                 end
             end
-            
-            noProtractionThresholdTns = cellfun(@(x) ~strcmp(x.trialType, 'oo') * isempty(x.protractionThreshold) * ~isempty(x.protractionDistance) * x.trialNum, wlArray.trials);
-            noProtractionThresholdTns = noProtractionThresholdTns(noProtractionThresholdTns>0);
-            noRetractionThresholdTns = cellfun(@(x) ~strcmp(x.trialType, 'oo') * isempty(x.retractionThreshold) * ~isempty(x.retractionDistance) * x.trialNum, wlArray.trials);
-            noRetractionThresholdTns = noRetractionThresholdTns(noRetractionThresholdTns>0);
-            
-            changeInds = union(noProtractionThresholdTns, noRetractionThresholdTns);
+                        
+            noProtractionThresholdInds = find(cellfun(@(x) ~strcmp(x.trialType, 'oo') * isempty(x.protractionThreshold) * ~isempty(x.protractionDistance), wlArray.trials));            
+            noRetractionThresholdInds = find(cellfun(@(x) ~strcmp(x.trialType, 'oo') * isempty(x.retractionThreshold) * ~isempty(x.retractionDistance), wlArray.trials));            
+            changeInds = union(noProtractionThresholdInds, noRetractionThresholdInds); % trials that needs to be changed, because there was no threshold calculated.
             sdpair = p.Results.servo_distance_pair;
+            fnlist = cellfun(@(x) x.trackerFileName, wlArray.trials(changeInds), 'uniformoutput', 'false');
             for k = 1 : length(changeInds)
-                fn = num2str(changeInds(k));
+                fn = fnlist{k};
                 disp(['2nd processing ''_WL_2pad.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
 
                 wl = pctloadwl([fn '_WL_2pad.mat']);
                 tempInd = find(cellfun(@(x) isequal(x, [wl.servoAngle, wl.radialDistance]), sdpair));
-                if ismember(changeInds(k), noProtractionThresholdTns)
+                if ismember(changeInds(k), noProtractionThresholdInds)
                     wl.protractionThreshold = meanProtractionThreshold(tempInd);
                     wl.protractionTouchFramesPre = wl.protractionFrames(wl.protractionDistance <= wl.protractionThreshold);
                     wl.protractionTouchFramesPre = setdiff(wl.protractionTouchFramesPre, wl.obviousNoTouchFrames);
                     wl.protractionTFchunksPre = wl.get_chunks(wl.protractionTouchFramesPre);
                 end
-                if ismember(changeInds(k), noRetractionThresholdTns)
+                if ismember(changeInds(k), noRetractionThresholdInds)
                     wl.retractionThreshold = meanRetractionThreshold(tempInd);
                     wl.retractionTouchFramesPre = wl.retractionFrames(wl.retractionDistance >= wl.retractionThreshold);
                     wl.retractionTouchFramesPre = setdiff(wl.retractionTouchFramesPre, wl.obviousNoTouchFrames);
@@ -540,10 +540,10 @@ if ~isempty(fnall)
                 wl.protractionTouchFrames = wl.single_frame_correction(wl.protractionTouchFrames);
                 wl.protractionTFchunks = wl.get_chunks(wl.protractionTouchFrames);
                 wl.retractionTouchFrames = wl.single_frame_correction(wl.retractionTouchFrames);
-                wl.retractionTFchunks = wl.get_chunks(wl.retractionTouchFrames);
-                
+                wl.retractionTFchunks = wl.get_chunks(wl.retractionTouchFrames);                
+
                 outfn = [fn '_WL_2pad.mat'];
-                save(outfn,'wl');
+                pctsave(outfn,wl)
             end
         end
     end

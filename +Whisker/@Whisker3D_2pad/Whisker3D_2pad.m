@@ -33,9 +33,6 @@ classdef Whisker3D_2pad < handle
         phi = []; % elevation angle (front angle)
         zeta = []; % roll angle, calculated by tangent line from the mask
         
-        protractionTouchChunks = {}; % Inherited from WhiskerLiteTrial_2pad. in frame numbers (not as same as in obj.time)
-        retractionTouchChunks = {};% Inherited from WhiskerLiteTrial_2pad. in frame numbers (not as same as in obj.time)
-        
         trackerData = {}; % {n}(:,1) for anterior-posterior axis, {n}(:,2) for radial axis, and {n}(:,3) for vertical axis. Starts from the mask.        
         fit3Data = {}; % same as in trackerData, except that it's for polynomial fitting (using polyfitn by John D'Errico (https://www.mathworks.com/matlabcentral/fileexchange/34765-polyfitn)
         fitorder = 5;
@@ -54,17 +51,16 @@ classdef Whisker3D_2pad < handle
     
         
     methods (Access = public)
-        function obj = Whisker3D_2pad(ws, wl, varargin)
+        function obj = Whisker3D_2pad(ws, varargin)
             if nargin==0
                 return
             end
             
             p = inputParser;
-            p.addRequired('ws', @(x) isa(x,'Whisker.WhiskerSignalTrial_2pad'));
-            p.addRequired('wl', @(x) isa(x,'Whisker.WhiskerTrialLite_2pad'));
+            p.addRequired('ws', @(x) isa(x,'Whisker.WhiskerSignalTrial_2pad'));            
             p.addParameter('rInMm', 3, @(x) isnumeric(x) && numel(x)==1 );
        
-            p.parse(ws,wl,varargin{:});
+            p.parse(ws,varargin{:});
             
             obj.rInMm = p.Results.rInMm;
             
@@ -83,9 +79,6 @@ classdef Whisker3D_2pad < handle
             obj.poleUpFrames = ws.poleUpFrames;
             obj.poleMovingFrames = ws.poleMovingFrames;            
             
-            obj.protractionTouchChunks = wl.protractionTFchunks;
-            obj.retractionTouchChunks = wl.retractionTFchunks;
-
             obj.mirrorAngle = ws.mirrorAngle;
             R = [cosd(obj.mirrorAngle) -sind(obj.mirrorAngle); sind(obj.mirrorAngle) cosd(obj.mirrorAngle)]; % rotation matrix in top view
             % Caution: the rotation is based on 'plot function coordinate
