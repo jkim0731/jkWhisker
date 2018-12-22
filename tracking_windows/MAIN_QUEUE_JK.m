@@ -13,7 +13,7 @@ DISPLAY_STATISTICS = true;
 CONVERT_ALL_VIDEOS = true;
 NUMBER_OF_RESERVED_CORES = 1;
 USE_ERROR_CHECK = true;
-base_dir = 'L:\';
+base_dir = 'E:\';
 
 % DIRECTORY LIST ----------------------------------------------------------
 %Directory to find files to convert or track

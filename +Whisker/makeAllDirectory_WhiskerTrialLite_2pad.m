@@ -283,7 +283,7 @@ if ~isempty(fnall)
             noRetractionThresholdInds = find(cellfun(@(x) ~strcmp(x.trialType, 'oo') * isempty(x.retractionThreshold) * ~isempty(x.retractionDistance), wlArray.trials));            
             changeInds = union(noProtractionThresholdInds, noRetractionThresholdInds); % trials that needs to be changed, because there was no threshold calculated.
             sdpair = p.Results.servo_distance_pair;
-            fnlist = cellfun(@(x) x.trackerFileName, wlArray.trials(changeInds), 'uniformoutput', 'false');
+            fnlist = cellfun(@(x) x.trackerFileName, wlArray.trials(changeInds), 'uniformoutput', false);
             parfor k = 1 : length(changeInds)
 %             for k = 1 : length(changeInds)
                 fn = fnlist{k};
@@ -466,7 +466,7 @@ if ~isempty(fnall)
             noRetractionThresholdInds = find(cellfun(@(x) ~strcmp(x.trialType, 'oo') * isempty(x.retractionThreshold) * ~isempty(x.retractionDistance), wlArray.trials));            
             changeInds = union(noProtractionThresholdInds, noRetractionThresholdInds); % trials that needs to be changed, because there was no threshold calculated.
             sdpair = p.Results.servo_distance_pair;
-            fnlist = cellfun(@(x) x.trackerFileName, wlArray.trials(changeInds), 'uniformoutput', 'false');
+            fnlist = cellfun(@(x) x.trackerFileName, wlArray.trials(changeInds), 'uniformoutput', false);
             for k = 1 : length(changeInds)
                 fn = fnlist{k};
                 disp(['2nd processing ''_WL_2pad.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
