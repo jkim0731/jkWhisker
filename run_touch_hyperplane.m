@@ -31,6 +31,8 @@ if strcmp(skip,'skip') && ~isempty(dir([whisker_d, '*touch_hp.mat']))
     return
 end
 
+savefn = [whisker_d mouseName sessionName '_touch_hp.mat'];
+
 if strcmp(sessionName,'S99')
     sessionName = 'S17';
 elseif strcmp(sessionName,'S91')
@@ -874,7 +876,7 @@ for iservo = 1 : length(servo_values)
     end
 end
 %%
-save([whisker_d mouseName sessionName '_touch_hp.mat'],'touch_hp','num_points_in_hp','steps_hp','hp_peaks', 'psi1', 'psi2', 'servo_distance_pair', 'thPolygon')
+save(savefn,'touch_hp','num_points_in_hp','steps_hp','hp_peaks', 'psi1', 'psi2', 'servo_distance_pair', 'thPolygon')
 fprintf('%s %s hp_peaks saved\n', mouseName, sessionName)
 
 

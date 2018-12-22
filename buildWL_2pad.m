@@ -31,10 +31,18 @@ end
 % fnind = find(~ismember(wstTrialFn, wlTrialFn));
 % wstTrialFn = wstTrialFn(fnind);
 
-load(wstFnList(1).name)
+% load(wstFnList(1).name)
+% 
+% loadfn = [ws.mouseName, ws.sessionName, '_touch_hp.mat'];
 
-loadfn = [ws.mouseName, ws.sessionName, '_touch_hp.mat'];
-load(loadfn)
+hpfn = dir('*_touch_hp.mat');
+if length(hpfn) == 1
+    load(hpfn(1).name)
+elseif length(hpfn) == 0
+    error('No touch hp file')
+else
+    error('Too many hp files')
+end
 
 if ~isempty(p.Results.b_session)
     Whisker.makeAllDirectory_WhiskerTrialLite_2pad(whisker_d, 'include_files', wstTrialFn, 'calc_forces', false, 'rInMm', rInMm, ...
