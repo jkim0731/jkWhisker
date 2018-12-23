@@ -21,8 +21,9 @@
 %%
 %%
 
-mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041','JK052', 'JK053','JK054','JK056'};
+% mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041','JK052', 'JK053','JK054','JK056'};
 
+mice = {'JK052', 'JK053','JK054','JK056'};
 
 
 videoloc = 'Y:\Whiskernas\JK\whisker\tracked\';
@@ -33,13 +34,7 @@ else
 end
 behavior_base_dir = 'Y:\Whiskernas\JK\SoloData\';
 
-%%
-%%
-%%
-% ppm = 17.81/2;
-%%
-%%
-%%
+ppm = 17.81;
             % 'pxPerMm': 17.81002608 for telecentric lens
             % /2 for mice <= JK041, because of binning.
 % comment out when doing for all of the sessions in the mouse directory
@@ -56,13 +51,7 @@ barRadius = 0.3; % in mm
 whiskingAmpThreshold = 2.5; % in degrees
 stdHistogramThreshold = 1;
 distanceHistogramBinInMm = 0.02; %
-%%
-%%
-%%
-% distanceHistogramBin = round(ppm*distanceHistogramBinInMm*100)/100; % up to 2 significant numbers
-%%
-%%
-%%
+distanceHistogramBin = round(ppm*distanceHistogramBinInMm*100)/100; % up to 2 significant numbers
 touchBoundaryThickness = 0.3; % in mm
 touchBoundaryBuffer = 0.1; % in mm
 maxPointsNearHyperplane = videoFreq * 15 / 1000; % mean touch duration ~ 15 ms. 
@@ -75,8 +64,12 @@ touchKappaSTDthreshold = 2;
 % sessions_pre = {[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3]};
 % 
 
-sessions = {    [1:19,22],  [1:22,99], [1:22], [1:18,21,91],  [1:10,12:24],   [1:22,24:31],   [1:28], [1:19,21:30],   [1:29,94,95],     [1:3,5:21],     [1:26], [1:13]};
-sessions_pre = {[1],        [1],    [1:2],  [1],        [1:2],          [1],            [1],    [1],            [1],        [1],            [1],    [1:3]};
+% sessions = {    [1:19,22],  [1:22,99], [1:22], [1:18,21,91],  [1:10,12:24],   [1:22,24:31],   [1:28], [1:19,21:30],   [1:29,94,95],     [1:3,5:21],     [1:26], [1:13]};
+% sessions_pre = {[1],        [1],    [1:2],  [1],        [1:2],          [1],            [1],    [1],            [1],        [1],            [1],    [1:3]};
+
+sessions = {    [1:29,94,95],     [1:3,5:21],     [1:26], [1:13]};
+sessions_pre = {[1],        [1],            [1],    [1:3]};
+
 
 % sessions_spont = {[],[],[],[],[],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5]};
 
@@ -942,77 +935,6 @@ if doWL
         end
     else
         for mi = 1 : size(mice,2) % mouse index
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            if mi <= 8
-                ppm = 17.81/2;
-            else
-                ppm = 17.87;
-            end
-            distanceHistogramBin = round(ppm*distanceHistogramBinInMm*100)/100;
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
             mouseName = mice{mi};
             if ~isempty(sessions{mi}) 
                 for j = 1 : length(sessions{mi})  
