@@ -3,39 +3,43 @@
 %%
 %% Error sessions!!
 
-% 2018/12/20 Need to run hyperplane for JK027S99
+% 2018/12/22 Run JK052pre1 W3.
 
-% 025-22
-% Need to resume from 027-03. for now, run pre sessions first
 % Run JK027S17 WL_2pad again. error at 2nd running. check with wlarray first.
 % Run all W3 again. 
-%%
-%%
-%%
 
-mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
-
+% Check w3 length(time) == length(theta) == length(phi) == length(kappaH) == length(kappaV)
 % Error sessions for length(protraction frames) ~= length(prtraction distance) -> Run WL on these first
-% {'JK030S10','JK030S13','JK030pre1','JK030pre2','JK036S09','JK036pre1','JK037S03','JK037pre1','JK039S24','JK039S25','JK052S02','JK052S03','JK052S08','JK052S14','JK053S07','JK054S26'}
-% and then run 2nd processing of WL. 
-% Then check proportion of trials without touch frames again, except for these sessions.
+%%
+%%
+%% re-do these
+% sessions = {[14,15]};  % for JK039. Did not check JK041 S06~S31 
+%%
+%%
+%%
+%%
+%%
+%%
+
+mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041','JK052', 'JK053','JK054','JK056'};
 
 
 
-% mice = {'JK052', 'JK053','JK054'};
-
-
-
-
-videoloc = 'D:\WhiskerVideo\';
+videoloc = 'Y:\Whiskernas\JK\whisker\tracked\';
 if strcmp(videoloc(end),filesep)
     whisker_d = videoloc;
 else
     whisker_d = ([videoloc filesep]);
 end
-behavior_base_dir = 'D:\SoloData\';
+behavior_base_dir = 'Y:\Whiskernas\JK\SoloData\';
 
-ppm = 17.81/2;
+%%
+%%
+%%
+% ppm = 17.81/2;
+%%
+%%
+%%
             % 'pxPerMm': 17.81002608 for telecentric lens
             % /2 for mice <= JK041, because of binning.
 % comment out when doing for all of the sessions in the mouse directory
@@ -52,18 +56,18 @@ barRadius = 0.3; % in mm
 whiskingAmpThreshold = 2.5; % in degrees
 stdHistogramThreshold = 1;
 distanceHistogramBinInMm = 0.02; %
-distanceHistogramBin = round(ppm*distanceHistogramBinInMm*100)/100; % up to 2 significant numbers
+%%
+%%
+%%
+% distanceHistogramBin = round(ppm*distanceHistogramBinInMm*100)/100; % up to 2 significant numbers
+%%
+%%
+%%
 touchBoundaryThickness = 0.3; % in mm
 touchBoundaryBuffer = 0.1; % in mm
 maxPointsNearHyperplane = videoFreq * 15 / 1000; % mean touch duration ~ 15 ms. 
 touchKappaSTDthreshold = 2;
-%%
-%%
-%% re-do these
-% sessions = {[14,15]};  % for JK039. Did not check JK041 S06~S31 
-%%
-%%
-%%
+
 % sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
 % sessions = {[3,4,21:23,25,26],[3],[3,4,25,26],[3:5]};
 % 
@@ -71,8 +75,8 @@ touchKappaSTDthreshold = 2;
 % sessions_pre = {[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3]};
 % 
 
-sessions = {[],[],[1:22],[1:20,91],[1:24],[1:31],[1:25],[1:30]};
-sessions_pre = {[],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3],[1:3]};
+sessions = {    [1:19,22],  [1:22,99], [1:22], [1:18,21,91],  [1:10,12:24],   [1:22,24:31],   [1:28], [1:19,21:30],   [1:29,94,95],     [1:3,5:21],     [1:26], [1:13]};
+sessions_pre = {[1],        [1],    [1:2],  [1],        [1:2],          [1],            [1],    [1],            [1],        [1],            [1],    [1:3]};
 
 % sessions_spont = {[],[],[],[],[],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5]};
 
@@ -937,7 +941,78 @@ if doWL
             end
         end
     else
-        for mi = 1 : size(mice,2) % mouse index            
+        for mi = 1 : size(mice,2) % mouse index
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if mi <= 8
+                ppm = 17.81/2;
+            else
+                ppm = 17.87;
+            end
+            distanceHistogramBin = round(ppm*distanceHistogramBinInMm*100)/100;
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             mouseName = mice{mi};
             if ~isempty(sessions{mi}) 
                 for j = 1 : length(sessions{mi})  
@@ -1066,7 +1141,7 @@ if do3D
             end
         end
     else
-        for mi = 1 : size(mice,2) % mouse index            
+        for mi = 1 : size(mice,2) % mouse index
             mouseName = mice{mi};
             if ~isempty(sessions{mi}) 
                 for j = 1 : length(sessions{mi})  
@@ -1087,7 +1162,7 @@ if do3D
                 for j = 1 : length(sessions_pre{mi})
                     sessionName = sprintf('pre%d',sessions_pre{mi}(j));
                     cd(whisker_d)
-                    if exist([mouseName, sessionName],'dir')                       
+                    if exist([mouseName, sessionName],'dir')
                         wd = [whisker_d, mouseName, sessionName];
                         errors = Whisker.makeAllDirectory_Whisker3D_2pad(wd, 'rInMm', rInMm);
                         if ~isempty(errors)
@@ -1098,34 +1173,21 @@ if do3D
                 end
             end
             
-%             if ~isempty(sessions_piezo{mi})
-%                 for j = 1 : length(sessions_piezo{mi})
-%                     sessionName = sprintf('piezo%d',sessions_piezo{mi}(j));
+%             if ~isempty(sessions_spont{mi})
+%                 for j = 1 : length(sessions_spont{mi})
+%                     sessionName = sprintf('spont%d',sessions_spont{mi}(j));
 %                     cd(whisker_d)
 %                     if exist([mouseName, sessionName],'dir')
 %                         wd = [whisker_d, mouseName, sessionName];
-%                         Whisker.makeAllDirectory_Whisker3D_2pad(wd, 'rInMm', rInMm);
+%                         errors = Whisker.makeAllDirectory_Whisker3D_2pad(wd, 'rInMm', rInMm);
+%                         if ~isempty(errors)
+%                             errorsession{end+1} = [mouseName,sessionName];
+%                             errorfn{end+1} = errors;
+%                         end
 %                     end
 %                 end
 %             end
-            
-            if ~isempty(sessions_spont{mi})
-                for j = 1 : length(sessions_spont{mi})
-                    sessionName = sprintf('spont%d',sessions_spont{mi}(j));
-                    cd(whisker_d)
-                    if exist([mouseName, sessionName],'dir')
-                        wd = [whisker_d, mouseName, sessionName];
-                        errors = Whisker.makeAllDirectory_Whisker3D_2pad(wd, 'rInMm', rInMm);
-                        if ~isempty(errors)
-                            errorsession{end+1} = [mouseName,sessionName];
-                            errorfn{end+1} = errors;
-                        end
-                    end
-                end
-            end            
         end
     end
 end
-
-save('w3errorlist.mat', 'errorsession', 'errorfn')
-
+    

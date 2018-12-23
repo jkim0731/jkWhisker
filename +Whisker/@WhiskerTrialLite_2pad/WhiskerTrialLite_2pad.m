@@ -319,7 +319,7 @@ classdef WhiskerTrialLite_2pad < handle
                     height = size(ws.binvavg,1);
                     width = size(ws.binvavg,2);
                     topViewPole = zeros([height, width],'logical');
-                    targetH = 0.6; targetW = 0.7; targetArea = zeros(size(ws.binvavg), 'logical'); targetArea(1:round(height*targetH), round((1-targetW)*width):end) = deal(1);
+                    targetH = 0.8; targetW = 0.8; targetArea = zeros(size(ws.binvavg), 'logical'); targetArea(1:round(height*targetH), round((1-targetW)*width):end) = deal(1);
                     tempBinvavg = ws.binvavg;
                     tempBinvavg(:,1:round(width*(1-targetW))) = deal(0);
                     tempBinvavg(round(height*targetH):end, :) = deal(0);
@@ -328,13 +328,10 @@ classdef WhiskerTrialLite_2pad < handle
                     bwInd = find(cellfun(@(x) length(intersect(x,targetInd)),bw.PixelIdxList));
                     if isempty(bwInd)
                         error(['no top-view pole detected at mouse ', obj.mouseName, ' session ', obj.sessionName, ' trial # ', num2str(obj.trialNum)]);
-                    elseif length(bwInd) > 1
-                        pixLength = cellfun(@(x) length(x), bw.PixelIdxList);
-                        [~,tempInd] = max(pixLength(bwInd));
-                        bwInd = bwInd(tempInd);
                     end
-                    topViewPole(bw.PixelIdxList{bwInd}) = deal(1);
-                    
+                    for tempi = 1 : length(bwInd)
+                        topViewPole(bw.PixelIdxList{bwInd(tempi)}) = deal(1);
+                    end
                     for tempi = 1 : length(obj.poleUpFrames)
                         trackerFrameTop = find(ws.trackerFrames{1} == obj.poleUpFrames(tempi),1);
                         if ~isempty(trackerFrameTop)
