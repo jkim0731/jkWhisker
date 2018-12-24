@@ -34,7 +34,7 @@ subplot(311), plot(poleUpLength), hold on, plot(oonum,poleUpLength(oonum), 'r.')
 subplot(312), plot(poleMovingLength), hold on, plot(oonum,poleMovingLength(oonum), 'r.')
 subplot(313), plot(noPoleLength), hold on, plot(oonum,noPoleLength(oonum), 'r.')
 %%
-figure, title([mouse, ' ', session]), hold on
+
 poleAxesUpX = [];
 poleAxesUpY = [];
 poleAxesUpX90 = [];
@@ -42,23 +42,28 @@ poleAxesUpY90 = [];
 angles = unique(cellfun(@(x) x.angle, wtArray));
 rds = unique(cellfun(@(x) x.radialDistance, wtArray));
 rds = rds(find(rds));
+
 for ai = 1 : length(angles)
     for ri = 1 : length(rds)
-        tn = find(cellfun(@(x) x.angle == angles(ai) && x.radialDistance == rds(ri), wtArray));
-        imshow(wtArray{tn(10)}.binvavg), hold on, 
-        for j = 1 : length(tn)
-            plot(wtArray{tn(j)}.poleAxesUp{1}(1,:), wtArray{tn(j)}.poleAxesUp{1}(2,:), 'r.'), 
-            plot(wtArray{tn(j)}.poleAxesUp{2}(1,:), wtArray{tn(j)}.poleAxesUp{2}(2,:), 'b.')
+        figure
+        inds = find(cellfun(@(x) x.angle == angles(ai) && x.radialDistance == rds(ri), wtArray));
+        subplot(121), imshow(wtArray{inds(10)}.binvavg), title([mouse, ' ', session, ': ', 'Angle = ', num2str(angles(ai)), ', Radial distance = ', num2str(rds(ri))]), hold on
+        
+        for j = 1 : length(inds)
+            plot(wtArray{inds(j)}.poleAxesUp{1}(1,:), wtArray{inds(j)}.poleAxesUp{1}(2,:), 'r.'), 
+            plot(wtArray{inds(j)}.poleAxesUp{2}(1,:), wtArray{inds(j)}.poleAxesUp{2}(2,:), 'b.')            
         end
-        if wtArray{tn(j)}.angle == 90
-            poleAxesUpX90 = wtArray{tn(1)}.poleAxesUp{1}(1,:);
-            poleAxesUpY90 = wtArray{tn(1)}.poleAxesUp{1}(2,:);
+        slopesTop = cellfun(@(x) (x.poleAxesUp{1}(2,1)-x.poleAxesUp{1}(2,end)) ./ (x.poleAxesUp{1}(1,1) - x.poleAxesUp{1}(1,end)), wtArray(inds));
+        slopesFront = cellfun(@(x) (x.poleAxesUp{2}(2,1)-x.poleAxesUp{2}(2,end)) ./ (x.poleAxesUp{2}(1,1) - x.poleAxesUp{2}(1,end)), wtArray(inds));
+        tn = cellfun(@(x) x.trialNum, wtArray(inds));
+        if wtArray{inds(j)}.angle == 90
+            poleAxesUpX90 = wtArray{inds(1)}.poleAxesUp{1}(1,:);
+            poleAxesUpY90 = wtArray{inds(1)}.poleAxesUp{1}(2,:);
         else
-            poleAxesUpX = [poleAxesUpX; wtArray{tn(1)}.poleAxesUp{1}(1,:)];
-            poleAxesUpY = [poleAxesUpY; wtArray{tn(1)}.poleAxesUp{1}(2,:)];
+            poleAxesUpX = [poleAxesUpX; wtArray{inds(1)}.poleAxesUp{1}(1,:)];
+            poleAxesUpY = [poleAxesUpY; wtArray{inds(1)}.poleAxesUp{1}(2,:)];
         end
-        waitforbuttonpress        
-        hold off
+        subplot(122), plot(tn, slopesTop, 'r.'), hold on, plot(tn, slopesFront, 'b.')
     end
 end
 figure, hold on

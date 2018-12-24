@@ -126,9 +126,9 @@ if ~isempty(fnall)
             disp(['Processing ''_WST.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
 
             ws = pctload([fn '_WST.mat']);
-            wl = pctloadwl([fn, '_WL_2pad.mat']);
+%             wl = pctloadwl([fn, '_WL_2pad.mat']);
 %             try
-                w3 = Whisker.Whisker3D_2pad(ws,wl);
+                w3 = Whisker.Whisker3D_2pad(ws);
                 outfn = [fn '_W3_2pad.mat'];
                 pctsave(outfn,w3);
 %             catch
