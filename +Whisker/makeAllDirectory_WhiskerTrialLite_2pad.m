@@ -171,6 +171,11 @@ end
 % %%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %
+wla = Whisker.WhiskerTrialLite_2padArray(d);
+proMethZeroInds = find(cellfun(@(x) x.prothresholdMethod == 0, wla.trials));
+reMethZeroInds = find(cellfun(@(x) x.rethresholdMethod == 0, wla.trials));
+reInds = union(proMethZeroInds, reMethZeroInds);
+fnall = cellfun(@(x) x.trackerFileName, wla.trials(reInds), 'uniformoutput', false);
 % fnall = {'181'};
 %
 %
@@ -279,14 +284,14 @@ if ~isempty(fnall)
                 end
             end
                         
-            noProtractionThresholdInds = find(cellfun(@(x) ~strcmp(x.trialType, 'oo') * isempty(x.protractionThreshold) * ~isempty(x.protractionDistance), wlArray.trials));            
-            noRetractionThresholdInds = find(cellfun(@(x) ~strcmp(x.trialType, 'oo') * isempty(x.retractionThreshold) * ~isempty(x.retractionDistance), wlArray.trials));            
+            noProtractionThresholdInds = find(cellfun(@(x) ~strcmp(x.trialType, 'oo') * (x.prothresholdMethod == 0) * ~isempty(x.protractionDistance), wlArray.trials));            
+            noRetractionThresholdInds = find(cellfun(@(x) ~strcmp(x.trialType, 'oo') * (x.rethresholdMethod == 0) * ~isempty(x.retractionDistance), wlArray.trials));            
             changeInds = union(noProtractionThresholdInds, noRetractionThresholdInds); % trials that needs to be changed, because there was no threshold calculated.
             sdpair = p.Results.servo_distance_pair;
             fnlist = cellfun(@(x) x.trackerFileName, wlArray.trials(changeInds), 'uniformoutput', false);
             parfor k = 1 : length(changeInds)
 %             for k = 1 : length(changeInds)
-                fn = fnlist{k};
+                fn = fnlist{k}; 
                 disp(['2nd processing ''_WL_2pad.mat'' file '  fn ', ' int2str(k) ' of ' int2str(nfiles)])
 
                 wl = pctloadwl([fn '_WL_2pad.mat']);
@@ -339,8 +344,8 @@ if ~isempty(fnall)
                     end
                     wl.protractionFrames = noNaNInd(unique(tempProtFrames));
                     wl.retractionFrames = noNaNInd(unique(tempRetFrames));
-                    wl.protractionDistance = protractionDistance(tempProtFrames);
-                    wl.retractionDistance = retractionDistance(tempRetFrames);
+                    wl.protractionDistance = protractionDistance(unique(tempProtFrames));
+                    wl.retractionDistance = retractionDistance(unique(tempProtFrames));
                     if ~isempty(proTF)
                         wl.protractionTouchFrames = noNaNInd(sort(proTF));
                     end
@@ -462,8 +467,8 @@ if ~isempty(fnall)
                 end
             end
                         
-            noProtractionThresholdInds = find(cellfun(@(x) ~strcmp(x.trialType, 'oo') * isempty(x.protractionThreshold) * ~isempty(x.protractionDistance), wlArray.trials));            
-            noRetractionThresholdInds = find(cellfun(@(x) ~strcmp(x.trialType, 'oo') * isempty(x.retractionThreshold) * ~isempty(x.retractionDistance), wlArray.trials));            
+            noProtractionThresholdInds = find(cellfun(@(x) ~strcmp(x.trialType, 'oo') * (x.prothresholdMethod == 0) * ~isempty(x.protractionDistance), wlArray.trials));            
+            noRetractionThresholdInds = find(cellfun(@(x) ~strcmp(x.trialType, 'oo') * (x.rethresholdMethod == 0) * ~isempty(x.retractionDistance), wlArray.trials));            
             changeInds = union(noProtractionThresholdInds, noRetractionThresholdInds); % trials that needs to be changed, because there was no threshold calculated.
             sdpair = p.Results.servo_distance_pair;
             fnlist = cellfun(@(x) x.trackerFileName, wlArray.trials(changeInds), 'uniformoutput', false);
@@ -521,8 +526,8 @@ if ~isempty(fnall)
                     end
                     wl.protractionFrames = noNaNInd(unique(tempProtFrames));
                     wl.retractionFrames = noNaNInd(unique(tempRetFrames));
-                    wl.protractionDistance = protractionDistance(tempProtFrames);
-                    wl.retractionDistance = retractionDistance(tempRetFrames);
+                    wl.protractionDistance = protractionDistance(unique(tempRetFrames));
+                    wl.retractionDistance = retractionDistance(unique(tempRetFrames));
                     if ~isempty(proTF)
                         wl.protractionTouchFrames = noNaNInd(sort(proTF));
                     end
