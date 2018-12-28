@@ -345,7 +345,7 @@ if ~isempty(fnall)
                     wl.protractionFrames = noNaNInd(unique(tempProtFrames));
                     wl.retractionFrames = noNaNInd(unique(tempRetFrames));
                     wl.protractionDistance = protractionDistance(unique(tempProtFrames));
-                    wl.retractionDistance = retractionDistance(unique(tempProtFrames));
+                    wl.retractionDistance = retractionDistance(unique(tempRetFrames));
                     if ~isempty(proTF)
                         wl.protractionTouchFrames = noNaNInd(sort(proTF));
                     end
@@ -526,7 +526,7 @@ if ~isempty(fnall)
                     end
                     wl.protractionFrames = noNaNInd(unique(tempProtFrames));
                     wl.retractionFrames = noNaNInd(unique(tempRetFrames));
-                    wl.protractionDistance = protractionDistance(unique(tempRetFrames));
+                    wl.protractionDistance = protractionDistance(unique(tempProtFrames));
                     wl.retractionDistance = retractionDistance(unique(tempRetFrames));
                     if ~isempty(proTF)
                         wl.protractionTouchFrames = noNaNInd(sort(proTF));

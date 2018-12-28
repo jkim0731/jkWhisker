@@ -1,8 +1,8 @@
 clear
-mouseName = 'JK056';
-sessionName = 'S11';
+mouseName = 'JK030';
+sessionName = 'S08';
 
-wDir = 'D:\WhiskerVideo\';
+wDir = 'Y:\Whiskernas\JK\whisker\tracked\';
 sdir = [wDir,mouseName,sessionName];
 
 cd(sdir)
@@ -13,7 +13,8 @@ wsa = Whisker.WhiskerSignalTrialArray_2pad(sdir);
 %%
 close all
 % for sdi = 1 : length(servo_distance_pair)
-for sdi = 4
+for sdi = 2
+    
     figure('units','normalized','position', [0 0 1 1])
     angle = servo_distance_pair{sdi}(1);
     dist = servo_distance_pair{sdi}(2);
@@ -41,11 +42,16 @@ for sdi = 4
     th_2d2 = unique(th_2d2(1:2,:)','rows');
     scatter(points_2d(:,1),points_2d(:,2),'k.'), hold on, scatter(th_2d1(:,1), th_2d1(:,2),'r.'), scatter(th_2d2(:,1), th_2d2(:,2),'r.')
     title(['Angle = ', num2str(angle), ', Dist = ', num2str(dist)])
+    figure, 
     
+    plot3(points(1,:), points(2,:), points(3,:), 'k.'), hold on
+    plot3(touch_hp{sdi}(1,:) + hp_peaks{sdi}(1), touch_hp{sdi}(2,:), touch_hp{sdi}(3,:), 'r-')
+    plot3(touch_hp{sdi}(1,:) + hp_peaks{sdi}(2), touch_hp{sdi}(2,:), touch_hp{sdi}(3,:), 'r-')
 end
 
 %%
-for sdi = 1 : length(servo_distance_pair)
+% for sdi = 1 : length(servo_distance_pair)
+for sdi = 1
     inds = find(cellfun(@(x) x.angle == servo_distance_pair{sdi}(1) && x.radialDistance == servo_distance_pair{sdi}(2), wsa.trials));
     points3d = [];
     for ii = 1 : length(inds)

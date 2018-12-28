@@ -6,9 +6,6 @@
 % 2018/12/22 Run JK052pre1 W3.
 
 % Run JK027S17 WL_2pad again. error at 2nd running. check with wlarray first.
-% Run all W3 again. 
-
-% Check w3 length(time) == length(theta) == length(phi) == length(kappaH) == length(kappaV)
 % Error sessions for length(protraction frames) ~= length(prtraction distance) -> Run WL on these first
 %%
 %%
@@ -25,7 +22,8 @@
 
 % mice = {'JK052', 'JK053','JK054','JK056'};
 
-mice = {'JK025'};
+% mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
+mice = {'JK030'};
 
 videoloc = 'Y:\Whiskernas\JK\whisker\tracked\';
 if strcmp(videoloc(end),filesep)
@@ -35,7 +33,7 @@ else
 end
 behavior_base_dir = 'Y:\Whiskernas\JK\SoloData\';
 
-ppm = 17.81;
+ppm = 17.81/2;
             % 'pxPerMm': 17.81002608 for telecentric lens
             % /2 for mice <= JK041, because of binning.
 % comment out when doing for all of the sessions in the mouse directory
@@ -68,9 +66,10 @@ touchKappaSTDthreshold = 2;
 % sessions = {    [1:19,22],  [1:22,99], [1:22], [1:18,91],  [1:10,12:24],   [1:22,24:31],   [1:25], [1:19,21:30],   [1:29,94,95],     [1:3,5:21],     [1:26], [1:13]};
 % sessions_pre = {[1],        [1],    [1:2],  [1],        [1:2],          [1],            [1],    [1],            [1],        [1],            [1],    [1]};
 
-sessions = {    [5],      [],     [], []};
+% sessions = {    [1:19,22],  [1:22,99], [1:22], [1:18,91],  [1:10,12:24],   [1:22,24:31],   [1:25], [1:19,21:30]};
+% sessions_pre = {[1],        [1],    [1:2],  [1],        [1:2],          [1],            [1],    [1]};
 
-
+sessions = {[98]};
 
 % sessions_spont = {[],[],[],[],[],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5],[1:5]};
 
@@ -87,7 +86,7 @@ DoRemeasure = 0;
 doWT = 0;
 testPoleUp = 0;
 doWST = 0;
-makeTouchHyperplane = 0;
+makeTouchHyperplane = 1;
 doWL = 1;
 do3D = 0;
 
@@ -761,7 +760,7 @@ if makeTouchHyperplane
                         elseif strcmp(sessionName, 'S95') % JK052
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S05'), b));
                         elseif strcmp(sessionName, 'S99') % JK027
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b)); 
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b));
                         else
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                         end
@@ -821,7 +820,7 @@ if makeTouchHyperplane
                         elseif strcmp(sessionName, 'S95') % JK052
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S05'), b));
                         elseif strcmp(sessionName, 'S99') % JK027
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b)); 
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b));
                         else
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                         end
@@ -888,7 +887,7 @@ if doWL
                         elseif strcmp(sessionName, 'S95') % JK052
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S05'), b));
                         elseif strcmp(sessionName, 'S99') % JK027
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b)); 
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b));
                         else
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                         end
@@ -961,7 +960,7 @@ if doWL
                         elseif strcmp(sessionName, 'S95') % JK052
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S05'), b));
                         elseif strcmp(sessionName, 'S99') % JK027
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b)); 
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b));
                         else
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                         end
