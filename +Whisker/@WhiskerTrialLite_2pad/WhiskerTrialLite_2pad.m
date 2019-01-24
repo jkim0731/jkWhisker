@@ -104,6 +104,8 @@ classdef WhiskerTrialLite_2pad < handle
         theta % For compatability, make this 'alias' to refer to thetaAtBase
         kappa % For compatability, make this 'alias' to refer to deltaKappa
         M0Combined
+        retractionSlide % in mm
+        protractionSlide % in mm
     end
     
         
@@ -1352,6 +1354,23 @@ classdef WhiskerTrialLite_2pad < handle
             end
         end
         
+        function value = get.retractionSlide(obj)
+            if isempty(obj.retractionTFchunks)
+                value = {};
+            else
+                value = cellfun(@(x) sqrt((obj.whiskerEdgeCoord(x,1) - obj.whiskerEdgeCoord(x(1),1)).^2 + ...
+                    (obj.whiskerEdgeCoord(x,2) - obj.whiskerEdgeCoord(x(1),2)).^2) / obj.pxPerMm, obj.retractionTFchunks, 'uniformoutput', false);
+            end
+        end
+        
+        function value = get.protractionSlide(obj)
+            if isempty(obj.protractionTFchunks)
+                value = {};
+            else
+                value = cellfun(@(x) sqrt((obj.whiskerEdgeCoord(x,1) - obj.whiskerEdgeCoord(x(1),1)).^2 + ...
+                    (obj.whiskerEdgeCoord(x,2) - obj.whiskerEdgeCoord(x(1),2)).^2) / obj.pxPerMm, obj.protractionTFchunks, 'uniformoutput', false);
+            end
+        end
     end
        
 end
