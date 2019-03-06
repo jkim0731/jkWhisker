@@ -33,7 +33,7 @@ classdef Whisker3D_2pad < handle
         phi = []; % elevation angle (front angle)
         zeta = []; % roll angle, calculated by tangent line from the mask
         
-        trackerData = {}; % {n}(:,1) for anterior-posterior axis, {n}(:,2) for radial axis, and {n}(:,3) for vertical axis. Starts from the mask.        
+        trackerData = {}; % {n}(:,1) for anterior-posterior axis, {n}(:,2) for radial axis, and {n}(:,3) for vertical axis. Starts from the follicle (closest point to the face)        
         fit3Data = {}; % same as in trackerData, except that it's for polynomial fitting (using polyfitn by John D'Errico (https://www.mathworks.com/matlabcentral/fileexchange/34765-polyfitn)
         fitorder = 5;
         base = []; % Base of the whisker. It is the point where whisker crosses with the mask. (:,1) for anterior-posterior axis, (:,2) for radial axis, and (:,3) for vertical axis.
@@ -43,10 +43,13 @@ classdef Whisker3D_2pad < handle
         prePoint = []; % for visual confirmation
         postPoint = [];
 
+        baseCoordinateTopview = [];
+        lengthAlongWhiskerTopview = [];
+        lengthAlongWhisker = [];
     end
     
     properties (Dependent = true)
-
+        
     end
     
         
@@ -92,7 +95,7 @@ classdef Whisker3D_2pad < handle
             end
             
             obj.time = intersect(ws.time{1}, ws.time{2});
-
+            
             % calculating 3D tracker Data
             [~,tdtopind] = ismember(obj.time, ws.time{1});
             [~,tdfrontind] = ismember(obj.time, ws.time{2});
@@ -293,6 +296,55 @@ classdef Whisker3D_2pad < handle
                 obj.theta(fi) = thetas(rind);
                 obj.phi(fi) = phis(rind) - obj.cameraAngle;
             end
+            
+            x = polyval(ws.polyFitsMask{1}{1}, linspace(0,1));
+            y = polyval(ws.polyFitsMask{1}{2}, linspace(0,1));
+            mask = [x;y];
+            
+            obj.baseCoordinateTopview = obj.get_baseCoordinateTopview(ws.trackerData{1}, mask);
+            obj.lengthAlongWhiskerTopview = obj.get_lengthAlongWhiskerTopview(ws.whiskerPoleIntersection, ws.trackerData{1});
+            obj.lengthAlongWhisker = obj.get_lengthAlongWhisker(ws.lengthAlongWhiskerTopview(tdtopind));
+        end
+        
+        function value = get_baseCoordinateTopview(obj, trackerData, mask)
+            value = zeros(length(trackerData),2);            
+            for i = 1 : length(trackerData)
+                xall = trackerData{i}{4};
+                xall = xall';
+                yall = trackerData{i}{5};
+                yall = yall';
+                whisker = [xall+1;yall+1];
+                value(i,:) = Whisker.InterX(whisker, mask);
+            end
+        end
+        
+        function value = get_lengthAlongWhiskerTopview(obj, whiskerPoleIntersection, trackerData)
+            value = nan(length(obj.baseCoordinateTopview),1);
+            ind = intersect(find(~isempty(obj.baseCoordinateTopview)), find(isfinite(sum(obj.baseCoordinateTopview,2))));
+            for i = 1 : length(value)
+                if ~isempty(whiskerPoleIntersection{i,1}) && ismember(i, ind)
+                    whisker = [trackerData{i}{4}+1, trackerData{i}{5}+1];
+                    dist2base = sum((whisker - obj.baseCoordinateTopview(i,:)).^2);
+                    baseInd = find(dist2base == min(dist2base));
+                    dist2intersect = sum((whisker - obj.whiskerPoleIntersection{i,1}).^2);
+                    intersectInd = find(dist2intersect == min(dist2intersect));
+                    arcLength = [0; cumsum(sqrt(diff(whisker(:,1)).^2 + diff(whisker(:,2)).^2))];
+                    value(i) = arcLength(intersectInd) - arcLength(baseInd);
+                end
+            end
+        end
+        
+        function value = get_lengthAlongWhisker(obj, lengthAlongWhiskerTopview)
+            value = zeros(length(obj.trackerData),1);
+            for i = 1 : length(value)
+                x = obj.trackerData{i}(obj.baseInd(i):end,1);
+                y = obj.trackerData{i}(obj.baseInd(i):end,2);
+                z = obj.trackerData{i}(obj.baseInd(i):end,3);
+                arcLengths = cumsum((diff(x).^2 + diff(y).^2));
+                arcLengths3d = cumsum(diff(x).^2 + diff(y).^2 + diff(z).^2);
+                [~, ind] = min(abs(arcLengths - lengthAlongWhiskerTopview));
+                value(i) = arcLengths3d(ind);
+            end
         end
         
         function show_all_3D(obj)
@@ -475,6 +527,11 @@ classdef Whisker3D_2pad < handle
                         next = 0;
                 end
             end
+        end
+    end
+    methods
+        function value = get.lengthAlongWhisker(obj)
+            
         end
     end
 end

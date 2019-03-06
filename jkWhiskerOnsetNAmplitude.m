@@ -1,9 +1,11 @@
-function [onsetFrame, amplitude, midpoint, whiskingAmp] = jkWhiskerOnsetNAmplitude(theta, varargin)
+function [onsetFrame, amplitude, midpoint, whiskingAmp, peakFrame] = jkWhiskerOnsetNAmplitude(theta, varargin)
 
 % calculate whisking onset frames calculated from phase and max amplitude
 % of that whisking bout.
 % input is assumed to be continuous frames with equal inter-frame interval.
 % If not tracked, fill in NaN.
+
+% added peakFrame (only during whisking, right after onset) 2019/03/05 JK.
 switch nargin
     case 1
         whiskingThreshold = 5; % in degrees
@@ -17,6 +19,8 @@ switch nargin
     otherwise
         error('too much input arguments')
 end
+
+
 
 % make any nan thetaAtBase = mean of the surrounding points (10 on each side)
 try
@@ -46,3 +50,12 @@ for i = 1 : length(onsetCandid)-1
     whiskingAmp(i) = max(amplitude(onsetCandid(i):onsetCandid(i+1)));
 end
 onsetFrame = onsetCandid((whiskingAmp > whiskingThreshold));
+
+peakFrame = nan(length(onsetFrame),1);
+for i = 1 : length(onsetFrame)-1
+    peakFrame(i) = find(phase(onsetFrame(i):onsetFrame(i+1)) > 0, 1, 'first') + onsetFrame(i)-1;
+end
+last = find(phase(onsetFrame(end):end) > 0, 1, 'first');
+if ~isempty(last)
+    peakFrame(end) = last + onsetFrame(end)-1;
+end

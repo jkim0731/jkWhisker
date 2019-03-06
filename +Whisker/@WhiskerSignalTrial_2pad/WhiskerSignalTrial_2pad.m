@@ -41,8 +41,9 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     end
     
-    properties (Dependent = true)        
-
+    properties (Dependent = true)
+%         baseCoordinateTopview
+%         lengthAlongWhiskerTopview
     end
     
     methods (Access = public)
@@ -154,16 +155,54 @@ classdef WhiskerSignalTrial_2pad < Whisker.WhiskerSignalTrial
                     end
                 end
             end
+            
         end
 
         function frontRInMm = get_frontRInMm(obj, rInMm)
             frontRInMm = rInMm;
-        end        
+        end  
+        
     end
     
-    methods (Access = private)
-       
-
+    methods 
+%         function value = get.baseCoordinateTopview(obj)
+%             x = polyval(obj.polyFitsMask{1}{1}, linspace(0,1));
+%             y = polyval(obj.polyFitsMask{1}{2}, linspace(0,1));
+%             mask = [x;y];
+%             value = zeros(length(obj.trackerData{1}),2);
+%             for i = 1 : length(obj.trackerData{1})
+%                 xall = obj.trackerData{1}{i}{4};
+%                 xall = xall';
+%                 yall = obj.trackerData{1}{i}{5};
+%                 yall = yall';
+%                 whisker = [xall+1;yall+1];
+%                 temp = Whisker.InterX(whisker, mask);
+%                 if ~isempty(temp)
+%                     value(i,:) = temp;
+%                 else
+%                     value(i,:) = whisker(1,:);
+%                 end
+%             end
+%         end
+        
+%         function value = get.lengthAlongWhiskerTopview(obj)
+%             value = nan(length(obj.baseCoordinateTopview),1);
+%             ind = find(isfinite(sum(obj.baseCoordinateTopview,2)));
+%             for i = 1 : length(value)
+%                 if ~isempty(obj.whiskerPoleIntersection{i,1}) && ismember(i, ind)
+%                     whisker = [obj.trackerData{1}{i}{4}+1, obj.trackerData{1}{i}{5}+1];
+%                     dist2base = sum((whisker - obj.baseCoordinateTopview(i,:)).^2);
+%                     baseInd = find(dist2base == min(dist2base));
+%                     dist2intersect = sum((whisker - obj.whiskerPoleIntersection{i,1}).^2);
+%                     intersectInd = find(dist2intersect == min(dist2intersect));
+%                     arcLength = [0; cumsum(sqrt(diff(whisker(:,1)).^2 + diff(whisker(:,2)).^2))];
+%                     value(i) = arcLength(intersectInd) - arcLength(baseInd);
+%                 end
+%             end
+%             value = [];
+%         end
+% It takes really long... do this when making w3
+        
     end
        
 end
