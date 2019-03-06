@@ -1123,17 +1123,17 @@ if doWF
             sn = dir([whisker_d, mice{mi},'S*']);
             for si = 1 : length(sn)                
                 if sn(si).isdir && ~contains(sn(si).name, 'spont')
-%                     [mouseName, sessionName] = strtok(sn(si).name,'S');
-%                     wd = [whisker_d, mouseName, sessionName];
-%                     Whisker.makeAllDirectory_WhiskerFinal_2pad(wd);
-                    cd(sn(si).name)                    
-                    wfdir = dir('*_WF_2pad.mat');
-                    wldir = dir('*_WL_2pad.mat');
-                    if length(wldir) > 2 && length(wfdir) < length(wldir)
-                        Whisker.makeAllDirectory_WhiskerFinal_2pad(pwd);
-                    end
+                    [mouseName, sessionName] = strtok(sn(si).name,'S');
+                    wd = [whisker_d, mouseName, sessionName];
+                    Whisker.makeAllDirectory_WhiskerFinal_2pad(wd);
+%                     cd(sn(si).name)                    
+%                     wfdir = dir('*_WF_2pad.mat');
+%                     wldir = dir('*_WL_2pad.mat');
+%                     if length(wldir) > 2 && length(wfdir) < length(wldir)
+%                         Whisker.makeAllDirectory_WhiskerFinal_2pad(pwd);
+%                     end
                 end
-                cd(whisker_d)
+%                 cd(whisker_d)
             end
 
             cd(whisker_d)
@@ -1141,16 +1141,16 @@ if doWF
             for si = 1 : length(sn_pre)
                 cd(whisker_d)
                 if sn_pre(si).isdir
-%                     [mouseName, sessionName] = strtok(sn_pre(si).name,'pre');
-%                     wd = [whisker_d, mouseName, sessionName];
-%                     Whisker.makeAllDirectory_Whisker3D_2pad(wd, 'rInMm', rInMm);
-                    cd(sn(si).name)                    
-                    wfdir = dir('*_WF_2pad.mat');
-                    wldir = dir('*_WL_2pad.mat');
-                    if length(wldir) > 2 && length(wfdir) < length(wldir)
-                        Whisker.makeAllDirectory_WhiskerFinal_2pad(pwd);
-                    end
-                    cd(whisker_d)
+                    [mouseName, sessionName] = strtok(sn_pre(si).name,'pre');
+                    wd = [whisker_d, mouseName, sessionName];
+                    Whisker.makeAllDirectory_Whisker3D_2pad(wd, 'rInMm', rInMm);
+%                     cd(sn(si).name)                    
+%                     wfdir = dir('*_WF_2pad.mat');
+%                     wldir = dir('*_WL_2pad.mat');
+%                     if length(wldir) > 2 && length(wfdir) < length(wldir)
+%                         Whisker.makeAllDirectory_WhiskerFinal_2pad(pwd);
+%                     end
+%                     cd(whisker_d)
                 end
             end
 
