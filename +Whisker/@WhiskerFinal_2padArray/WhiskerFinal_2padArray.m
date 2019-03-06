@@ -11,8 +11,11 @@ classdef WhiskerFinal_2padArray < handle
             cd(d)
             fnlist = dir('*_WF_2pad.mat');
             
-            load(fnlist(1).name)
+            load(fnlist(end).name)
             obj.mouseName = wf.mouseName;
+            if strcmp(wf.sessionName, 'S91')
+                wf.sessionName = 'S01';
+            end
             obj.sessionName = wf.sessionName;
             
             tns = zeros(length(fnlist),1);
