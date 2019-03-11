@@ -8,7 +8,7 @@ function [onsetFrame, amplitude, midpoint, whiskingAmp, peakFrame] = jkWhiskerOn
 % added peakFrame (only during whisking, right after onset) 2019/03/05 JK.
 switch nargin
     case 1
-        whiskingThreshold = 5; % in degrees
+        whiskingThreshold = 2.5; % in degrees
         sampleRate = 311;
     case 2        
         whiskingThreshold = varargin{1};
