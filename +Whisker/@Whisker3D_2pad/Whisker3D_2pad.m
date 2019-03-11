@@ -303,7 +303,7 @@ classdef Whisker3D_2pad < handle
             
             obj.baseCoordinateTopview = obj.get_baseCoordinateTopview(ws.trackerData{1}, mask);
             obj.lengthAlongWhiskerTopview = obj.get_lengthAlongWhiskerTopview(ws.whiskerPoleIntersection, ws.trackerData{1});
-            obj.lengthAlongWhisker = obj.get_lengthAlongWhisker(ws.lengthAlongWhiskerTopview(tdtopind));
+            obj.lengthAlongWhisker = obj.get_lengthAlongWhisker(obj.lengthAlongWhiskerTopview(tdtopind));
         end
         
         function value = get_baseCoordinateTopview(obj, trackerData, mask)
@@ -314,7 +314,12 @@ classdef Whisker3D_2pad < handle
                 yall = trackerData{i}{5};
                 yall = yall';
                 whisker = [xall+1;yall+1];
-                value(i,:) = Whisker.InterX(whisker, mask);
+                temp = Whisker.InterX(whisker, mask);
+                if isempty(temp)
+                    value(i,:) = whisker(:,1)';
+                else
+                    value(i,:) = temp(1,:);
+                end
             end
         end
         
@@ -342,7 +347,7 @@ classdef Whisker3D_2pad < handle
                 z = obj.trackerData{i}(obj.baseInd(i):end,3);
                 arcLengths = cumsum((diff(x).^2 + diff(y).^2));
                 arcLengths3d = cumsum(diff(x).^2 + diff(y).^2 + diff(z).^2);
-                [~, ind] = min(abs(arcLengths - lengthAlongWhiskerTopview));
+                [~, ind] = min(abs(arcLengths - lengthAlongWhiskerTopview(i)));
                 value(i) = arcLengths3d(ind);
             end
         end
@@ -530,9 +535,7 @@ classdef Whisker3D_2pad < handle
         end
     end
     methods
-        function value = get.lengthAlongWhisker(obj)
-            
-        end
+
     end
 end
         

@@ -11,8 +11,7 @@ p.addParameter('stdHistogramThreshold', 3, @isnumeric);
 p.addParameter('distanceHistogramBin', 0.2, @isnumeric);
 p.addParameter('touchBoundaryThickness', 0.25, @isnumeric);
 p.addParameter('touchBoundaryBuffer', 0.1, @isnumeric);
-p.addParameter('maxPointsNearHyperplane', 10, @isnumeric);
-            
+p.addParameter('maxPointsNearHyperplane', 10, @isnumeric);       
 p.parse(whisker_d, rInMm,varargin{:});
 
 cd(whisker_d)

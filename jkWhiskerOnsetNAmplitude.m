@@ -51,11 +51,22 @@ for i = 1 : length(onsetCandid)-1
 end
 onsetFrame = onsetCandid((whiskingAmp > whiskingThreshold));
 
-peakFrame = nan(length(onsetFrame),1);
-for i = 1 : length(onsetFrame)-1
-    peakFrame(i) = find(phase(onsetFrame(i):onsetFrame(i+1)) > 0, 1, 'first') + onsetFrame(i)-1;
-end
-last = find(phase(onsetFrame(end):end) > 0, 1, 'first');
-if ~isempty(last)
-    peakFrame(end) = last + onsetFrame(end)-1;
+if length(onsetFrame) > 2
+    peakFrame = nan(length(onsetFrame),1);
+    for i = 1 : length(onsetFrame)-1
+        peakFrame(i) = find(phase(onsetFrame(i):onsetFrame(i+1)) > 0, 1, 'first') + onsetFrame(i)-1;
+    end
+    last = find(phase(onsetFrame(end):end) > 0, 1, 'first');
+    if ~isempty(last)
+        peakFrame(end) = last + onsetFrame(end)-1;
+    end
+elseif length(onsetFrame) == 1
+    last = find(phase(onsetFrame:end) > 0, 1, 'first');
+    if ~isempty(last)
+        peakFrame = last + onsetFrame-1;
+    else
+        peakFrame = [];
+    end
+else
+    peakFrame = [];
 end

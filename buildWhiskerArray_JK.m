@@ -19,11 +19,11 @@
 %%
 
 % mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041','JK052', 'JK053','JK054','JK056', 'JK070', 'JK074', 'JK075', 'JK076'};
-
-% mice = {'JK052', 'JK053','JK054','JK056', 'JK070', 'JK074', 'JK075', 'JK076'};
-mice = {'JK054','JK056', 'JK070', 'JK074', 'JK075', 'JK076'};
+% mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041','JK052', 'JK053','JK054','JK056'};
+% mice = {'JK052', 'JK053','JK054','JK056'};
+% mice = {'JK054','JK056', 'JK070', 'JK074', 'JK075', 'JK076'};
 % mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
-% mice = {'JK030'};
+mice = {'JK041'};
 
 videoloc = 'Y:\Whiskernas\JK\whisker\tracked\';
 if strcmp(videoloc(end),filesep)
@@ -33,7 +33,7 @@ else
 end
 behavior_base_dir = 'Y:\Whiskernas\JK\SoloData\';
 
-% ppm = 17.81/2;
+ppm = 17.81/2;
             % 'pxPerMm': 17.81002608 for telecentric lens
             % /2 for mice <= JK041, because of binning.
 % comment out when doing for all of the sessions in the mouse directory
@@ -50,13 +50,13 @@ barRadius = 0.3; % in mm
 whiskingAmpThreshold = 2.5; % in degrees
 stdHistogramThreshold = 1;
 distanceHistogramBinInMm = 0.02; %
-% distanceHistogramBin = round(ppm*distanceHistogramBinInMm*100)/100; % up to 2 significant numbers
+distanceHistogramBin = round(ppm*distanceHistogramBinInMm*100)/100; % up to 2 significant numbers
 touchBoundaryThickness = 0.3; % in mm
 touchBoundaryBuffer = 0.1; % in mm
 maxPointsNearHyperplane = videoFreq * 15 / 1000; % mean touch duration ~ 15 ms. 
 touchKappaSTDthreshold = 2;
 
-% sessions = {[4,19,22],[3,16,17],[3,21,22],[1,17,18,91],[7],[2],[1,22:25],[3]};
+% sessions = {[4,5,18,19,22],[3,4,15,16,17],[3,4,20,21,22],[1,2,16,17,18,91],[7],[2],[1,2,21,22:25],[3]};
 % sessions = {[3,4,21:23,25,26],[3],[3,4,25,26],[3:5]};
 % 
 % sessions = {[1:22],[1:22,99],[1:22],[1:20,91],[1:24],[1:31],[1:25],[1:30]};
@@ -75,11 +75,13 @@ touchKappaSTDthreshold = 2;
 
 % 
 % sessions = {[],[],[],[],[],[],[],[],[],[]};
-% sessions_pre = {[],[],[],[],[],[],[],[],[],[],[],[]};
-% sessions_piezo = {[],[],[],[],[],[],[],[],[],[],[],[]};
-% sessions_spont = {[],[],[],[],[],[],[],[],[],[],[],[]};
+sessions_pre = {[],[],[],[],[],[],[],[],[],[],[],[]};
+sessions_piezo = {[],[],[],[],[],[],[],[],[],[],[],[]};
+sessions_spont = {[],[],[],[],[],[],[],[],[],[],[],[]};
 
-all_session = 1; % 1 if using all sessions, 0 if using selected sessions
+% sessions = {[4,5,18,19,22],[3,4,15,16,17],[3,4,20,21,22],[1,2,16,17,18],[7],[2],[1,2,21,22:25],[3], [3:5,24:26], [3],[3],[3]};
+sessions = { [9:19,21:30]};
+all_session = 0; % 1 if using all sessions, 0 if using selected sessions
 
 DoFollicle = 0;
 DoRemeasure = 0;
@@ -87,9 +89,9 @@ doWT = 0;
 testPoleUp = 0;
 doWST = 0;
 makeTouchHyperplane = 0;
-doWL = 0;
+doWL = 1;
 do3D = 0;
-doWF = 1;
+doWF = 0;
 
 %% Define follicle points and masks
 % saves follicle_n_mask.mat file consists of variables 'maskx','masky','width', 'height', and 'follicle_first'
@@ -893,7 +895,7 @@ if doWL
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                         end
                         b_session = b{b_ind};
-                        wd = [whisker_d, mouseName, sessionName];
+                        wd = [whisker_d, mouseName, sessionName];                        
                         buildWL_2pad(wd, rInMm, 'b_session', b_session, 'whiskingAmpThreshold', whiskingAmpThreshold, 'stdHistogramThreshold', stdHistogramThreshold, 'distanceHistogramBin', distanceHistogramBin, 'touchBoundaryThickness', touchBoundaryThickness, 'touchBoundaryBuffer', touchBoundaryBuffer, 'maxPointsNearHyperplane', maxPointsNearHyperplane, 'touchKappaSTDthreshold', touchKappaSTDthreshold)
                     end
                 end
@@ -923,16 +925,16 @@ if doWL
                 end
             end
             
-            cd(whisker_d)
-            sn_spont= dir([mice{mi},'spont*']);
-            for si = 1 : length(sn_spont)
-                cd(whisker_d)
-                if sn_spont(si).isdir
-                    [mouseName, sessionName] = strtok(sn_spont(si).name,'piezo');
-                    wd = [whisker_d, mouseName, sessionName];
-                    buildWL_2pad(wd, rInMm)
-                end
-            end
+%             cd(whisker_d)
+%             sn_spont= dir([mice{mi},'spont*']);
+%             for si = 1 : length(sn_spont)
+%                 cd(whisker_d)
+%                 if sn_spont(si).isdir
+%                     [mouseName, sessionName] = strtok(sn_spont(si).name,'piezo');
+%                     wd = [whisker_d, mouseName, sessionName];
+%                     buildWL_2pad(wd, rInMm)
+%                 end
+%             end
         end
     else
         for mi = 1 : size(mice,2) % mouse index
@@ -1143,7 +1145,7 @@ if doWF
                 if sn_pre(si).isdir
                     [mouseName, sessionName] = strtok(sn_pre(si).name,'pre');
                     wd = [whisker_d, mouseName, sessionName];
-                    Whisker.makeAllDirectory_Whisker3D_2pad(wd, 'rInMm', rInMm);
+                    Whisker.makeAllDirectory_WhiskerFinal_2pad(wd);
 %                     cd(sn(si).name)                    
 %                     wfdir = dir('*_WF_2pad.mat');
 %                     wldir = dir('*_WL_2pad.mat');
@@ -1166,37 +1168,29 @@ if doWF
 %             end
         end
     else
-%         for mi = 1 : size(mice,2) % mouse index
-%             mouseName = mice{mi};
-%             if ~isempty(sessions{mi}) 
-%                 for j = 1 : length(sessions{mi})  
-%                     cd(whisker_d)
-%                     sessionName = sprintf('S%02d',sessions{mi}(j));
-%                     if exist([mouseName, sessionName],'dir')
-%                         wd = [whisker_d, mouseName, sessionName];
-%                         errors = Whisker.makeAllDirectory_Whisker3D_2pad(wd, 'rInMm', rInMm);
-%                         if ~isempty(errors)
-%                             errorsession{end+1} = [mouseName,sessionName];
-%                             errorfn{end+1} = errors;
-%                         end
-%                     end
-%                 end
-%             end
-% 
-%             if ~isempty(sessions_pre{mi})
-%                 for j = 1 : length(sessions_pre{mi})
-%                     sessionName = sprintf('pre%d',sessions_pre{mi}(j));
-%                     cd(whisker_d)
-%                     if exist([mouseName, sessionName],'dir')
-%                         wd = [whisker_d, mouseName, sessionName];
-%                         errors = Whisker.makeAllDirectory_Whisker3D_2pad(wd, 'rInMm', rInMm);
-%                         if ~isempty(errors)
-%                             errorsession{end+1} = [mouseName,sessionName];
-%                             errorfn{end+1} = errors;
-%                         end
-%                     end
-%                 end
-%             end
+        for mi = 1 : size(mice,2) % mouse index
+            mouseName = mice{mi};
+            if ~isempty(sessions{mi}) 
+                for j = 1 : length(sessions{mi})  
+                    cd(whisker_d)
+                    sessionName = sprintf('S%02d',sessions{mi}(j));
+                    if exist([mouseName, sessionName],'dir')
+                        wd = [whisker_d, mouseName, sessionName];
+                        Whisker.makeAllDirectory_WhiskerFinal_2pad(wd);
+                    end
+                end
+            end
+
+            if ~isempty(sessions_pre{mi})
+                for j = 1 : length(sessions_pre{mi})
+                    sessionName = sprintf('pre%d',sessions_pre{mi}(j));
+                    cd(whisker_d)
+                    if exist([mouseName, sessionName],'dir')
+                        wd = [whisker_d, mouseName, sessionName];
+                        Whisker.makeAllDirectory_WhiskerFinal_2pad(wd);                        
+                    end
+                end
+            end
             
 %             if ~isempty(sessions_spont{mi})
 %                 for j = 1 : length(sessions_spont{mi})
@@ -1212,6 +1206,6 @@ if doWF
 %                     end
 %                 end
 %             end
-%         end
+        end
     end
 end

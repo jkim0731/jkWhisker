@@ -76,8 +76,10 @@ classdef WhiskerTrialLite_2pad < handle
         allTouchFrames = [];
         retractionTouchFrames = [];
         retractionTFchunks = {};
+        retractionTFchunksByWhisking = {};
         protractionTouchFrames = [];
         protractionTFchunks = {};
+        protractionTFchunksByWhisking = {};
         protractionThreshold = [];
         retractionThreshold = [];
         obviousNoTouchFrames = []; % just for check
@@ -106,6 +108,9 @@ classdef WhiskerTrialLite_2pad < handle
         M0Combined
         retractionSlide % in mm
         protractionSlide % in mm
+        retractionSlideByWhisking % in mm
+        protractionSlideByWhisking % in mm
+        
     end
     
         
@@ -643,7 +648,24 @@ classdef WhiskerTrialLite_2pad < handle
                     obj.protractionTouchFrames = obj.single_frame_correction(obj.protractionTouchFrames);
                     obj.protractionTFchunks = obj.get_chunks(obj.protractionTouchFrames);
                     obj.retractionTouchFrames = obj.single_frame_correction(obj.retractionTouchFrames);
-                    obj.retractionTFchunks = obj.get_chunks(obj.retractionTouchFrames);                
+                    obj.retractionTFchunks = obj.get_chunks(obj.retractionTouchFrames); 
+                    
+                    [onsetFrames, ~, ~, ~, peakFrames] = jkWhiskerOnsetNAmplitude(obj.theta{1}, 2);
+                    if ~isempty(onsetFrames) && ~isempty(peakFrames)
+                        protractionFrames = cell(1,length(find(isfinite(peakFrames))));
+                        retractionFrames = cell(1,length(find(isfinite(peakFrames)))-1);
+                        for i = 1 : length(find(isfinite(peakFrames)))-1
+                            protractionFrames{i} = onsetFrames(i):peakFrames(i);
+                            retractionFrames{i} = peakFrames(i):onsetFrames(i+1);
+                        end
+                        protractionFrames{end} = onsetFrames(end):peakFrames(end);
+
+                        obj.protractionTFchunksByWhisking = obj.get_protractionTFchunksByWhisking(protractionFrames, obj.protractionTFchunks);
+                        obj.retractionTFchunksByWhisking = obj.get_protractionTFchunksByWhisking(retractionFrames, obj.retractionTFchunks);
+                    else
+                        obj.protractionTFchunksByWhisking = {};
+                        obj.retractionTFchunksByWhisking = {};
+                    end
                 end
             end
             %
@@ -720,6 +742,30 @@ classdef WhiskerTrialLite_2pad < handle
                 end
             end
         end
+                
+        function value = get_protractionTFchunksByWhisking(obj, protractionFrames, protractionTFchunks)
+            if isempty(protractionTFchunks)
+                value = {};
+            else
+                wholeChunk = cell2mat(protractionTFchunks');
+                wholeProtractionFrames = cell2mat(protractionFrames);
+                frames = intersect(wholeChunk, wholeProtractionFrames);
+                if isempty(frames)
+                    value = {};
+                else
+                    if size(frames,1) > size(frames,2)
+                        frames = frames';
+                    end
+                    chunkPoints = [1, find(diff(frames)>1) + 1, length(frames)+1]; % +1 because of diff. first 1 for the first chunk. So this is actually start points of each chunk.
+                    value = cell(1,length(chunkPoints)-1); % 
+                    for i = 1 : length(value)
+                        value{i} = [frames(chunkPoints(i) : chunkPoints(i+1)-1)]';
+                    end
+                end
+            end
+        end
+        
+        
         
         function tid = name2tid(obj, whisker_name)
             if ~ischar(whisker_name)
@@ -1371,6 +1417,25 @@ classdef WhiskerTrialLite_2pad < handle
                     (obj.whiskerEdgeCoord(x,2) - obj.whiskerEdgeCoord(x(1),2)).^2) / obj.pxPerMm, obj.protractionTFchunks, 'uniformoutput', false);
             end
         end
+        
+        function value = get.retractionSlideByWhisking(obj)
+            if isempty(obj.retractionTFchunks)
+                value = {};
+            else
+                value = cellfun(@(x) sqrt((obj.whiskerEdgeCoord(x,1) - obj.whiskerEdgeCoord(x(1),1)).^2 + ...
+                    (obj.whiskerEdgeCoord(x,2) - obj.whiskerEdgeCoord(x(1),2)).^2) / obj.pxPerMm, obj.retractionTFchunksByWhisking, 'uniformoutput', false);
+            end
+        end
+        
+        function value = get.protractionSlideByWhisking(obj)
+            if isempty(obj.protractionTFchunks)
+                value = {};
+            else
+                value = cellfun(@(x) sqrt((obj.whiskerEdgeCoord(x,1) - obj.whiskerEdgeCoord(x(1),1)).^2 + ...
+                    (obj.whiskerEdgeCoord(x,2) - obj.whiskerEdgeCoord(x(1),2)).^2) / obj.pxPerMm, obj.protractionTFchunksByWhisking, 'uniformoutput', false);
+            end
+        end
+       
     end
        
 end
