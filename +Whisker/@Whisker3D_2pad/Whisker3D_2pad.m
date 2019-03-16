@@ -325,7 +325,7 @@ classdef Whisker3D_2pad < handle
         
         function value = get_lengthAlongWhiskerTopview(obj, whiskerPoleIntersection, trackerData)
             value = nan(length(obj.baseCoordinateTopview),1);
-            ind = intersect(find(~isempty(obj.baseCoordinateTopview)), find(isfinite(sum(obj.baseCoordinateTopview,2))));
+            ind = intersect(find(obj.baseCoordinateTopview(:,1)), find(isfinite(sum(obj.baseCoordinateTopview,2))));
             for i = 1 : length(value)
                 if ~isempty(whiskerPoleIntersection{i,1}) && ismember(i, ind)
                     whisker = [trackerData{i}{4}+1, trackerData{i}{5}+1];
