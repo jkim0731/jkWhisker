@@ -39,12 +39,10 @@ classdef Whisker3D_2pad < handle
         base = []; % Base of the whisker. It is the point where whisker crosses with the mask. (:,1) for anterior-posterior axis, (:,2) for radial axis, and (:,3) for vertical axis.
         baseInd = []; % index of the base in each trackerData frame
 %         fitBase = []; % base position with fitted 3D data
-
+        intersectPoint = []; % index of the whisker-pole intersection
         prePoint = []; % for visual confirmation
         postPoint = [];
 
-        baseCoordinateTopview = [];
-        lengthAlongWhiskerTopview = [];
         lengthAlongWhisker = [];
     end
     
@@ -102,16 +100,20 @@ classdef Whisker3D_2pad < handle
             obj.trackerData = cell(length(tdtopind),1);
             obj.base = zeros(length(obj.trackerData), 3);
             obj.baseInd = zeros(length(obj.trackerData), 1);
+            obj.intersectPoint = zeros(length(obj.trackerData), 3);
             obj.fit3Data = cell(length(obj.trackerData),1);
 %             obj.fitBase = zeros(length(obj.trackerData), 3);
             wpo = ws.whiskerPadOrigin;
             vwidth = ws.imagePixelDimsXY(1);
             for i = 1 : length(tdtopind)
-                if tdtopind(i) && tdfrontind(i)
-                    x = ws.trackerData{1}{tdtopind(i)}{4};
-                    y = ws.trackerData{1}{tdtopind(i)}{5};
-                    z = ws.trackerData{2}{tdfrontind(i)}{4};
-                    w = ws.trackerData{2}{tdfrontind(i)}{5};
+                if tdtopind(i) && tdfrontind(i) % just in case
+                    x = polyval(ws.polyFits{1}{1}(tdtopind(i),:), linspace(0,1))';
+                    y = polyval(ws.polyFits{1}{2}(tdtopind(i),:), linspace(0,1))';
+                    z = polyval(ws.polyFits{2}{1}(tdfrontind(i),:), linspace(0,1))';
+                    w = polyval(ws.polyFits{2}{2}(tdfrontind(i),:), linspace(0,1))';
+%                     y = ws.trackerData{1}{tdtopind(i)}{5};
+%                     z = ws.trackerData{2}{tdfrontind(i)}{4};
+%                     w = ws.trackerData{2}{tdfrontind(i)}{5};
                     whiskerTop = [x'; y'];
                     maskTop = [polyval(ws.polyFitsMask{1}{1},linspace(-0.3,1.3)); polyval(ws.polyFitsMask{1}{2},linspace(-0.3,1.3))];
                     whiskerFront = [z'; w'];
@@ -119,10 +121,25 @@ classdef Whisker3D_2pad < handle
 
                     Ptop = Whisker.InterX(whiskerTop, maskTop);
                     Pfront = Whisker.InterX(whiskerFront, maskFront);
-
+                    
+                    if isempty(Ptop)
+                        x = polyval(ws.polyFits{1}{1}(tdtopind(i),:), linspace(-0.2, 1))';
+                        y = polyval(ws.polyFits{1}{2}(tdtopind(i),:), linspace(-0.2, 1))';
+                        whiskerTop = [x'; y'];
+                        Ptop = Whisker.InterX(whiskerTop, maskTop);
+%                         error('No base point at top view')
+                    end
+                    
+                    if isempty(Pfront)
+                        z = polyval(ws.polyFits{2}{1}(tdfrontind(i),:), linspace(-0.2, 1))';
+                        w = polyval(ws.polyFits{2}{2}(tdfrontind(i),:), linspace(-0.2, 1))';
+                        whiskerFront = [z';w'];
+                        Pfront = Whisker.InterX(whiskerFront, maskFront);
+%                         error('No base point at front view')
+                    end
                     tempData = NaN(length(x),3);
                     if ~isempty(Ptop) && ~isempty(Pfront) % only consider where tracking data intersects with the mask in both views
-                        Ptop = Ptop(:,1); Pfront = Pfront(:,1);
+                        Ptop = Ptop(:,1); Pfront = Pfront(:,1); % in case where there is more than 1 intersection
                         if sqrt(sum((wpo-[x(end) y(end)]).^2)) < sqrt(sum((wpo-[x(1) y(1)]).^2))
                             % c(q_max) is closest to whisker pad origin, so reverse the (x,y) sequence
                             x = x(end:-1:1);
@@ -160,8 +177,14 @@ classdef Whisker3D_2pad < handle
                                 pz = polyfit(q',tempData(:,3)',obj.fitorder);
                                 obj.fit3Data{i} = [px', py', pz'];
                             end
+                            if ~isempty(ws.whiskerPoleIntersection{i,1}) && ~isempty(ws.whiskerPoleIntersection{i,2})
+                                obj.intersectPoint(i,1:2) = (R * [ws.whiskerPoleIntersection{i,1}(1) - Ptop(1); ws.whiskerPoleIntersection{i,1}(2) - Ptop(2)] + Ptop)';
+                                obj.intersectPoint(i,3) = ws.whiskerPoleIntersection{i,2}(2);
+                            end
                         end
                     end
+                else
+                    error('Frame mismatch between top and front view') % just in case    
                 end
             end            
             ind = find(cellfun(@(x) length(x), obj.trackerData));
@@ -172,15 +195,18 @@ classdef Whisker3D_2pad < handle
                 tempFit = obj.fit3Data;
                 tempBase = obj.base;
                 tempBaseInd = obj.baseInd;
+                tempIntersectPoint = obj.intersectPoint;
                 obj.trackerData = cell(length(ind),1);
                 obj.fit3Data = cell(length(ind),1);
                 obj.base = zeros(length(ind),3);
                 obj.baseInd = zeros(length(ind),1);
+                obj.intersectPoint = zeros(length(ind),3);
                 for i = 1 : length(ind)
                     obj.trackerData{i} = tempData{ind(i)};
                     obj.fit3Data{i} = tempFit{ind(i)};
                     obj.base(i,:) = tempBase(ind(i),:);
                     obj.baseInd(i) = tempBaseInd(ind(i));
+                    obj.intersectPoint(i,:) = tempIntersectPoint(ind(i),:);
                 end
             end
             
@@ -297,58 +323,69 @@ classdef Whisker3D_2pad < handle
                 obj.phi(fi) = phis(rind) - obj.cameraAngle;
             end
             
-            x = polyval(ws.polyFitsMask{1}{1}, linspace(0,1));
-            y = polyval(ws.polyFitsMask{1}{2}, linspace(0,1));
-            mask = [x;y];
-            
-            obj.baseCoordinateTopview = obj.get_baseCoordinateTopview(ws.trackerData{1}, mask);
-            obj.lengthAlongWhiskerTopview = obj.get_lengthAlongWhiskerTopview(ws.whiskerPoleIntersection, ws.trackerData{1});
-            obj.lengthAlongWhisker = obj.get_lengthAlongWhisker(obj.lengthAlongWhiskerTopview(tdtopind));
+            obj.lengthAlongWhisker = obj.get_lengthAlongWhisker;
         end
         
-        function value = get_baseCoordinateTopview(obj, trackerData, mask)
-            value = zeros(length(trackerData),2);            
-            for i = 1 : length(trackerData)
-                xall = trackerData{i}{4};
-                xall = xall';
-                yall = trackerData{i}{5};
-                yall = yall';
-                whisker = [xall+1;yall+1];
-                temp = Whisker.InterX(whisker, mask);
-                if isempty(temp)
-                    value(i,:) = whisker(:,1)';
-                else
-                    value(i,:) = temp(1,:);
-                end
-            end
-        end
-        
-        function value = get_lengthAlongWhiskerTopview(obj, whiskerPoleIntersection, trackerData)
-            value = nan(length(obj.baseCoordinateTopview),1);
-            ind = intersect(find(obj.baseCoordinateTopview(:,1)), find(isfinite(sum(obj.baseCoordinateTopview,2))));
-            for i = 1 : length(value)
-                if ~isempty(whiskerPoleIntersection{i,1}) && ismember(i, ind)
-                    whisker = [trackerData{i}{4}+1, trackerData{i}{5}+1];
-                    dist2base = sum((whisker - obj.baseCoordinateTopview(i,:)).^2);
-                    baseInd = find(dist2base == min(dist2base));
-                    dist2intersect = sum((whisker - obj.whiskerPoleIntersection{i,1}).^2);
-                    intersectInd = find(dist2intersect == min(dist2intersect));
-                    arcLength = [0; cumsum(sqrt(diff(whisker(:,1)).^2 + diff(whisker(:,2)).^2))];
-                    value(i) = arcLength(intersectInd) - arcLength(baseInd);
-                end
-            end
-        end
-        
-        function value = get_lengthAlongWhisker(obj, lengthAlongWhiskerTopview)
-            value = zeros(length(obj.trackerData),1);
-            for i = 1 : length(value)
-                x = obj.trackerData{i}(obj.baseInd(i):end,1);
-                y = obj.trackerData{i}(obj.baseInd(i):end,2);
-                z = obj.trackerData{i}(obj.baseInd(i):end,3);
-                arcLengths = cumsum((diff(x).^2 + diff(y).^2));
-                arcLengths3d = cumsum(diff(x).^2 + diff(y).^2 + diff(z).^2);
-                [~, ind] = min(abs(arcLengths - lengthAlongWhiskerTopview(i)));
-                value(i) = arcLengths3d(ind);
+%         function value = get_baseCoordinateTopview(obj, mask)
+%             value = zeros(length(obj.trackerData),2);            
+%             for i = 1 : length(obj.trackerData)
+%                 xall = obj.trackerData{i}{4};
+%                 xall = xall';
+%                 yall = obj.trackerData{i}{5};
+%                 yall = yall';
+%                 whisker = [xall+1;yall+1];
+%                 temp = Whisker.InterX(whisker, mask);
+%                 if isempty(temp)
+%                     value(i,:) = whisker(:,1)';
+%                 else
+%                     value(i,:) = temp(:,1);
+%                 end
+%             end
+%         end
+%         
+%         function value = get_lengthAlongWhiskerTopview(obj, whiskerPoleIntersection)
+%             value = nan(length(obj.baseCoordinateTopview),1);
+%             ind = intersect(find(obj.baseCoordinateTopview(:,1)), find(isfinite(sum(obj.baseCoordinateTopview,2))));
+%             for i = 1 : length(value)
+%                 if ~isempty(whiskerPoleIntersection{i,1}) && ismember(i, ind)
+%                     whisker = [obj.trackerData{i}{4}+1, obj.trackerData{i}{5}+1];
+%                     dist2base = sum((whisker - obj.baseCoordinateTopview(i,:)).^2,2);
+%                     baseInd = find(dist2base == min(dist2base));
+%                     dist2intersect = sum((whisker - whiskerPoleIntersection{i,1}).^2,2);
+%                     intersectInd = find(dist2intersect == min(dist2intersect));
+%                     arcLength = [0; cumsum(sqrt(diff(whisker(:,1)).^2 + diff(whisker(:,2)).^2))];
+%                     value(i) = abs(arcLength(intersectInd) - arcLength(baseInd));
+%                 end
+%             end
+%         end
+%         
+%         function value = get_lengthAlongWhisker(obj)
+%             value = nan(length(obj.trackerData),1);
+%             inds = find(isfinite(obj.lengthAlongWhiskerTopview))';
+%             for i = inds
+%                 x = obj.trackerData{i}(obj.baseInd(i):end,1);
+%                 y = obj.trackerData{i}(obj.baseInd(i):end,2);
+%                 z = obj.trackerData{i}(obj.baseInd(i):end,3);
+%                 arcLengths = cumsum((diff(x).^2 + diff(y).^2));
+%                 arcLengths3d = cumsum(diff(x).^2 + diff(y).^2 + diff(z).^2);
+%                 [~, ind] = min(abs(arcLengths - obj.lengthAlongWhiskerTopview(i)));
+%                 value(i) = arcLengths3d(ind);
+%             end
+%         end
+        function value = get_lengthAlongWhisker(obj)
+            value = nan(length(obj.trackerData),1);
+            inds = find(sum(obj.intersectPoint,2))';
+            for i = inds                
+                x = obj.trackerData{i}(:,1);
+                y = obj.trackerData{i}(:,2);
+                z = obj.trackerData{i}(:,3);
+                distToIntersection = (x-obj.intersectPoint(i,1)).^2 + (y-obj.intersectPoint(i,2)).^2 + (z-obj.intersectPoint(i,3)).^2;
+                [~, intersectInd] = min(distToIntersection);
+                x = obj.trackerData{i}(obj.baseInd(i):intersectInd, 1);
+                y = obj.trackerData{i}(obj.baseInd(i):intersectInd, 2);
+                z = obj.trackerData{i}(obj.baseInd(i):intersectInd, 3);
+                temp = cumsum(sqrt(diff(x).^2 + diff(y).^2 + diff(z).^2));
+                value(i) = temp(end);
             end
         end
         

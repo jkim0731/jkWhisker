@@ -46,7 +46,7 @@ classdef WhiskerFinal_2pad < handle
 %         zeta = []; % roll angle, calculated by tangent line from the mask
         
         rInMm = [];
-        arcLength = [];
+        arcLength = []; % from the base (whisker intersection with the mask) to the whisker-pole intersection. In mm.
     end
     
     properties (Dependent = true)        
@@ -117,7 +117,7 @@ classdef WhiskerFinal_2pad < handle
             obj.kappaV(timeMatchingInds) = w3.kappaV;
             
             obj.rInMm = w3.rInMm;
-            obj.arcLength = w3.lengthAlongWhisker;
+            obj.arcLength = w3.lengthAlongWhisker/obj.pxPerMm;
             
             obj.protractionTFchunksByWhisking = wl.protractionTFchunksByWhisking;
             obj.retractionTFchunksByWhisking = wl.retractionTFchunksByWhisking;
