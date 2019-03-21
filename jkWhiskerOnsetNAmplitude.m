@@ -44,7 +44,7 @@ amplitude=abs(hh);
 midpoint=new_midpoint;
 phase = angle(hh);
 
-onsetCandid = [find(diff(phase) < -5) + 1; length(phase)];
+onsetCandid = [find(diff(phase) < -pi) + 1; length(phase)];
 whiskingAmp = zeros(length(onsetCandid)-1,1);
 for i = 1 : length(onsetCandid)-1
     whiskingAmp(i) = max(amplitude(onsetCandid(i):onsetCandid(i+1)));

@@ -106,7 +106,7 @@ classdef Whisker3D_2pad < handle
             wpo = ws.whiskerPadOrigin;
             vwidth = ws.imagePixelDimsXY(1);
             for i = 1 : length(tdtopind)
-                if tdtopind(i) && tdfrontind(i) % just in case
+                if ws.time{1}(tdtopind(i)) == ws.time{2}(tdfrontind(i)) % just in case
                     x = polyval(ws.polyFits{1}{1}(tdtopind(i),:), linspace(0,1))';
                     y = polyval(ws.polyFits{1}{2}(tdtopind(i),:), linspace(0,1))';
                     z = polyval(ws.polyFits{2}{1}(tdfrontind(i),:), linspace(0,1))';
@@ -177,9 +177,10 @@ classdef Whisker3D_2pad < handle
                                 pz = polyfit(q',tempData(:,3)',obj.fitorder);
                                 obj.fit3Data{i} = [px', py', pz'];
                             end
-                            if ~isempty(ws.whiskerPoleIntersection{i,1}) && ~isempty(ws.whiskerPoleIntersection{i,2})
-                                obj.intersectPoint(i,1:2) = (R * [ws.whiskerPoleIntersection{i,1}(1) - Ptop(1); ws.whiskerPoleIntersection{i,1}(2) - Ptop(2)] + Ptop)';
-                                obj.intersectPoint(i,3) = ws.whiskerPoleIntersection{i,2}(2);
+                            frameNum = round(ws.time{1}(tdtopind(i))/ws.framePeriodInSec + 1);
+                            if ~isempty(ws.whiskerPoleIntersection{frameNum,1}) && ~isempty(ws.whiskerPoleIntersection{frameNum,2})
+                                obj.intersectPoint(i,1:2) = (R * [ws.whiskerPoleIntersection{frameNum,1}(1) - Ptop(1); ws.whiskerPoleIntersection{frameNum,1}(2) - Ptop(2)] + Ptop)';
+                                obj.intersectPoint(i,3) = ws.whiskerPoleIntersection{frameNum,2}(1);
                             end
                         end
                     end
@@ -374,18 +375,20 @@ classdef Whisker3D_2pad < handle
 %         end
         function value = get_lengthAlongWhisker(obj)
             value = nan(length(obj.trackerData),1);
-            inds = find(sum(obj.intersectPoint,2))';
-            for i = inds                
-                x = obj.trackerData{i}(:,1);
-                y = obj.trackerData{i}(:,2);
-                z = obj.trackerData{i}(:,3);
-                distToIntersection = (x-obj.intersectPoint(i,1)).^2 + (y-obj.intersectPoint(i,2)).^2 + (z-obj.intersectPoint(i,3)).^2;
-                [~, intersectInd] = min(distToIntersection);
-                x = obj.trackerData{i}(obj.baseInd(i):intersectInd, 1);
-                y = obj.trackerData{i}(obj.baseInd(i):intersectInd, 2);
-                z = obj.trackerData{i}(obj.baseInd(i):intersectInd, 3);
-                temp = cumsum(sqrt(diff(x).^2 + diff(y).^2 + diff(z).^2));
-                value(i) = temp(end);
+            inds = intersect(find(sum(obj.intersectPoint,2))', obj.poleUpFrames);
+            if ~strcmp(obj.trialType, 'oo')
+                for i = inds                
+                    x = obj.trackerData{i}(:,1);
+                    y = obj.trackerData{i}(:,2);
+                    z = obj.trackerData{i}(:,3);
+                    distToIntersection = (x-obj.intersectPoint(i,1)).^2 + (y-obj.intersectPoint(i,2)).^2 + (z-obj.intersectPoint(i,3)).^2;
+                    [~, intersectInd] = min(distToIntersection);
+                    x = obj.trackerData{i}(obj.baseInd(i):intersectInd, 1);
+                    y = obj.trackerData{i}(obj.baseInd(i):intersectInd, 2);
+                    z = obj.trackerData{i}(obj.baseInd(i):intersectInd, 3);
+                    temp = cumsum(sqrt(diff(x).^2 + diff(y).^2 + diff(z).^2));
+                    value(i) = temp(end);
+                end
             end
         end
         

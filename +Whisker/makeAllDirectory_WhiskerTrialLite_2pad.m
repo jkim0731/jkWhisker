@@ -171,12 +171,12 @@ end
 % %%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %
-wla = Whisker.WhiskerTrialLite_2padArray(d);
-proMethZeroInds = find(cellfun(@(x) x.prothresholdMethod == 0, wla.trials));
-reMethZeroInds = find(cellfun(@(x) x.rethresholdMethod == 0, wla.trials));
-reInds = union(proMethZeroInds, reMethZeroInds);
-fnall = cellfun(@(x) x.trackerFileName, wla.trials(reInds), 'uniformoutput', false);
-% fnall = {'181'};
+% wla = Whisker.WhiskerTrialLite_2padArray(d);
+% proMethZeroInds = find(cellfun(@(x) x.prothresholdMethod == 0, wla.trials));
+% reMethZeroInds = find(cellfun(@(x) x.rethresholdMethod == 0, wla.trials));
+% reInds = union(proMethZeroInds, reMethZeroInds);
+% fnall = cellfun(@(x) x.trackerFileName, wla.trials(reInds), 'uniformoutput', false);
+% fnall = {'81'};
 %
 %
 % %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -363,7 +363,24 @@ if ~isempty(fnall)
                 wl.protractionTouchFrames = wl.single_frame_correction(wl.protractionTouchFrames);
                 wl.protractionTFchunks = wl.get_chunks(wl.protractionTouchFrames);
                 wl.retractionTouchFrames = wl.single_frame_correction(wl.retractionTouchFrames);
-                wl.retractionTFchunks = wl.get_chunks(wl.retractionTouchFrames);                
+                wl.retractionTFchunks = wl.get_chunks(wl.retractionTouchFrames); 
+                
+                [onsetFrames, ~, ~, ~, peakFrames] = jkWhiskerOnsetNAmplitude(wl.theta{1}, 0.2);
+                if ~isempty(onsetFrames) && ~isempty(peakFrames)
+                    protractionFrames = cell(1,length(find(isfinite(peakFrames))));
+                    retractionFrames = cell(1,length(find(isfinite(peakFrames)))-1);
+                    for i = 1 : length(find(isfinite(peakFrames)))-1
+                        protractionFrames{i} = onsetFrames(i):peakFrames(i);
+                        retractionFrames{i} = peakFrames(i):onsetFrames(i+1);
+                    end
+                    protractionFrames{end} = onsetFrames(end):peakFrames(end);
+
+                    wl.protractionTFchunksByWhisking = wl.get_protractionTFchunksByWhisking(protractionFrames, wl.protractionTFchunks);
+                    wl.retractionTFchunksByWhisking = wl.get_protractionTFchunksByWhisking(retractionFrames, wl.retractionTFchunks);
+                else
+                    wl.protractionTFchunksByWhisking = {};
+                    wl.retractionTFchunksByWhisking = {};
+                end
 
                 outfn = [fn '_WL_2pad.mat'];
                 pctsave(outfn,wl)
@@ -545,7 +562,25 @@ if ~isempty(fnall)
                 wl.protractionTouchFrames = wl.single_frame_correction(wl.protractionTouchFrames);
                 wl.protractionTFchunks = wl.get_chunks(wl.protractionTouchFrames);
                 wl.retractionTouchFrames = wl.single_frame_correction(wl.retractionTouchFrames);
-                wl.retractionTFchunks = wl.get_chunks(wl.retractionTouchFrames);                
+                wl.retractionTFchunks = wl.get_chunks(wl.retractionTouchFrames);
+                
+                
+                [onsetFrames, ~, ~, ~, peakFrames] = jkWhiskerOnsetNAmplitude(wl.theta{1}, 0.2);
+                if ~isempty(onsetFrames) && ~isempty(peakFrames)
+                    protractionFrames = cell(1,length(find(isfinite(peakFrames))));
+                    retractionFrames = cell(1,length(find(isfinite(peakFrames)))-1);
+                    for i = 1 : length(find(isfinite(peakFrames)))-1
+                        protractionFrames{i} = onsetFrames(i):peakFrames(i);
+                        retractionFrames{i} = peakFrames(i):onsetFrames(i+1);
+                    end
+                    protractionFrames{end} = onsetFrames(end):peakFrames(end);
+
+                    wl.protractionTFchunksByWhisking = wl.get_protractionTFchunksByWhisking(protractionFrames, wl.protractionTFchunks);
+                    wl.retractionTFchunksByWhisking = wl.get_protractionTFchunksByWhisking(retractionFrames, wl.retractionTFchunks);
+                else
+                    wl.protractionTFchunksByWhisking = {};
+                    wl.retractionTFchunksByWhisking = {};
+                end
 
                 outfn = [fn '_WL_2pad.mat'];
                 pctsave(outfn,wl)

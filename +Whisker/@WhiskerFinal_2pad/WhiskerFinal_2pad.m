@@ -51,7 +51,6 @@ classdef WhiskerFinal_2pad < handle
     
     properties (Dependent = true)        
         
-
     end
     
         
@@ -83,6 +82,8 @@ classdef WhiskerFinal_2pad < handle
             % from WL (touch)
             obj.protractionTFchunks = wl.protractionTFchunks;
             obj.retractionTFchunks = wl.retractionTFchunks;
+            obj.protractionTFchunksByWhisking = wl.protractionTFchunksByWhisking;
+            obj.retractionTFchunksByWhisking = wl.retractionTFchunksByWhisking;
             if ~isempty(obj.protractionTFchunks)
                 obj.protractionTouchDuration = cellfun(@(x) obj.time(x(end)) - obj.time(x(1)) + obj.framePeriodInSec, obj.protractionTFchunks);
             end
@@ -91,10 +92,10 @@ classdef WhiskerFinal_2pad < handle
             end
             
             if ~isempty(obj.protractionTFchunksByWhisking)
-                obj.protractionTouchDuration = cellfun(@(x) obj.time(x(end)) - obj.time(x(1)) + obj.framePeriodInSec, obj.protractionTFchunksByWhisking);
+                obj.protractionTouchDurationByWhisking = cellfun(@(x) obj.time(x(end)) - obj.time(x(1)) + obj.framePeriodInSec, obj.protractionTFchunksByWhisking); 
             end
             if ~isempty(obj.retractionTFchunksByWhisking)
-                obj.retractionTouchDuration = cellfun(@(x) obj.time(x(end)) - obj.time(x(1)) + obj.framePeriodInSec, obj.retractionTFchunksByWhisking);
+                obj.retractionTouchDurationByWhisking = cellfun(@(x) obj.time(x(end)) - obj.time(x(1)) + obj.framePeriodInSec, obj.retractionTFchunksByWhisking);
             end
             
             obj.protractionSlide = wl.protractionSlide;
@@ -118,16 +119,13 @@ classdef WhiskerFinal_2pad < handle
             
             obj.rInMm = w3.rInMm;
             obj.arcLength = w3.lengthAlongWhisker/obj.pxPerMm;
-            
-            obj.protractionTFchunksByWhisking = wl.protractionTFchunksByWhisking;
-            obj.retractionTFchunksByWhisking = wl.retractionTFchunksByWhisking;
+                        
         end
         
         
     end
     
     methods % Dependent property methods; cannot have attributes.
-
         
     end
        
