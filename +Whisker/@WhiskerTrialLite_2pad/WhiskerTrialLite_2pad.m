@@ -650,8 +650,8 @@ classdef WhiskerTrialLite_2pad < handle
                     obj.retractionTouchFrames = obj.single_frame_correction(obj.retractionTouchFrames);
                     obj.retractionTFchunks = obj.get_chunks(obj.retractionTouchFrames); 
                     
-                    [onsetFrames, ~, ~, ~, peakFrames] = jkWhiskerOnsetNAmplitude(obj.theta{1}, 0.2);
-                    if ~isempty(obj.protractionTFchunks) || ~isempty(obj.retractionTFchunks)
+                    [onsetFrames, ~, ~, ~, peakFrames] = jkWhiskerOnsetNAmplitude(obj.theta{1}, 2.5);
+                    if ~isempty(onsetFrames) && ~isempty(peakFrames) && (~isempty(obj.protractionTFchunks) || ~isempty(obj.retractionTFchunks))
                         protractionFrames = cell(1,length(find(isfinite(peakFrames))));
                         retractionFrames = cell(1,length(find(isfinite(peakFrames)))-1);
                         for i = 1 : length(find(isfinite(peakFrames)))-1
