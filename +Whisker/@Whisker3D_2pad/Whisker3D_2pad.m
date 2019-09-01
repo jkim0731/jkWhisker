@@ -88,39 +88,48 @@ classdef Whisker3D_2pad < handle
             obj.poleMovingFrames = ws.poleMovingFrames;            
             
             obj.mirrorAngle = ws.mirrorAngle;
-            R = [cosd(obj.mirrorAngle) -sind(obj.mirrorAngle); sind(obj.mirrorAngle) cosd(obj.mirrorAngle)]; % rotation matrix in top view
+            rotMatMirror = [cosd(obj.mirrorAngle) -sind(obj.mirrorAngle); sind(obj.mirrorAngle) cosd(obj.mirrorAngle)]; % rotation matrix in top view
+            rotMatMirrorInv = [cosd(-obj.mirrorAngle) -sind(-obj.mirrorAngle); sind(-obj.mirrorAngle) cosd(-obj.mirrorAngle)]; % rotation matrix in top view
             % Caution: the rotation is based on 'plot function coordinate
             % system', which in 'imshow coordiate' should be in different
             % direction, hence omitting the negative sign 2018/12/10 JK
             
+            vwidth = ws.imagePixelDimsXY(1);
+            vheight = ws.imagePixelDimsXY(2);
+            rotRefP = [vwidth/2; vheight/2];
             
             % Compensating for camera angle error before 2018/11/13
             if strcmp(obj.mouseName(1:2), 'JK') && str2double(obj.mouseName(3:end)) < 60
                 obj.cameraAngle = 4.2;
             end
-            
+            rotMatCamera = [cosd(-obj.cameraAngle) -sind(-obj.cameraAngle); sind(-obj.cameraAngle) cosd(-obj.cameraAngle)];
             obj.time = intersect(ws.time{1}, ws.time{2});
             
             %% calculating 3D mask
             % basic settings
-            numPoints = 100; % total num points in defining the 3d mask is going to be numPoints^2
-            
+            tempMaskZ = polyval(ws.polyFitsMask{1}{1}, linspace(-0.3, 1.3));
+            zInterval = max(tempMaskZ) - min(tempMaskZ); % in pixels
+            numPoints = round(zInterval/ws.pxPerMm*33)+1; % total num points in defining the 3d mask is going to be numPoints^2
+            % 30 um interval.
+
             % calculate a reference line at the top-down view (phi = 0).
-            maskTopY = polyval(ws.polyFitsMask{1}{2}, linspace(-0.3, 1.3, numPoints));
-            maskTopX = polyval(ws.polyFitsMask{1}{1}, linspace(-0.3, 1.3, numPoints));
-
+            maskTopYtemp = polyval(ws.polyFitsMask{1}{2}, linspace(-0.3, 1.3, numPoints));
+            maskTopXtemp = polyval(ws.polyFitsMask{1}{1}, linspace(-0.3, 1.3, numPoints));
+            maskTopYapexOG = min(maskTopYtemp);
+            
             % find the apex point of front-view mask (in y direction)
-            maskFrontY = polyval(ws.polyFitsMask{2}{2}, linspace(-0.3, 1.3, numPoints));
-            [~,maxIndFrontView] = max(maskFrontY);
-            maskFrontZ = polyval(ws.polyFitsMask{2}{1}, linspace(-0.3, 1.3, numPoints));
-            apexFrontView = [maskFrontY(maxIndFrontView), maskFrontZ(maxIndFrontView)];
-
+            maskFrontYtemp = polyval(ws.polyFitsMask{2}{2}, linspace(-0.3, 1.3, numPoints));
+            maskFrontZtemp = polyval(ws.polyFitsMask{2}{1}, linspace(-0.3, 1.3, numPoints));
+            maskFront = (rotMatCamera * [maskFrontZtemp - rotRefP(1); maskFrontYtemp - rotRefP(2)] + rotRefP)';
+            maskFrontZ = maskFront(:,1);
+            maskFrontY = maskFront(:,2);
+            apexFrontY = min(maskFrontY);
+            
             % along the z axis, move the reference line following the relationship in
             % front mask (maskFrontY and maskFrontz)
             obj.mask3d = zeros(numPoints^2,3);
             for i = 1 : numPoints
-                obj.mask3d((i-1)*numPoints+1 : i*numPoints,1) = maskTopX;
-                obj.mask3d((i-1)*numPoints+1 : i*numPoints,2) = maskTopY - (apexFrontView(1)-maskFrontY(i));
+                obj.mask3d((i-1)*numPoints+1 : i*numPoints,1:2) = (rotMatMirror*([maskTopXtemp; maskTopYtemp + (maskFrontY(i) - apexFrontY)] - rotRefP) + rotRefP)';
                 obj.mask3d((i-1)*numPoints+1 : i*numPoints,3) = maskFrontZ(i);
             end
 
@@ -134,35 +143,35 @@ classdef Whisker3D_2pad < handle
             obj.fit3Data = cell(length(obj.trackerData),1);
 %             obj.fitBase = zeros(length(obj.trackerData), 3);
             wpo = ws.whiskerPadOrigin;
-            vwidth = ws.imagePixelDimsXY(1);
+            
             for i = 1 : length(tdtopind)
                 if ws.time{1}(tdtopind(i)) == ws.time{2}(tdfrontind(i)) % just in case
-                    z = polyval(ws.polyFits{2}{1}(tdfrontind(i),:), linspace(0,1))';
-                    w = polyval(ws.polyFits{2}{2}(tdfrontind(i),:), linspace(0,1))';
+                    z = polyval(ws.polyFits{2}{1}(tdfrontind(i),:), linspace(0,1));
+                    w = polyval(ws.polyFits{2}{2}(tdfrontind(i),:), linspace(0,1));
                     if sqrt(sum((wpo-[z(end) w(end)]).^2)) < sqrt(sum((wpo-[z(1) w(1)]).^2))
                         % c(q_max) is closest to whisker pad origin, so reverse the (z,w) sequence
                         z = z(end:-1:1);
                         w = w(end:-1:1);
                     end
-
-                    whiskerFront = [z'; w'];
-                    maskFront = [polyval(ws.polyFitsMask{2}{1},linspace(-0.3,1.3)); polyval(ws.polyFitsMask{2}{2},linspace(-0.3,1.3))];
-                    Pfront = Whisker.InterX(whiskerFront, maskFront);
+                    whiskerFrontOG = [z; w];
+                    PfrontOG = Whisker.InterX(whiskerFrontOG, [maskFrontZtemp; maskFrontYtemp]);
                     
-                    if isempty(Pfront)
-                        z = polyval(ws.polyFits{2}{1}(tdfrontind(i),:), linspace(-0.1, 1))';
-                        w = polyval(ws.polyFits{2}{2}(tdfrontind(i),:), linspace(-0.1, 1))';
+                    if isempty(PfrontOG)
+                        z = polyval(ws.polyFits{2}{1}(tdfrontind(i),:), linspace(-0.1, 1.1));
+                        w = polyval(ws.polyFits{2}{2}(tdfrontind(i),:), linspace(-0.1, 1.1));
                         if sqrt(sum((wpo-[z(end) w(end)]).^2)) < sqrt(sum((wpo-[z(1) w(1)]).^2))
                             % c(q_max) is closest to whisker pad origin, so reverse the (z,w) sequence
                             z = z(end:-1:1);
                             w = w(end:-1:1);
                         end
-                        whiskerFront = [z';w'];
-                        Pfront = Whisker.InterX(whiskerFront, maskFront);
+                        whiskerFrontOG = [z;w];
+                        PfrontOG = Whisker.InterX(whiskerFrontOG, [maskFrontZtemp; maskFrontYtemp]);
                     end
 
-                    if ~isempty(Pfront) % only consider where tracking data intersects with the mask in both views
-                        Pfront = Pfront(:,end); % just in case where there is 2 intersection points.
+                    if ~isempty(PfrontOG) % only consider where tracking data intersects with the mask in both views
+                        PfrontOG = PfrontOG(:,end); % just in case where there is 2 intersection points.
+                        Pfront = rotMatCamera*(PfrontOG - rotRefP) + rotRefP;
+                        
                         % top-view mask is picked from 3D mask, based on the z-axis intersection value.
                         whiskerBaseZ = Pfront(1);
                         [~,maskZind] = min(abs(maskFrontZ - whiskerBaseZ));
@@ -171,44 +180,46 @@ classdef Whisker3D_2pad < handle
                         maskTop = obj.mask3d(mask3dInd,1:2);
                         maskTop = maskTop';
                         
-                        x = polyval(ws.polyFits{1}{1}(tdtopind(i),:), linspace(0, 1))';
-                        y = polyval(ws.polyFits{1}{2}(tdtopind(i),:), linspace(0, 1))';
+                        x = polyval(ws.polyFits{1}{1}(tdtopind(i),:), linspace(0, 1));
+                        y = polyval(ws.polyFits{1}{2}(tdtopind(i),:), linspace(0, 1));
                         if sqrt(sum((wpo-[x(end) y(end)]).^2)) < sqrt(sum((wpo-[x(1) y(1)]).^2))
                             % c(q_max) is closest to whisker pad origin, so reverse the (x,y) sequence
                             x = x(end:-1:1);
                             y = y(end:-1:1);
                         end
-                        whiskerTop = [x'; y'];
+                        whiskerTop = rotMatMirror * ([x; y] - rotRefP) + rotRefP;
                         Ptop = Whisker.InterX(whiskerTop, maskTop);
                     
                         if isempty(Ptop)
-                            x = polyval(ws.polyFits{1}{1}(tdtopind(i),:), linspace(-0.1, 1))';
-                            y = polyval(ws.polyFits{1}{2}(tdtopind(i),:), linspace(-0.1, 1))';
+                            x = polyval(ws.polyFits{1}{1}(tdtopind(i),:), linspace(-0.1, 1.1))';
+                            y = polyval(ws.polyFits{1}{2}(tdtopind(i),:), linspace(-0.1, 1.1))';
                             if sqrt(sum((wpo-[x(end) y(end)]).^2)) < sqrt(sum((wpo-[x(1) y(1)]).^2))
                                 % c(q_max) is closest to whisker pad origin, so reverse the (x,y) sequence
                                 x = x(end:-1:1);
                                 y = y(end:-1:1);
                             end
-                            whiskerTop = [x'; y'];
+                            whiskerTop = rotMatMirror * ([x; y] - rotRefP) + rotRefP;
                             Ptop = Whisker.InterX(whiskerTop, maskTop);
                         end
                         if ~isempty(Ptop) % only consider where tracking data intersects with the mask in both views
                             Ptop = Ptop(:,end);
                             tempData = NaN(length(x),3);
                     
-                            distFromBase = zeros(length(x),1);
-                            tempData(:,1:2) = (R * [x' - Ptop(1); y' - Ptop(2)] + Ptop)'; % rotate in regard to the base (intersection between whisker and mask)
+                            tempData(:,1:2) = whiskerTop'; % rotate in regard to the base (intersection between whisker and mask)
                             for j = 1 : length(x)
-                                distFromBase(j) = Ptop(2) - y(j); % lateral distance from the mask, calculated from the top-view
-                                line = [1, vwidth; Pfront(2) - distFromBase(j), Pfront(2) - distFromBase(j)]; % corresponding line for front-view
+                                lateralDist = y(j) - maskTopYapexOG; % lateral distance from the mask, calculated from the top-view, before rotation
+                                line = [1, vwidth; apexFrontY + lateralDist, apexFrontY + lateralDist]; % corresponding line for front-view, after rotation
+                                whiskerFront = rotMatCamera*(whiskerFrontOG-rotRefP) + rotRefP;
                                 P = Whisker.InterX(line, whiskerFront);
 %                                 if size(P,2) == 1 % else, there is no intersection or more than 1 intersection, which in that case cannot correctly reconstruct 3D shape
                                 if size(P,2) > 0
                                     % projection to the axis orthogonal to the body axis. Height (j,3) does not have to change
+                                    P = P(:,end);
                                     tempData(j,3) = P(1);
                                 end
                             end
-                            [~,baseInd] = nanmin(abs(distFromBase));
+                            distFromBase = sum((Ptop - whiskerTop).^2);
+                            [~,baseInd] = nanmin(distFromBase);
                             finiteInds = find(isfinite(sum(tempData,2)));
                             [~, obj.baseInd(i)] = min(abs(finiteInds - baseInd));
                             tempData = tempData(finiteInds,:);
@@ -225,8 +236,11 @@ classdef Whisker3D_2pad < handle
                             end
                             frameNum = round(ws.time{1}(tdtopind(i))/ws.framePeriodInSec + 1);
                             if ~isempty(ws.whiskerPoleIntersection{frameNum,1}) && ~isempty(ws.whiskerPoleIntersection{frameNum,2})
-                                obj.intersectPoint(i,1:2) = (R * [ws.whiskerPoleIntersection{frameNum,1}(1) - Ptop(1); ws.whiskerPoleIntersection{frameNum,1}(2) - Ptop(2)] + Ptop)';
-                                obj.intersectPoint(i,3) = ws.whiskerPoleIntersection{frameNum,2}(1);
+                                
+                                obj.intersectPoint(i,1:2) = (rotMatMirror * (ws.whiskerPoleIntersection{frameNum,1}' - rotRefP) + rotRefP)';
+                                % y axis is inverted for ws.whiskerPolerIntersection
+                                tempFrontIntersect = rotMatCamera * (ws.whiskerPoleIntersection{frameNum,2}' - rotRefP) + rotRefP;
+                                obj.intersectPoint(i,3) = tempFrontIntersect(1);
                             end
                         end
                     end
@@ -405,7 +419,7 @@ classdef Whisker3D_2pad < handle
                     error('Invalid value of property ''faceSideInImage'' or ''protractionDirection''')
                 end
                 obj.theta(fi) = thetas(rind);
-                obj.phi(fi) = phis(rind) - obj.cameraAngle;
+                obj.phi(fi) = phis(rind);
             end
             
             obj.lengthAlongWhisker = obj.get_lengthAlongWhisker;
@@ -530,6 +544,7 @@ classdef Whisker3D_2pad < handle
                     plot3(obj.intersectPoint(i,1), obj.intersectPoint(i,2), obj.intersectPoint(i,3), 'b.')
                 end
             end
+%             plot3(obj.mask3d(:,1), obj.mask3d(:,2), obj.mask3d(:,3), '.', 'color', [0.7 0.7 0.7])
             axis equal
         end
         
