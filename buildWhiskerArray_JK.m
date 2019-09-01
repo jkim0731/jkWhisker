@@ -23,19 +23,19 @@
 % mice = {'JK052', 'JK053','JK054','JK056'};
 % 
 
-% mice = {'JK027'};
+mice = {'JK027'};
 % mice = {'JK052', 'JK053','JK054','JK056'};
 % mice = {'JK054','JK056', 'JK070', 'JK074', 'JK075', 'JK076'};
-mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
+% mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
 % mice = {'JK056'};
 
-videoloc = 'E:\WhiskerVideo\';
+videoloc = 'Y:\Whiskernas\JK\whisker\tracked\';
 if strcmp(videoloc(end),filesep)
     whisker_d = videoloc;
 else
     whisker_d = ([videoloc filesep]);
 end
-behavior_base_dir = 'E:\SoloData\';
+behavior_base_dir = 'Y:\Whiskernas\JK\whisker\tracked\';
 
 ppm = 17.81/2;
             % 'pxPerMm': 17.81002608 for telecentric lens
@@ -84,15 +84,15 @@ sessions_pre = {[],[],[],[],[],[],[],[],[],[],[],[]};
 sessions_piezo = {[],[],[],[],[],[],[],[],[],[],[],[]};
 sessions_spont = {[],[],[],[],[],[],[],[],[],[],[],[]};
 
-sessionsDone = {[4,5,18,19,22],[3,4,15,16,17],[3,4,20,21,22],[1,2,16,17,18],[7],[2],[1,2,21,22:25],[3], [3:5,24:26], [3],[3],[3]};
-sessionsTorun = {   [1:19,22],  [1:22,99], [1:7,9:22], [1:18,91],  [1:10,12:24],   [1:22,24:31],   [1:25], [1:19,21:30]};
+% sessionsDone = {[4,5,18,19,22],[3,4,15,16,17],[3,4,20,21,22],[1,2,16,17,18],[7],[2],[1,2,21,22:25],[3], [3:5,24:26], [3],[3],[3]};
+% sessionsTorun = {   [1:19,22],  [1:22,99], [1:7,9:22], [1:18,91],  [1:10,12:24],   [1:22,24:31],   [1:25], [1:19,21:30]};
 % sessionsDone = {[3:5,24:26], [3],[3],[3]};
-sessions = cell(1,length(sessionsTorun));
-for i = 1 : length(sessions)
-    sessions{i} = setdiff(sessionsTorun{i}, sessionsDone{i});
-end
-% sessions = {[15,16,17],[3,4,20,21,22],[1,2,16,17,18],[7],[2],[1,2,21,22:25],[3], [3:5,24:26], [3],[3],[3]};
-
+% sessions = cell(1,length(sessionsTorun));
+% for i = 1 : length(sessions)
+%     sessions{i} = setdiff(sessionsTorun{i}, sessionsDone{i});
+% end
+% sessions = {[1:29,94,95],     [1:3,5:21],     [1:26], [1:13]};
+sessions = {[7,14]};
 all_session = 0; % 1 if using all sessions, 0 if using selected sessions
 
 DoFollicle = 0;
@@ -101,9 +101,9 @@ doWT = 0;
 testPoleUp = 0;
 doWST = 0;
 makeTouchHyperplane = 0;
-doWL = 1;
-do3D = 0;
-doWF = 1;
+doWL = 0;
+do3D = 1;
+doWF = 0;
 
 %% Define follicle points and masks
 % saves follicle_n_mask.mat file consists of variables 'maskx','masky','width', 'height', and 'follicle_first'

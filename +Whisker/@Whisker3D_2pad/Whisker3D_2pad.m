@@ -7,6 +7,11 @@ classdef Whisker3D_2pad < handle
     %
     % 2018/08/14 JK
     %
+    % 1. 3D mask, dome-like shape instead of palisades -> mask3d
+    % 2. Kv calculated at the projection to the angle tangent to the whisker
+    % at the calculated point.
+    % 3. Remove double mask-crossing fragments.
+    % 2019/08/31 JK
     properties
         trialNum = [];
         trialType = '';
@@ -29,11 +34,13 @@ classdef Whisker3D_2pad < handle
         time = [];
         kappaH = []; % horizaontal kappa
         theta = []; % horizontal angle (top angle)
-        kappaV = []; % vertical kappa
+        kappaV = []; % vertical kappa, projected to the angle 
         phi = []; % elevation angle (front angle)
         zeta = []; % roll angle, calculated by tangent line from the mask
+        alpha = []; % the angle of the tangent line of the whisker segment used for kappa calculation
         
         trackerData = {}; % {n}(:,1) for anterior-posterior axis, {n}(:,2) for radial axis, and {n}(:,3) for vertical axis. Starts from the follicle (closest point to the face)        
+        mask3d = [];
         fit3Data = {}; % same as in trackerData, except that it's for polynomial fitting (using polyfitn by John D'Errico (https://www.mathworks.com/matlabcentral/fileexchange/34765-polyfitn)
         fitorder = 5;
         base = []; % Base of the whisker. It is the point where whisker crosses with the mask. (:,1) for anterior-posterior axis, (:,2) for radial axis, and (:,3) for vertical axis.
@@ -60,7 +67,7 @@ classdef Whisker3D_2pad < handle
             p = inputParser;
             p.addRequired('ws', @(x) isa(x,'Whisker.WhiskerSignalTrial_2pad'));            
             p.addParameter('rInMm', 3, @(x) isnumeric(x) && numel(x)==1 );
-       
+        
             p.parse(ws,varargin{:});
             
             obj.rInMm = p.Results.rInMm;
@@ -94,7 +101,30 @@ classdef Whisker3D_2pad < handle
             
             obj.time = intersect(ws.time{1}, ws.time{2});
             
-            % calculating 3D tracker Data
+            %% calculating 3D mask
+            % basic settings
+            numPoints = 100; % total num points in defining the 3d mask is going to be numPoints^2
+            
+            % calculate a reference line at the top-down view (phi = 0).
+            maskTopY = polyval(ws.polyFitsMask{1}{2}, linspace(-0.3, 1.3, numPoints));
+            maskTopX = polyval(ws.polyFitsMask{1}{1}, linspace(-0.3, 1.3, numPoints));
+
+            % find the apex point of front-view mask (in y direction)
+            maskFrontY = polyval(ws.polyFitsMask{2}{2}, linspace(-0.3, 1.3, numPoints));
+            [~,maxIndFrontView] = max(maskFrontY);
+            maskFrontZ = polyval(ws.polyFitsMask{2}{1}, linspace(-0.3, 1.3, numPoints));
+            apexFrontView = [maskFrontY(maxIndFrontView), maskFrontZ(maxIndFrontView)];
+
+            % along the z axis, move the reference line following the relationship in
+            % front mask (maskFrontY and maskFrontz)
+            obj.mask3d = zeros(numPoints^2,3);
+            for i = 1 : numPoints
+                obj.mask3d((i-1)*numPoints+1 : i*numPoints,1) = maskTopX;
+                obj.mask3d((i-1)*numPoints+1 : i*numPoints,2) = maskTopY - (apexFrontView(1)-maskFrontY(i));
+                obj.mask3d((i-1)*numPoints+1 : i*numPoints,3) = maskFrontZ(i);
+            end
+
+            %% calculating 3D tracker Data
             [~,tdtopind] = ismember(obj.time, ws.time{1});
             [~,tdfrontind] = ismember(obj.time, ws.time{2});
             obj.trackerData = cell(length(tdtopind),1);
@@ -107,49 +137,65 @@ classdef Whisker3D_2pad < handle
             vwidth = ws.imagePixelDimsXY(1);
             for i = 1 : length(tdtopind)
                 if ws.time{1}(tdtopind(i)) == ws.time{2}(tdfrontind(i)) % just in case
-                    x = polyval(ws.polyFits{1}{1}(tdtopind(i),:), linspace(0,1))';
-                    y = polyval(ws.polyFits{1}{2}(tdtopind(i),:), linspace(0,1))';
                     z = polyval(ws.polyFits{2}{1}(tdfrontind(i),:), linspace(0,1))';
                     w = polyval(ws.polyFits{2}{2}(tdfrontind(i),:), linspace(0,1))';
-%                     y = ws.trackerData{1}{tdtopind(i)}{5};
-%                     z = ws.trackerData{2}{tdfrontind(i)}{4};
-%                     w = ws.trackerData{2}{tdfrontind(i)}{5};
-                    whiskerTop = [x'; y'];
-                    maskTop = [polyval(ws.polyFitsMask{1}{1},linspace(-0.3,1.3)); polyval(ws.polyFitsMask{1}{2},linspace(-0.3,1.3))];
+                    if sqrt(sum((wpo-[z(end) w(end)]).^2)) < sqrt(sum((wpo-[z(1) w(1)]).^2))
+                        % c(q_max) is closest to whisker pad origin, so reverse the (z,w) sequence
+                        z = z(end:-1:1);
+                        w = w(end:-1:1);
+                    end
+
                     whiskerFront = [z'; w'];
                     maskFront = [polyval(ws.polyFitsMask{2}{1},linspace(-0.3,1.3)); polyval(ws.polyFitsMask{2}{2},linspace(-0.3,1.3))];
-
-                    Ptop = Whisker.InterX(whiskerTop, maskTop);
                     Pfront = Whisker.InterX(whiskerFront, maskFront);
                     
-                    if isempty(Ptop)
-                        x = polyval(ws.polyFits{1}{1}(tdtopind(i),:), linspace(-0.2, 1))';
-                        y = polyval(ws.polyFits{1}{2}(tdtopind(i),:), linspace(-0.2, 1))';
-                        whiskerTop = [x'; y'];
-                        Ptop = Whisker.InterX(whiskerTop, maskTop);
-%                         error('No base point at top view')
-                    end
-                    
                     if isempty(Pfront)
-                        z = polyval(ws.polyFits{2}{1}(tdfrontind(i),:), linspace(-0.2, 1))';
-                        w = polyval(ws.polyFits{2}{2}(tdfrontind(i),:), linspace(-0.2, 1))';
+                        z = polyval(ws.polyFits{2}{1}(tdfrontind(i),:), linspace(-0.1, 1))';
+                        w = polyval(ws.polyFits{2}{2}(tdfrontind(i),:), linspace(-0.1, 1))';
+                        if sqrt(sum((wpo-[z(end) w(end)]).^2)) < sqrt(sum((wpo-[z(1) w(1)]).^2))
+                            % c(q_max) is closest to whisker pad origin, so reverse the (z,w) sequence
+                            z = z(end:-1:1);
+                            w = w(end:-1:1);
+                        end
                         whiskerFront = [z';w'];
                         Pfront = Whisker.InterX(whiskerFront, maskFront);
-%                         error('No base point at front view')
                     end
-                    tempData = NaN(length(x),3);
-                    if ~isempty(Ptop) && ~isempty(Pfront) % only consider where tracking data intersects with the mask in both views
-                        Ptop = Ptop(:,1); Pfront = Pfront(:,1); % in case where there is more than 1 intersection
+
+                    if ~isempty(Pfront) % only consider where tracking data intersects with the mask in both views
+                        Pfront = Pfront(:,end); % just in case where there is 2 intersection points.
+                        % top-view mask is picked from 3D mask, based on the z-axis intersection value.
+                        whiskerBaseZ = Pfront(1);
+                        [~,maskZind] = min(abs(maskFrontZ - whiskerBaseZ));
+                        maskZ = maskFrontZ(maskZind);
+                        mask3dInd = find(obj.mask3d(:,3) == maskZ);
+                        maskTop = obj.mask3d(mask3dInd,1:2);
+                        maskTop = maskTop';
+                        
+                        x = polyval(ws.polyFits{1}{1}(tdtopind(i),:), linspace(0, 1))';
+                        y = polyval(ws.polyFits{1}{2}(tdtopind(i),:), linspace(0, 1))';
                         if sqrt(sum((wpo-[x(end) y(end)]).^2)) < sqrt(sum((wpo-[x(1) y(1)]).^2))
                             % c(q_max) is closest to whisker pad origin, so reverse the (x,y) sequence
                             x = x(end:-1:1);
                             y = y(end:-1:1);
                         end
-                        if sqrt(sum((wpo-[z(end) w(end)]).^2)) < sqrt(sum((wpo-[z(1) w(1)]).^2))
-                            % c(q_max) is closest to whisker pad origin, so reverse the (z,w) sequence
-                            w = w(end:-1:1);
+                        whiskerTop = [x'; y'];
+                        Ptop = Whisker.InterX(whiskerTop, maskTop);
+                    
+                        if isempty(Ptop)
+                            x = polyval(ws.polyFits{1}{1}(tdtopind(i),:), linspace(-0.1, 1))';
+                            y = polyval(ws.polyFits{1}{2}(tdtopind(i),:), linspace(-0.1, 1))';
+                            if sqrt(sum((wpo-[x(end) y(end)]).^2)) < sqrt(sum((wpo-[x(1) y(1)]).^2))
+                                % c(q_max) is closest to whisker pad origin, so reverse the (x,y) sequence
+                                x = x(end:-1:1);
+                                y = y(end:-1:1);
+                            end
+                            whiskerTop = [x'; y'];
+                            Ptop = Whisker.InterX(whiskerTop, maskTop);
                         end
-                        if Ptop(2) - y(1) < 0 && Pfront(2) - w(1) < 0 % only when the whisker crosses the mask, from both views
+                        if ~isempty(Ptop) % only consider where tracking data intersects with the mask in both views
+                            Ptop = Ptop(:,end);
+                            tempData = NaN(length(x),3);
+                    
                             distFromBase = zeros(length(x),1);
                             tempData(:,1:2) = (R * [x' - Ptop(1); y' - Ptop(2)] + Ptop)'; % rotate in regard to the base (intersection between whisker and mask)
                             for j = 1 : length(x)
@@ -218,6 +264,7 @@ classdef Whisker3D_2pad < handle
             obj.phi = nan(length(ind),1);
             obj.prePoint = nan(length(ind),1);
             obj.postPoint = nan(length(ind),1);
+            obj.alpha = nan(length(ind),1);
             
             for fi = 1 : length(ind)
                 % 1. find the calculation point for kappas 
@@ -241,7 +288,43 @@ classdef Whisker3D_2pad < handle
                         q = linspace(0,1, obj.postPoint(fi)-obj.prePoint(fi)+1);
                         px = polyfit(q',x,2);
                         py = polyfit(q',y,2);
-                        pz = polyfit(q',z,2);
+                        
+                        midpoint = round((obj.postPoint(fi) - obj.prePoint(fi))/2);
+                        
+                        % figure out the angle of tangent plane (alpha)
+                        pxDot = polyder(px);
+                        pyDot = polyder(py);
+                        xDot = polyval(pxDot,q);
+                        yDot = polyval(pyDot,q);
+                        if strcmp(ws.faceSideInImage,'top') && strcmp(ws.protractionDirection,'rightward')
+                            alpha = atand(xDot(midpoint) / yDot(midpoint));
+                        elseif strcmp(ws.faceSideInImage,'top') && strcmp(ws.protractionDirection,'leftward')
+                            alpha = -atand(xDot(midpoint) / yDot(midpoint));
+                        elseif strcmp(ws.faceSideInImage,'left') && strcmp(ws.protractionDirection,'downward')
+                            alpha = atand(yDot(midpoint) / xDot(midpoint));
+                        elseif strcmp(ws.faceSideInImage,'left') && strcmp(ws.protractionDirection,'upward')
+                            alpha = -atand(yDot(midpoint) / xDot(midpoint));
+                        elseif strcmp(ws.faceSideInImage,'right') && strcmp(ws.protractionDirection,'upward')
+                            alpha = atand(yDot(midpoint) / xDot(midpoint));
+                        elseif strcmp(ws.faceSideInImage,'right') && strcmp(ws.protractionDirection,'downward')
+                            alpha = -atand(yDot(midpoint) / xDot(midpoint));
+                        elseif strcmp(ws.faceSideInImage,'bottom') && strcmp(ws.protractionDirection,'rightward')
+                            alpha = -atand(xDot(midpoint) / yDot(midpoint));
+                        elseif strcmp(ws.faceSideInImage,'bottom') && strcmp(ws.protractionDirection,'leftward')
+                            alpha = atand(xDot(midpoint) / yDot(midpoint));
+                        end
+                        
+                        obj.alpha(fi) = alpha;
+                        
+                        % Rotate the segment 
+                        Rvertical = [cosd(-alpha) -sind(-alpha); sind(-alpha) cosd(-alpha)]; % rotation matrix in top view
+                        refPoint = [x(midpoint); y(midpoint)];
+                        projected = [(Rvertical * [x' - refPoint(1); y' - refPoint(2)] + refPoint)', z];
+                        
+                        % 2. horizontal & vertical kappa
+                        px = polyfit(q',projected(:,1),2);
+                        py = polyfit(q',projected(:,2),2);
+                        pz = polyfit(q',projected(:,3),2);
 
                         % 2. horizontal & vertical kappa
                         pxDot = polyder(px);
@@ -264,9 +347,10 @@ classdef Whisker3D_2pad < handle
 
                         kappasH = (xDot.*yDoubleDot - yDot.*xDoubleDot) ./ ((xDot.^2 + yDot.^2).^(3/2)) * obj.pxPerMm; % SIGNED CURVATURE, in 1/mm.
                         kappasV = (zDot.*yDoubleDot - yDot.*zDoubleDot) ./ ((zDot.^2 + yDot.^2).^(3/2)) * obj.pxPerMm; % SIGNED CURVATURE, in 1/mm.
-                        midpoint = round((obj.postPoint(fi) - obj.prePoint(fi))/2);
+
                         obj.kappaH(fi) = kappasH(midpoint);
                         obj.kappaV(fi) = kappasV(midpoint);
+
                     end
                 end
                 
@@ -392,13 +476,51 @@ classdef Whisker3D_2pad < handle
             end
         end
         
+        function show_one_3D(obj, frameNum, varargin)
+%             q = linspace(0,1);
+%             x = polyval(obj.fit3Data{frameNum}(:,1),q)';
+%             y = polyval(obj.fit3Data{frameNum}(:,2),q)';
+%             z = polyval(obj.fit3Data{frameNum}(:,3),q)';
+
+            x = obj.trackerData{frameNum}(obj.baseInd(frameNum):end,1);
+            y = obj.trackerData{frameNum}(obj.baseInd(frameNum):end,2);
+            z = obj.trackerData{frameNum}(obj.baseInd(frameNum):end,3);
+
+            plot3(x,y,z, 'k-')
+            
+            xt = obj.trackerData{frameNum}(obj.prePoint(frameNum):obj.postPoint(frameNum),1);
+            yt = obj.trackerData{frameNum}(obj.prePoint(frameNum):obj.postPoint(frameNum),2);
+            zt = obj.trackerData{frameNum}(obj.prePoint(frameNum):obj.postPoint(frameNum),3);
+%             qt = linspace(0,1, obj.postPoint(frameNum)-obj.prePoint(frameNum)+1);
+%             px = polyfit(qt',xt,2);
+%             py = polyfit(qt',yt,2);
+%             pz = polyfit(qt',zt,2);
+%             plot3(polyval(px,qt), polyval(py,qt), polyval(pz,qt), 'm-');
+            plot3(xt, yt, zt, 'm-');
+            plot3(obj.base(frameNum,1), obj.base(frameNum,2), obj.base(frameNum,3), 'r.', 'markersize', 10)
+            if nargin > 2 && varargin{1}
+                whisker = [x,y,z];
+                ind = find(sum((whisker-obj.intersectPoint(frameNum,:)).^2,2) == min(sum((whisker-obj.intersectPoint(frameNum,:)).^2,2)) );
+                plot3(x(ind), y(ind), z(ind), 'b.', 'markersize', 10)
+            end            
+            axis equal
+            if nargin > 3
+                view(varargin{2})
+            else
+                view(3)
+            end
+            xlabel('A-P'), ylabel('M-L'), zlabel('D-V')
+        end
+        
         function show_all_3D(obj)
             figure, hold on,
             for i = 1 : length(obj.trackerData)
                 plot3(obj.trackerData{i}(:,1), obj.trackerData{i}(:,2), obj.trackerData{i}(:,3), 'k-')
             end
             for i = 1 : length(obj.trackerData)
-                plot3(obj.trackerData{i}(obj.prePoint(i):obj.postPoint(i),1), obj.trackerData{i}(obj.prePoint(i):obj.postPoint(i),2), obj.trackerData{i}(obj.prePoint(i):obj.postPoint(i),3), 'm-')
+                if isfinite(obj.prePoint(i))
+                    plot3(obj.trackerData{i}(obj.prePoint(i):obj.postPoint(i),1), obj.trackerData{i}(obj.prePoint(i):obj.postPoint(i),2), obj.trackerData{i}(obj.prePoint(i):obj.postPoint(i),3), 'm-')
+                end
             end
             for i = 1 : length(obj.trackerData)
                 plot3(obj.base(i,1), obj.base(i,2), obj.base(i,3), 'r.')
@@ -433,26 +555,40 @@ classdef Whisker3D_2pad < handle
             q = linspace(0,1);
             figure,
             i = 1;
-            x = polyval(obj.fit3Data{i}(:,1),q);
-            y = polyval(obj.fit3Data{i}(:,2),q);
-            z = polyval(obj.fit3Data{i}(:,3),q);
+            
+            basex = obj.base(i,1) / obj.pxPerMm;
+            basey = -obj.base(i,2) / obj.pxPerMm;
+            basez = obj.base(i,3) / obj.pxPerMm;
+            x = polyval(obj.fit3Data{i}(:,1),q) / obj.pxPerMm - basex;
+            y = -polyval(obj.fit3Data{i}(:,2),q) / obj.pxPerMm - basey;
+            z = polyval(obj.fit3Data{i}(:,3),q) / obj.pxPerMm - basez;
             plot3(x, y, z, 'k-'); hold on, 
-            plot3(obj.base(i,1), obj.base(i,2), obj.base(i,3), 'r.', 'markersize', 20); 
+            plot3(0, 0, 0, 'r.', 'markersize', 20); 
             hold off, 
             view(3);
+%             view([-90, 0]);
             [az, el] = view;
-            xl = [min(cellfun(@(x) min(x(:,1)), obj.trackerData)), max(cellfun(@(x) max(x(:,1)), obj.trackerData))];
-            yl = [min(cellfun(@(x) min(x(:,2)), obj.trackerData)), max(cellfun(@(x) max(x(:,2)), obj.trackerData))]; 
-            zl = [min(cellfun(@(x) min(x(:,3)), obj.trackerData)), max(cellfun(@(x) max(x(:,3)), obj.trackerData))];
-            while( i > 0 )                
-                plot3(polyval(obj.fit3Data{i}(:,1),q), polyval(obj.fit3Data{i}(:,2),q), polyval(obj.fit3Data{i}(:,3),q), 'k-', 'linewidth', 2), hold on
+            xl = [min(cellfun(@(x) min(x(:,1)) / obj.pxPerMm - basex, obj.trackerData)), max(cellfun(@(x) max(x(:,1)) / obj.pxPerMm - basex, obj.trackerData))];
+            yl = [min(cellfun(@(x) -max(x(:,2)) / obj.pxPerMm - basey, obj.trackerData)), max(cellfun(@(x) -min(x(:,2)) / obj.pxPerMm - basey, obj.trackerData))]; 
+            zl = [min(cellfun(@(x) min(x(:,3)) / obj.pxPerMm - basez, obj.trackerData)), max(cellfun(@(x) max(x(:,3)) / obj.pxPerMm - basez, obj.trackerData))];
+            while( i > 0 )
+                basex = obj.base(i,1) / obj.pxPerMm;
+                basey = -obj.base(i,2) / obj.pxPerMm;
+                basez = obj.base(i,3) / obj.pxPerMm;
+                x = polyval(obj.fit3Data{i}(:,1),q) / obj.pxPerMm - basex;
+                y = -polyval(obj.fit3Data{i}(:,2),q) / obj.pxPerMm - basey;
+                z = polyval(obj.fit3Data{i}(:,3),q) / obj.pxPerMm - basez;
+                plot3(x, y, z, 'k-'); hold on, 
                 if i < 51
                     j = 1;
                 else
                     j = i - 50;
                 end
                 for k = j : i-1
-                    plot3(polyval(obj.fit3Data{k}(:,1),q), polyval(obj.fit3Data{k}(:,2),q), polyval(obj.fit3Data{k}(:,3),q), 'color', [0.7 0.7 0.7])
+                    x = polyval(obj.fit3Data{k}(:,1),q) / obj.pxPerMm - basex;
+                    y = -polyval(obj.fit3Data{k}(:,2),q) / obj.pxPerMm - basey;
+                    z = polyval(obj.fit3Data{k}(:,3),q) / obj.pxPerMm - basez;
+                    plot3(x, y, z, 'k-', 'color', [0.7 0.7 0.7])                    
                 end
                 if i > length(obj.trackerData) - 50
                     j = length(obj.trackerData);
@@ -460,20 +596,289 @@ classdef Whisker3D_2pad < handle
                     j = i + 50;
                 end
                 for k = i+1:j
-                    plot3(polyval(obj.fit3Data{k}(:,1),q), polyval(obj.fit3Data{k}(:,2),q), polyval(obj.fit3Data{k}(:,3),q), 'color', [0.7 0.7 0.7])                    
-                end                
-                x = polyval(obj.fit3Data{i}(:,1),q);
-                y = polyval(obj.fit3Data{i}(:,2),q);
-                z = polyval(obj.fit3Data{i}(:,3),q);
-                plot3(x, y, z, 'k-', 'linewidth', 4); hold on, 
-                plot3(obj.base(i,1), obj.base(i,2), obj.base(i,3), 'r.', 'markersize', 25);
+                    x = polyval(obj.fit3Data{k}(:,1),q) / obj.pxPerMm - basex;
+                    y = -polyval(obj.fit3Data{k}(:,2),q) / obj.pxPerMm - basey;
+                    z = polyval(obj.fit3Data{k}(:,3),q) / obj.pxPerMm - basez;
+                    plot3(x, y, z, 'k-', 'color', [0.7 0.7 0.7])
+                end
+                x = polyval(obj.fit3Data{i}(:,1),q) / obj.pxPerMm - basex;
+                y = -polyval(obj.fit3Data{i}(:,2),q) / obj.pxPerMm - basey;
+                z = polyval(obj.fit3Data{i}(:,3),q) / obj.pxPerMm - basez;
+                plot3(x, y, z, 'k-', 'linewidth', 2); hold on, 
+                plot3(0, 0, 0, 'r.', 'markersize', 25);
                 hold off
                 title({'Navigate using keyboard'; ['Trial # ', obj.trackerFileName]; ['Frame # ', num2str(round(obj.time(i)/obj.framePeriodInSec))]});
-                xlabel('Rostro-caudal'), ylabel('Medio-lateral'), zlabel('Dorso-ventral')                
-                set(gca, 'linewidth', 3, 'fontweight', 'bold', 'fontsize', 15)
+                xlabel('AP (mm)'), ylabel('ML (mm)'), zlabel('DV (mm)')                
+%                 set(gca, 'linewidth', 3, 'fontweight', 'bold', 'fontsize', 15)
                 axis equal
                 view(az,el), xlim(xl), ylim(yl), zlim(zl);
                 [i, az, el] = obj.keyboard_navigation_3d(i, length(obj.trackerData));
+            end
+        end
+        
+        function show_onebyone_3D_polyfit_with_touch(obj)
+            q = linspace(0,1);
+            figure,
+            i = 1;
+            
+            basex = obj.base(i,1) / obj.pxPerMm;
+            basey = -obj.base(i,2) / obj.pxPerMm;
+            basez = obj.base(i,3) / obj.pxPerMm;
+            x = polyval(obj.fit3Data{i}(:,1),q) / obj.pxPerMm - basex;
+            y = -polyval(obj.fit3Data{i}(:,2),q) / obj.pxPerMm - basey;
+            z = polyval(obj.fit3Data{i}(:,3),q) / obj.pxPerMm - basez;
+            plot3(x, y, z, 'color'); hold on, 
+            plot3(0, 0, 0, 'r.', 'markersize', 20); 
+            hold off, 
+            view(3);
+%             view([-90, 0]);
+            [az, el] = view;
+            xl = [min(cellfun(@(x) min(x(:,1)) / obj.pxPerMm - basex, obj.trackerData)), max(cellfun(@(x) max(x(:,1)) / obj.pxPerMm - basex, obj.trackerData))];
+            yl = [min(cellfun(@(x) -max(x(:,2)) / obj.pxPerMm - basey, obj.trackerData)), max(cellfun(@(x) -min(x(:,2)) / obj.pxPerMm - basey, obj.trackerData))]; 
+            zl = [min(cellfun(@(x) min(x(:,3)) / obj.pxPerMm - basez, obj.trackerData)), max(cellfun(@(x) max(x(:,3)) / obj.pxPerMm - basez, obj.trackerData))];
+            while( i > 0 )
+                basex = obj.base(i,1) / obj.pxPerMm;
+                basey = -obj.base(i,2) / obj.pxPerMm;
+                basez = obj.base(i,3) / obj.pxPerMm;
+                x = polyval(obj.fit3Data{i}(:,1),q) / obj.pxPerMm - basex;
+                y = -polyval(obj.fit3Data{i}(:,2),q) / obj.pxPerMm - basey;
+                z = polyval(obj.fit3Data{i}(:,3),q) / obj.pxPerMm - basez;
+                plot3(x, y, z, 'k-'); hold on, 
+                if i < 51
+                    j = 1;
+                else
+                    j = i - 50;
+                end
+                for k = j : i-1
+                    x = polyval(obj.fit3Data{k}(:,1),q) / obj.pxPerMm - basex;
+                    y = -polyval(obj.fit3Data{k}(:,2),q) / obj.pxPerMm - basey;
+                    z = polyval(obj.fit3Data{k}(:,3),q) / obj.pxPerMm - basez;
+                    plot3(x, y, z, 'k-', 'color', [0.7 0.7 0.7])                    
+                end
+                if i > length(obj.trackerData) - 50
+                    j = length(obj.trackerData);
+                else
+                    j = i + 50;
+                end
+                for k = i+1:j
+                    x = polyval(obj.fit3Data{k}(:,1),q) / obj.pxPerMm - basex;
+                    y = -polyval(obj.fit3Data{k}(:,2),q) / obj.pxPerMm - basey;
+                    z = polyval(obj.fit3Data{k}(:,3),q) / obj.pxPerMm - basez;
+                    plot3(x, y, z, 'k-', 'color', [0.7 0.7 0.7])
+                end
+                x = polyval(obj.fit3Data{i}(:,1),q) / obj.pxPerMm - basex;
+                y = -polyval(obj.fit3Data{i}(:,2),q) / obj.pxPerMm - basey;
+                z = polyval(obj.fit3Data{i}(:,3),q) / obj.pxPerMm - basez;
+                plot3(x, y, z, 'k-', 'linewidth', 2); hold on, 
+                plot3(0, 0, 0, 'r.', 'markersize', 25);
+                hold off
+                title({'Navigate using keyboard'; ['Trial # ', obj.trackerFileName]; ['Frame # ', num2str(round(obj.time(i)/obj.framePeriodInSec))]});
+                xlabel('AP (mm)'), ylabel('ML (mm)'), zlabel('DV (mm)')                
+%                 set(gca, 'linewidth', 3, 'fontweight', 'bold', 'fontsize', 15)
+                axis equal
+                view(az,el), xlim(xl), ylim(yl), zlim(zl);
+                [i, az, el] = obj.keyboard_navigation_3d(i, length(obj.trackerData));
+            end
+        end
+        
+        function show_onebyone_3D_print(obj)
+            
+            
+            
+%             viewVal = [30, -30];
+            q = linspace(0,1);
+            figure,
+            subplot(221)            
+            i = 1;
+            
+            basePoint = obj.base(i,:);
+            
+            x = polyval(obj.fit3Data{i}(:,1),q);
+            y = polyval(obj.fit3Data{i}(:,2),q);
+            z = polyval(obj.fit3Data{i}(:,3),q);
+            
+            plot3(x, y, z, 'k-')
+            ax1 = gca;
+            hold(ax1,'on')
+            plot3(ax1, (obj.base(i,1) - basePoint(1)) / obj.pxPerMm, -(obj.base(i,2) - basePoint(2)) / obj.pxPerMm, (obj.base(i,3) - basePoint(3)) / obj.pxPerMm, 'r.', 'markersize', 20); 
+            hold(ax1,'off')
+            
+%             view(ax1, viewVal)
+
+            subplot(223)            
+            i = 1;
+            x = polyval(obj.fit3Data{i}(:,1),q);
+            y = polyval(obj.fit3Data{i}(:,2),q);
+            z = polyval(obj.fit3Data{i}(:,3),q);
+            plot3(x, y, z, 'k-'); 
+            ax2 = gca;
+            hold(ax2,'on')
+            plot3(ax2, (obj.base(i,1) - basePoint(1)) / obj.pxPerMm, -(obj.base(i,2) - basePoint(2)) / obj.pxPerMm, (obj.base(i,3) - basePoint(3)) / obj.pxPerMm, 'r.', 'markersize', 20);
+            hold(ax2,'off')       
+            view(ax2, [-90, 0])
+            
+            subplot(222)            
+            i = 1;
+            x = polyval(obj.fit3Data{i}(:,1),q);
+            y = polyval(obj.fit3Data{i}(:,2),q);
+            z = polyval(obj.fit3Data{i}(:,3),q);
+            plot3(x, y, z, 'k-')
+            ax3 = gca;
+            hold(ax3,'on')
+            plot3(ax3, (obj.base(i,1) - basePoint(1)) / obj.pxPerMm, -(obj.base(i,2) - basePoint(2)) / obj.pxPerMm, (obj.base(i,3) - basePoint(3)) / obj.pxPerMm, 'r.', 'markersize', 20);
+            hold(ax3,'off')            
+            view(ax3, [0, -90])
+            
+            while( i > 0 )                
+%                 plot3(ax1, (polyval(obj.fit3Data{i}(:,1),q) - basePoint(1)) / obj.pxPerMm, -(polyval(obj.fit3Data{i}(:,2),q) - basePoint(2)) / obj.pxPerMm, ...
+%                     (polyval(obj.fit3Data{i}(:,3),q) - basePoint(3)) / obj.pxPerMm, 'k-', 'linewidth', 2)
+                [az, el] = view(ax1);
+                basePoint = obj.base(i,:);
+                
+                x = (polyval(obj.fit3Data{i}(:,1),q) - basePoint(1)) / obj.pxPerMm;
+                y = -(polyval(obj.fit3Data{i}(:,2),q) - basePoint(2)) / obj.pxPerMm;
+                z = (polyval(obj.fit3Data{i}(:,3),q) - basePoint(3)) / obj.pxPerMm;
+                
+                xlimVal = [min(x)-1 max(x)+1];
+                ylimVal = [min(y)-1 max(y)+1];
+                zlimVal = [min(z)-1 max(z)+1];
+                
+                basex = (obj.base(i,1) - basePoint(1)) / obj.pxPerMm;
+                basey = -(obj.base(i,2) - basePoint(2)) / obj.pxPerMm;
+                basez = (obj.base(i,3) - basePoint(3)) / obj.pxPerMm;
+                
+                plot3(ax1, x, y, z, 'k-', 'linewidth', 2);
+                hold(ax1,'on')
+                plot3(ax1, basex, basey, basez, 'r.', 'markersize', 25);
+                minInd = zeros(2,1);
+                [~, minInd(1)] = min( abs(  sqrt( (x-basex).^2 + (y-basey).^2 + (z-basez).^2 )  -  (obj.rInMm-1)) );
+                [~, minInd(2)] = min( abs(  sqrt( (x-basex).^2 + (y-basey).^2 + (z-basez).^2 )  -  (obj.rInMm+1)) );                
+                plot3(ax1, x(minInd(1):minInd(2)), y(minInd(1):minInd(2)), z(minInd(1):minInd(2)), 'm-', 'linewidth', 2);
+                hold(ax1,'off')
+                title(ax1, {['Trial # ', obj.trackerFileName]; ['Frame # ', num2str(round(obj.time(i)/obj.framePeriodInSec))]});
+                xlabel(ax1, 'AP (mm)'), ylabel(ax1, 'ML (mm)'), zlabel(ax1, 'DV (mm)')
+                axis(ax1, 'equal')
+                xlim(ax1, xlimVal), ylim(ax1, ylimVal), zlim(ax1, zlimVal)
+%                 view(ax1, viewVal)
+                view(ax1, [az, el])
+                
+                plot3(ax2, x, y, z, 'k-', 'linewidth', 2)
+                hold(ax2,'on')                
+                plot3(ax2, basex, basey, basez, 'r.', 'markersize', 25);
+                plot3(ax2, x(minInd(1):minInd(2)), y(minInd(1):minInd(2)), z(minInd(1):minInd(2)), 'm-', 'linewidth', 2);
+                hold(ax2,'off')
+                title(ax2, 'Front view');
+                xlabel(ax2, 'AP (mm)'), ylabel(ax2, 'ML (mm)'), zlabel(ax2, 'DV (mm)')
+                axis(ax2, 'equal')
+                xlim(ax2, xlimVal), ylim(ax2, ylimVal), zlim(ax2, zlimVal)
+                view(ax2, [-90, 0])
+
+                plot3(ax3, x, y, z, 'k-', 'linewidth', 2)
+                hold(ax3,'on')                
+                plot3(ax3, basex, basey, basez, 'r.', 'markersize', 25);
+                plot3(ax3, x(minInd(1):minInd(2)), y(minInd(1):minInd(2)), z(minInd(1):minInd(2)), 'm-', 'linewidth', 2);
+                hold(ax3,'off')
+                title(ax3, 'Top-down view');
+                xlabel(ax3, 'AP (mm)'), ylabel(ax3, 'ML (mm)'), zlabel(ax3, 'DV (mm)')
+                axis(ax3, 'equal')
+                xlim(ax3, xlimVal), ylim(ax3, ylimVal), zlim(ax3, zlimVal)
+                view(ax3, [0, -90])
+                
+                i = obj.keyboard_navigation_3d(i, length(obj.trackerData));
+            end
+        end        
+        
+        function show_onebyone_3D_video(obj)
+            viewVal = [-30, 30];
+            q = linspace(0,1);
+            figure,
+            subplot(221)            
+            i = 1;
+            x = polyval(obj.fit3Data{i}(:,1),q);
+            y = polyval(obj.fit3Data{i}(:,2),q);
+            z = polyval(obj.fit3Data{i}(:,3),q);
+            xl = [min(cellfun(@(x) min(x(:,1)), obj.trackerData)), max(cellfun(@(x) max(x(:,1)), obj.trackerData))];
+            yl = [min(cellfun(@(x) min(x(:,2)), obj.trackerData)), max(cellfun(@(x) max(x(:,2)), obj.trackerData))]; 
+            zl = [min(cellfun(@(x) min(x(:,3)), obj.trackerData)), max(cellfun(@(x) max(x(:,3)), obj.trackerData))];
+            
+            plot3(x, y, z, 'k-')
+            ax1 = gca;
+            hold(ax1,'on')
+            plot3(ax1, obj.base(i,1), obj.base(i,2), obj.base(i,3), 'r.', 'markersize', 20); 
+            hold(ax1,'off')
+            view(ax1, viewVal),  xlim(ax1, xl), ylim(ax1, yl), zlim(ax1, zl);
+
+            subplot(223)            
+            i = 1;
+            x = polyval(obj.fit3Data{i}(:,1),q);
+            y = polyval(obj.fit3Data{i}(:,2),q);
+            z = polyval(obj.fit3Data{i}(:,3),q);
+            plot3(x, y, z, 'k-'); 
+            ax2 = gca;
+            hold(ax2,'on')
+            plot3(ax2, obj.base(i,1), obj.base(i,2), obj.base(i,3), 'r.', 'markersize', 20); 
+            hold(ax2,'off')       
+            view(ax2, [-90, 0]),  xlim(ax2, xl), ylim(ax2, yl), zlim(ax2, zl);
+            
+            
+            subplot(222)            
+            i = 1;
+            x = polyval(obj.fit3Data{i}(:,1),q);
+            y = polyval(obj.fit3Data{i}(:,2),q);
+            z = polyval(obj.fit3Data{i}(:,3),q);
+            plot3(x, y, z, 'k-')
+            ax3 = gca;
+            hold(ax3,'on')
+            plot3(ax3, obj.base(i,1), obj.base(i,2), obj.base(i,3), 'r.', 'markersize', 20); 
+            hold(ax1,'off')            
+            view(ax3, [0, 90]),  xlim(ax3, xl), ylim(ax3, yl), zlim(ax3, zl);
+            
+
+
+            while( i > 0 )                
+                plot3(ax1, polyval(obj.fit3Data{i}(:,1),q), polyval(obj.fit3Data{i}(:,2),q), polyval(obj.fit3Data{i}(:,3),q), 'k-', 'linewidth', 2)
+                x = polyval(obj.fit3Data{i}(:,1),q);
+                y = polyval(obj.fit3Data{i}(:,2),q);
+                z = polyval(obj.fit3Data{i}(:,3),q);
+                basex = obj.base(i,1);
+                basey = obj.base(i,2);
+                basez = obj.base(i,3);
+                plot3(ax1, x, y, z, 'k-', 'linewidth', 2);
+                hold(ax1,'on')
+                plot3(ax1, obj.base(i,1), obj.base(i,2), obj.base(i,3), 'r.', 'markersize', 25);
+                minInd = zeros(2,1);
+                [~, minInd(1)] = min( abs(  sqrt( (x-basex).^2 + (y-basey).^2 + (z-basez).^2 )  -  (obj.rInMm-1) * obj.pxPerMm  ) );
+                [~, minInd(2)] = min( abs(  sqrt( (x-basex).^2 + (y-basey).^2 + (z-basez).^2 )  -  (obj.rInMm+1) * obj.pxPerMm  ) );                
+                plot3(ax1, x(minInd(1):minInd(2)), y(minInd(1):minInd(2)), z(minInd(1):minInd(2)), 'm-', 'linewidth', 2);
+                hold(ax1,'off')
+                title(ax1, {['Trial # ', obj.trackerFileName]; ['Frame # ', num2str(round(obj.time(i)/obj.framePeriodInSec))]});
+                xlabel(ax1, 'Rostro-caudal'), ylabel(ax1, 'Medio-lateral'), zlabel(ax1, 'Dorso-ventral')
+                axis(ax1, 'equal')
+                view(ax1, viewVal), xlim(ax1, xl), ylim(ax1, yl), zlim(ax1, zl);
+                
+                plot3(ax2, polyval(obj.fit3Data{i}(:,1),q), polyval(obj.fit3Data{i}(:,2),q), polyval(obj.fit3Data{i}(:,3),q), 'k-', 'linewidth', 2)
+                hold(ax2,'on')
+                plot3(ax2, x, y, z, 'k-', 'linewidth', 2)
+                plot3(ax2, obj.base(i,1), obj.base(i,2), obj.base(i,3), 'r.', 'markersize', 25);
+                plot3(ax2, x(minInd(1):minInd(2)), y(minInd(1):minInd(2)), z(minInd(1):minInd(2)), 'm-', 'linewidth', 2);
+                hold(ax2,'off')
+                title(ax2, 'Front view');
+                xlabel(ax2, 'Rostro-caudal'), ylabel(ax2, 'Medio-lateral'), zlabel(ax2, 'Dorso-ventral')
+                axis(ax2, 'equal')
+                view(ax2, [-90, 0]), xlim(ax2, xl), ylim(ax2, yl), zlim(ax2, zl);
+
+                plot3(ax3, polyval(obj.fit3Data{i}(:,1),q), polyval(obj.fit3Data{i}(:,2),q), polyval(obj.fit3Data{i}(:,3),q), 'k-', 'linewidth', 2)
+                hold(ax3,'on')
+                plot3(ax3, x, y, z, 'k-', 'linewidth', 2)
+                plot3(ax3, obj.base(i,1), obj.base(i,2), obj.base(i,3), 'r.', 'markersize', 25);
+                plot3(ax3, x(minInd(1):minInd(2)), y(minInd(1):minInd(2)), z(minInd(1):minInd(2)), 'm-', 'linewidth', 2);
+                hold(ax3,'off')
+                title(ax3, 'Top-down view');
+                xlabel(ax3, 'Rostro-caudal'), ylabel(ax3, 'Medio-lateral'), zlabel(ax3, 'Dorso-ventral')
+                axis(ax3, 'equal')
+                view(ax3, [0, 90]), xlim(ax3, xl), ylim(ax3, yl), zlim(ax3, zl);
+                
+                i = obj.keyboard_navigation_3d(i, length(obj.trackerData));
             end
         end
         
@@ -510,7 +915,7 @@ classdef Whisker3D_2pad < handle
                 hold off
                 title({'Navigate using keyboard'; ['Trial # ', obj.trackerFileName]; ['Frame # ', num2str(round(obj.time(i)/obj.framePeriodInSec))]});
                 xlabel('Rostro-caudal'), ylabel('Medio-lateral'), zlabel('Dorso-ventral')                
-                set(gca, 'linewidth', 3, 'fontweight', 'bold', 'fontsize', 15)
+                set(gca, 'fontsize', 14)
                 axis equal
                 view(az,el), xlim(xl), ylim(yl), zlim(zl);
                 [i, az, el] = obj.keyboard_navigation_3d(i, length(obj.trackerData));

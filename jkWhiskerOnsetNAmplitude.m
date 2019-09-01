@@ -30,7 +30,7 @@ catch
 end
 
 BandPassCutOffsInHz = [6 30];  %%check filter parameters!!!
-% From Sofroniew 2014, which sites Hill 2011
+% From Sofroniew 2014, which cites Hill 2011
 W1 = BandPassCutOffsInHz(1) / (sampleRate/2);
 W2 = BandPassCutOffsInHz(2) / (sampleRate/2);
 [b,a]=butter(2,[W1 W2]);
