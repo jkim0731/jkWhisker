@@ -525,6 +525,11 @@ classdef Whisker3D_2pad < handle
             for i = 1 : length(obj.trackerData)
                 plot3(obj.base(i,1), obj.base(i,2), obj.base(i,3), 'r.')
             end
+            for i = 1 : length(obj.trackerData)
+                if isfinite(obj.intersectPoint(i,1)) && obj.intersectPoint(i,1) > 0
+                    plot3(obj.intersectPoint(i,1), obj.intersectPoint(i,2), obj.intersectPoint(i,3), 'b.')
+                end
+            end
             axis equal
         end
         
