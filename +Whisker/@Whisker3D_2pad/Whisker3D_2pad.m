@@ -191,8 +191,8 @@ classdef Whisker3D_2pad < handle
                         Ptop = Whisker.InterX(whiskerTop, maskTop);
                     
                         if isempty(Ptop)
-                            x = polyval(ws.polyFits{1}{1}(tdtopind(i),:), linspace(-0.1, 1.1))';
-                            y = polyval(ws.polyFits{1}{2}(tdtopind(i),:), linspace(-0.1, 1.1))';
+                            x = polyval(ws.polyFits{1}{1}(tdtopind(i),:), linspace(-0.1, 1.1));
+                            y = polyval(ws.polyFits{1}{2}(tdtopind(i),:), linspace(-0.1, 1.1));
                             if sqrt(sum((wpo-[x(end) y(end)]).^2)) < sqrt(sum((wpo-[x(1) y(1)]).^2))
                                 % c(q_max) is closest to whisker pad origin, so reverse the (x,y) sequence
                                 x = x(end:-1:1);
@@ -221,7 +221,11 @@ classdef Whisker3D_2pad < handle
                             distFromBase = sum((Ptop - whiskerTop).^2);
                             [~,baseInd] = nanmin(distFromBase);
                             finiteInds = find(isfinite(sum(tempData,2)));
+                            try
                             [~, obj.baseInd(i)] = min(abs(finiteInds - baseInd));
+                            catch
+                                error(sprintf('Error at trial #%d tdtopind %d', obj.trialNum, i))
+                            end
                             tempData = tempData(finiteInds,:);
                             obj.base(i,:) = tempData(obj.baseInd(i),:);
                             s = cumsum(sqrt([0; diff(tempData(:,1))].^2 + [0; diff(tempData(:,2))].^2) + [0; diff(tempData(:,3))].^2);
@@ -388,6 +392,7 @@ classdef Whisker3D_2pad < handle
                 R = cumsum(sqrt(xDot.^2 + yDot.^2 + zDot.^2) .* dq); % arc length segments, in pixels, times dq.
                 rind = find(R >= baseLength, 1, 'first');
                 
+                
                 % Angle (in degrees) as a function of q:
                 % Protraction means theta is increasing.
                 % Theta is 0 when perpendicular to the midline of the mouse.
@@ -418,7 +423,12 @@ classdef Whisker3D_2pad < handle
                 else
                     error('Invalid value of property ''faceSideInImage'' or ''protractionDirection''')
                 end
+                
+                try
                 obj.theta(fi) = thetas(rind);
+                catch
+                    error(sprintf('Error in trial #%d', obj.trialNum))
+                end
                 obj.phi(fi) = phis(rind);
             end
             
