@@ -6,6 +6,14 @@ function [onsetFrame, amplitude, midpoint, whiskingAmp, peakFrame] = jkWhiskerOn
 % If not tracked, fill in NaN.
 
 % added peakFrame (only during whisking, right after onset) 2019/03/05 JK.
+
+if size(theta,1) < size(theta,2)
+    theta = theta';
+end
+if size(theta,2) ~= 1
+    error('Input ''theta'' should be a vector.')
+end
+
 switch nargin
     case 1
         whiskingThreshold = 2.5; % in degrees
@@ -20,14 +28,14 @@ switch nargin
         error('too much input arguments')
 end
 
-
-
 % make any nan thetaAtBase = mean of the surrounding points (10 on each side)
 try
     theta(isnan(theta)) = nanmean(theta(repmat(find(isnan(theta)),21,1)+repmat([-10:10]',1,length(find(isnan(theta))))));
 catch
     theta(isnan(theta)) = nanmean(theta);
 end
+
+
 
 BandPassCutOffsInHz = [6 30];  %%check filter parameters!!!
 % From Sofroniew 2014, which cites Hill 2011
