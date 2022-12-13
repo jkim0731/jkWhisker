@@ -502,7 +502,7 @@ classdef WhiskerTrialLite_2pad < handle
                         closeAdjFrames = closeFrames(find([0;diff(closeFrames)] == 1));
                         if ~isempty(closeAdjFrames)
                             [~, amplitude, ~, ~, ~, ~, phase, ~] = jkWhiskerDecomposition(obj.thetaAtBase{1});
-                            whiskingStartInds = [1;find([0;diff(phase)]< pi); length(phase)+1];
+                            whiskingStartInds = [1;find([0;diff(phase)]< -pi); length(phase)+1]; % changed from pi to -pi (2022/12/12)
                             % pi (~3.41) is defined as the threshold by observing the histogram of diff(phase)
                             if ~isempty(whiskingStartInds)
                                 whiskingFrames = [];

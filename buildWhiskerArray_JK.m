@@ -3,6 +3,10 @@
 %%
 %% Error sessions!!
 
+% 2022/12/12 Running all JK025-056 again for WL and WF.
+% One thing to change at buildWL_2pad.m
+% Might not be a big problem (touch hyperplane adjustment.
+
 % 2018/12/22 Run JK052pre1 W3.
 
 % Run JK027S17 WL_2pad again. error at 2nd running. check with wlarray first.
@@ -19,8 +23,9 @@
 %%
 
 % mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041','JK052', 'JK053','JK054','JK056', 'JK070', 'JK074', 'JK075', 'JK076'};
-% mice = {'JK027','JK030','JK036','JK037','JK038','JK039','JK041','JK052', 'JK053','JK054','JK056'};
-mice = {'JK052', 'JK053','JK054','JK056'};
+mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041','JK052', 'JK053','JK054','JK056'};
+% mice = {'JK036','JK037','JK038','JK039','JK041','JK052', 'JK053','JK054','JK056'};
+
 % 
 
 % mice = {'JK027'};
@@ -30,13 +35,15 @@ mice = {'JK052', 'JK053','JK054','JK056'};
 % mice = {'JK025','JK027','JK030','JK036','JK037','JK038','JK039','JK041'};
 % mice = {'JK038','JK039','JK041'};
 
-videoloc = 'D:\TPM\JK\tracked\';
+% videoloc = 'D:\TPM\JK\tracked\';
+videoloc = 'D:\WhiskerVideo\';
 if strcmp(videoloc(end),filesep)
     whisker_d = videoloc;
 else
     whisker_d = ([videoloc filesep]);
 end
-behavior_base_dir = 'D:\TPM\JK\soloData\';
+% behavior_base_dir = 'D:\TPM\JK\soloData\';
+behavior_base_dir = 'D:\SoloData\';
 
 ppm = 17.81;
             % 'pxPerMm': 17.81002608 for telecentric lens
@@ -80,21 +87,21 @@ touchKappaSTDthreshold = 2;
 
 % 
 % sessions = {[],[],[],[],[],[],[],[],[],[]};
-sessions_pre = {[],[],[],[],[],[],[],[],[],[],[],[]};
-sessions_piezo = {[],[],[],[],[],[],[],[],[],[],[],[]};
-sessions_spont = {[],[],[],[],[],[],[],[],[],[],[],[]};
+% sessions_pre = {[],[],[],[],[],[],[],[],[],[],[],[]};
+% sessions_piezo = {[],[],[],[],[],[],[],[],[],[],[],[]};
+% sessions_spont = {[],[],[],[],[],[],[],[],[],[],[],[]};
 
 % sessionsDone = {[4,5,18,19,22],[3,4,15,16,17],[3,4,20,21,22],[1,2,16,17,18],[7],[2],[1,2,21,22:25],[3], [3:5,24:26], [3],[3],[3]};
 % sessionsTorun = {   [1:19,22],  [1:22,99], [1:7,9:22], [1:18,91],  [1:10,12:24],   [1:22,24:31],   [1:25], [1:19,21:30]};
-sessionsDone = {[3,4,21:23,25,26],[3],[3,4,25,26],[3:5]};
-sessionsTorun = {[1:29,94,95], [1:3,5:21], [1:26], [1:13]};
 % sessionsDone = {[3:5]};
 % sessionsTorun = {[8]};
-sessions = cell(1,length(sessionsTorun));
-for i = 1 : length(sessions)
-    sessions{i} = setdiff(sessionsTorun{i}, sessionsDone{i});
-end
+% sessions = cell(1,length(sessionsTorun));
+% for i = 1 : length(sessions)
+%     sessions{i} = setdiff(sessionsTorun{i}, sessionsDone{i});
+% end
 % sessions = {[1:29,94,95],     [1:3,5:21],     [1:26], [1:13]};
+% sessions = {[91],[91,92],[91],[91],[91],[91],[91],[91],[91]};
+% sessions = {[91]};
 all_session = 1; % 1 if using all sessions, 0 if using selected sessions
 
 DoFollicle = 0;
@@ -104,7 +111,7 @@ testPoleUp = 0;
 doWST = 0;
 makeTouchHyperplane = 0;
 doWL = 1;
-do3D = 1;
+do3D = 0;
 doWF = 1;
 
 %% Define follicle points and masks
