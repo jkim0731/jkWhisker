@@ -321,17 +321,14 @@ if doWT
                         else
                             load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
                         end
+                        
                         if strcmp(sessionName, 'S91')
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
-                        elseif strcmp(sessionName, 'S94') % JK052
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S04'), b));
-                        elseif strcmp(sessionName, 'S95') % JK052
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S05'), b));
-                        elseif strcmp(sessionName, 'S99') % JK027
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b)); 
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'pre1'), b));
+                        elseif strcmp(sessionName, 'S92')
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'pre2'), b));
                         else
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
-                        end                        
+                        end
                         b_session = b{b_ind};
 
                         buildWT_2pad(mouseName, sessionName, whisker_d, b_session, videoFreq, ppm, barRadius)
@@ -421,18 +418,16 @@ if doWT
                         else
                             load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
                         end
+                        
                         if strcmp(sessionName, 'S91')
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
-                        elseif strcmp(sessionName, 'S94') % JK052
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S04'), b));
-                        elseif strcmp(sessionName, 'S95') % JK052
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S05'), b));
-                        elseif strcmp(sessionName, 'S99') % JK027
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b)); 
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'pre1'), b));
+                        elseif strcmp(sessionName, 'S92')
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'pre2'), b));
                         else
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                         end
                         b_session = b{b_ind};
+
                         buildWT_2pad(mouseName, sessionName, whisker_d, b_session, videoFreq, ppm, barRadius)
                     end
                 end
@@ -455,7 +450,7 @@ if doWT
                         else
                             load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
                         end
-                        b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
+                        
                         b_session = b{b_ind};
 
                         buildWT_2pad(mouseName, sessionName, whisker_d, b_session, videoFreq, ppm, barRadius)
@@ -577,13 +572,9 @@ if doWST
                             load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
                         end
                         if strcmp(sessionName, 'S91')
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
-                        elseif strcmp(sessionName, 'S94') % JK052
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S04'), b));
-                        elseif strcmp(sessionName, 'S95') % JK052
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S05'), b));
-                        elseif strcmp(sessionName, 'S99') % JK027
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b)); 
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'pre1'), b));
+                        elseif strcmp(sessionName, 'S92')
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'pre2'), b));
                         else
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                         end
@@ -677,13 +668,9 @@ if doWST
                             load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
                         end
                         if strcmp(sessionName, 'S91')
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
-                        elseif strcmp(sessionName, 'S94') % JK052
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S04'), b));
-                        elseif strcmp(sessionName, 'S95') % JK052
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S05'), b));
-                        elseif strcmp(sessionName, 'S99') % JK027
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b)); 
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'pre1'), b));
+                        elseif strcmp(sessionName, 'S92')
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'pre2'), b));
                         else
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                         end
@@ -778,13 +765,9 @@ if makeTouchHyperplane
                             load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
                         end
                         if strcmp(sessionName, 'S91')
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
-                        elseif strcmp(sessionName, 'S94') % JK052
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S04'), b));
-                        elseif strcmp(sessionName, 'S95') % JK052
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S05'), b));
-                        elseif strcmp(sessionName, 'S99') % JK027
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b));
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'pre1'), b));
+                        elseif strcmp(sessionName, 'S92')
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'pre2'), b));
                         else
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                         end
@@ -838,13 +821,9 @@ if makeTouchHyperplane
                             load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
                         end
                         if strcmp(sessionName, 'S91')
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
-                        elseif strcmp(sessionName, 'S94') % JK052
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S04'), b));
-                        elseif strcmp(sessionName, 'S95') % JK052
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S05'), b));
-                        elseif strcmp(sessionName, 'S99') % JK027
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b));
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'pre1'), b));
+                        elseif strcmp(sessionName, 'S92')
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'pre2'), b));
                         else
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                         end
@@ -905,13 +884,9 @@ if doWL
                             load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
                         end
                         if strcmp(sessionName, 'S91')
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
-                        elseif strcmp(sessionName, 'S94') % JK052
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S04'), b));
-                        elseif strcmp(sessionName, 'S95') % JK052
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S05'), b));
-                        elseif strcmp(sessionName, 'S99') % JK027
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b));
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'pre1'), b));
+                        elseif strcmp(sessionName, 'S92')
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'pre2'), b));
                         else
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                         end
@@ -978,13 +953,9 @@ if doWL
                             load([behavior_d 'behavior_', mouseName,'.mat']) % loading b of the mouse (all the sessions)
                         end
                         if strcmp(sessionName, 'S91')
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S01'), b));
-                        elseif strcmp(sessionName, 'S94') % JK052
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S04'), b));
-                        elseif strcmp(sessionName, 'S95') % JK052
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S05'), b));
-                        elseif strcmp(sessionName, 'S99') % JK027
-                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'S17'), b));
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'pre1'), b));
+                        elseif strcmp(sessionName, 'S92')
+                            b_ind = find(cellfun(@(x) strcmp(x.sessionName,'pre2'), b));
                         else
                             b_ind = find(cellfun(@(x) strcmp(x.sessionName,sessionName), b));
                         end
